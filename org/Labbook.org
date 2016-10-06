@@ -1,0 +1,820 @@
+#+TITLE:  LabBook
+#+AUTHOR: Steven QUINITO MASNADA
+#+BABEL: :tangle yes
+#+TAGS: Arnaud(a) Brice(b) Script(s) Analysis (c) Ruby(r) R(t) deprecated(d) Modifications(m)
+
+* 2016
+** October
+*** 2016-10-04
+**** Meeting Alya
+     Loops \to subroutine, inlining.
+     Make tutorial to explain the steps.
+     24th October telco 14h.
+**** Tutorial
+***** Original Fortran source code
+     #+BEGIN_SRC fortran
+             subroutine nsi_element_assembly_split_oss(&
+             pnode,pgaus,pevat,gpden,gpvis,gppor,gpsp1,gpsp2,&
+             gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,gpgrp,gprhs,&
+             gpvel,gpsgs,wgrgr,agrau,elvel,elauu,elaup,elapp,&
+             elapu,elrbu,elrbp,dtinv_loc,dtsgs)
+
+             integer(ip), intent(in)    :: pnode,pgaus,pevat
+             real(rp),    intent(in)    :: gpden(VECTOR_SIZE,pgaus)
+             real(rp),    intent(in)    :: gpvis(VECTOR_SIZE,pgaus)
+             real(rp),    intent(in)    :: gppor(VECTOR_SIZE,pgaus)
+             real(rp),    intent(in)    :: gpsp1(VECTOR_SIZE,pgaus)
+             real(rp),    intent(in)    :: gpsp2(VECTOR_SIZE,pgaus)
+             real(rp),    intent(in)    :: gpvol(VECTOR_SIZE,pgaus)
+             real(rp),    intent(in)    :: gpsha(VECTOR_SIZE,pnode,pgaus)
+             real(rp),    intent(in)    :: gpcar(VECTOR_SIZE,ndime,mnode,pgaus)
+             real(rp),    intent(in)    :: gpadv(VECTOR_SIZE,ndime,pgaus)
+             real(rp),    intent(inout) :: gpvep(VECTOR_SIZE,ndime,pgaus)
+             real(rp),    intent(inout) :: gpprp(VECTOR_SIZE,pgaus)      
+             real(rp),    intent(inout) :: gpgrp(VECTOR_SIZE,ndime,pgaus)
+             real(rp),    intent(inout) :: gprhs(VECTOR_SIZE,ndime,pgaus)
+             real(rp),    intent(in)    :: gpvel(VECTOR_SIZE,ndime,pgaus,*)
+             real(rp),    intent(in)    :: gpsgs(VECTOR_SIZE,ndime,pgaus,*)
+             real(rp),    intent(out)   :: wgrgr(VECTOR_SIZE,pnode,pnode,pgaus)
+             real(rp),    intent(out)   :: agrau(VECTOR_SIZE,pnode,pgaus)
+             real(rp),    intent(in)    :: elvel(VECTOR_SIZE,ndime,pnode,*)
+             real(rp),    intent(out)   :: elauu(VECTOR_SIZE,pnode*ndime,pnode*ndime)
+             real(rp),    intent(out)   :: elaup(VECTOR_SIZE,pnode*ndime,pnode)
+             real(rp),    intent(out)   :: elapp(VECTOR_SIZE,pnode,pnode)
+             real(rp),    intent(out)   :: elapu(VECTOR_SIZE,pnode,pnode*ndime)
+             real(rp),    intent(out)   :: elrbu(VECTOR_SIZE,ndime,pnode)
+             real(rp),    intent(out)   :: elrbp(VECTOR_SIZE,pnode)
+             real(rp),    intent(in)    :: dtinv_loc(VECTOR_SIZE)
+             real(rp),    intent(in)    :: dtsgs(VECTOR_SIZE)
+             real(rp)                   :: gpsp1_p(VECTOR_SIZE,pgaus)
+             real(rp)                   :: gpsp1_v(VECTOR_SIZE,pgaus)
+             real(rp)                   :: c1(VECTOR_SIZE),c2(VECTOR_SIZE)
+             real(rp)                   :: c3(VECTOR_SIZE),c4(VECTOR_SIZE)
+             real(rp)                   :: alpha(VECTOR_SIZE),beta(VECTOR_SIZE)
+             real(rp)                   :: fact0(VECTOR_SIZE)
+             real(rp)                   :: fact1(VECTOR_SIZE)
+             real(rp)                   :: fact2(VECTOR_SIZE)
+             real(rp)                   :: fact3(VECTOR_SIZE)
+             real(rp)                   :: fact4(VECTOR_SIZE)
+             real(rp)                   :: fact5(VECTOR_SIZE)
+             real(rp)                   :: fact6(VECTOR_SIZE)
+             real(rp)                   :: fact7(VECTOR_SIZE)
+             real(rp)                   :: fact8(VECTOR_SIZE)
+             real(rp)                   :: gpveo(VECTOR_SIZE,3)
+             real(rp)                   :: fact1_p(VECTOR_SIZE)
+             integer(ip)                :: inode,jnode,idofn,jdofn,idofv,jdof2,jdof3
+             integer(ip)                :: idof1,idof3,idof2,igaus,idime,jdof1,jdofv,itime
+
+       #ifdef OPENACC
+       #define DEF_VECT ivect
+       #else
+       #define DEF_VECT 1:VECTOR_SIZE
+       #endif
+
+       !----------------------------------------------------------------------
+       !
+       ! possibility of using only pressure stabilization - not ready with limiter - nor with shock capturing
+       !
+       !----------------------------------------------------------------------
+
+             gpsp1_p = gpsp1
+             gpsp1_v = gpsp1
+       !if(1==2) gpsp1_v = 0.0_rp
+       !if(1==2) gpsp1_p = min(gpsp1_p,1.0_rp/dtinv_loc)    ! Activate this line only if runing without subscales
+       ! and you want to limit tau1 like most groups do for small time step
+
+       !----------------------------------------------------------------------
+       !
+       ! Initialization
+       !
+       !----------------------------------------------------------------------
+
+             elrbp = 0.0_rp
+             elrbu = 0.0_rp
+             elapp = 0.0_rp
+             elauu = 0.0_rp
+             elaup = 0.0_rp
+             elapu = 0.0_rp
+
+       !----------------------------------------------------------------------
+       !
+       ! Test functions
+       !
+       !----------------------------------------------------------------------
+
+       !
+       ! AGRAU = rho * (a.grad) Ni
+       ! WGRGR = grad(Ni) . grad(Nj)
+       !
+             if( ndime == 2 ) then
+
+                do igaus = 1,pgaus
+                   do inode = 1,pnode
+                      agrau(DEF_VECT,inode,igaus) =  gpden(DEF_VECT,igaus) * (                    &
+                      &                gpadv(DEF_VECT,1,igaus)*gpcar(DEF_VECT,1,inode,igaus) &
+                      &              + gpadv(DEF_VECT,2,igaus)*gpcar(DEF_VECT,2,inode,igaus) )
+                      do jnode = 1,pnode
+                         wgrgr(DEF_VECT,inode,jnode,igaus) = &
+                         &             gpcar(DEF_VECT,1,inode,igaus)*gpcar(DEF_VECT,1,jnode,igaus) &
+                         &           + gpcar(DEF_VECT,2,inode,igaus)*gpcar(DEF_VECT,2,jnode,igaus) 
+                      end do
+                   end do
+                end do
+
+             else
+
+                do igaus = 1,pgaus
+                   do inode = 1,pnode
+                      agrau(DEF_VECT,inode,igaus) =  gpden(DEF_VECT,igaus) * (                    &
+                      &                gpadv(DEF_VECT,1,igaus)*gpcar(DEF_VECT,1,inode,igaus) &
+                      &              + gpadv(DEF_VECT,2,igaus)*gpcar(DEF_VECT,2,inode,igaus) &
+                      &              + gpadv(DEF_VECT,3,igaus)*gpcar(DEF_VECT,3,inode,igaus) )
+                      do jnode = 1,pnode
+                         wgrgr(DEF_VECT,inode,jnode,igaus) = &
+                         &             gpcar(DEF_VECT,1,inode,igaus)*gpcar(DEF_VECT,1,jnode,igaus) &
+                         &           + gpcar(DEF_VECT,2,inode,igaus)*gpcar(DEF_VECT,2,jnode,igaus) & 
+                         &           + gpcar(DEF_VECT,3,inode,igaus)*gpcar(DEF_VECT,3,jnode,igaus) 
+                      end do
+                   end do
+                end do
+
+             end if
+
+       !----------------------------------------------------------------------
+       !
+       ! Auu
+       !
+       !----------------------------------------------------------------------
+
+       !
+       ! Galerkin + ( tau2 * div(u) , div(v) ) + ( tau1 * rho*a.grad(u), rho*a.grad(v) )
+       !
+             if( ndime == 2 ) then
+
+                do igaus = 1,pgaus
+
+                   fact0(DEF_VECT) = gpsp2(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+                   fact6(DEF_VECT) = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+                   fact7(DEF_VECT) = gpsp1_v(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) 
+                   fact8(DEF_VECT) = pabdf_nsi(1) * gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT) + gppor(DEF_VECT,igaus)
+
+                   do inode = 1,pnode
+
+                      idof1 = 2*inode-1
+                      idof2 = 2*inode
+
+                      fact1(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus) ! div(u) * tau2' * dv/dx
+                      fact2(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus) ! div(u) * tau2' * dv/dy
+                      fact4(DEF_VECT) = gpsha(DEF_VECT,inode,igaus) * gpvol(DEF_VECT,igaus)
+
+                      do jnode = 1,pnode    
+
+                         jdof1 = 2*jnode-1
+                         jdof2 = 2*jnode
+
+                         fact5(DEF_VECT) = fact4(DEF_VECT) * ( agrau(DEF_VECT,jnode,igaus) + fact8(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) ) & ! ( rho/dt N_j + s Nj + rho*(a.grad)Nj ) Ni
+                         &         +  fact6(DEF_VECT) * wgrgr(DEF_VECT,inode,jnode,igaus) & ! mu * grad(Ni) . grad(Nj)
+                         &         +  fact7(DEF_VECT) * agrau(DEF_VECT,jnode,igaus) * agrau(DEF_VECT,inode,igaus) ! tau1 * rho*(a.grad)Nj * rho*(a.grad)Ni
+
+                         elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus) + fact5(DEF_VECT)
+                         elauu(DEF_VECT,idof2,jdof1) = elauu(DEF_VECT,idof2,jdof1) + fact2(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                         elauu(DEF_VECT,idof1,jdof2) = elauu(DEF_VECT,idof1,jdof2) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) 
+                         elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) + fact2(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) + fact5(DEF_VECT)
+
+                      end do
+
+                   end do
+                end do
+
+             else
+
+                do igaus = 1,pgaus
+
+                   fact0(DEF_VECT) = gpsp2(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+                   fact6(DEF_VECT) = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+                   fact7(DEF_VECT) = gpsp1_v(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+                   fact8(DEF_VECT) = pabdf_nsi(1) * gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT) + gppor(DEF_VECT,igaus)
+
+                   do inode = 1,pnode
+
+                      idof1 = 3*inode-2
+                      idof2 = 3*inode-1
+                      idof3 = 3*inode
+
+                      fact1(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus) ! div(u) * tau2' * dv/dx
+                      fact2(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus) ! div(u) * tau2' * dv/dy
+                      fact3(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,3,inode,igaus) ! div(u) * tau2' * dv/dz
+                      fact4(DEF_VECT) = gpsha(DEF_VECT,inode,igaus) * gpvol(DEF_VECT,igaus)
+
+                      do jnode = 1,pnode    
+
+                         jdof1 = 3*jnode-2
+                         jdof2 = 3*jnode-1
+                         jdof3 = 3*jnode
+
+                         fact5(DEF_VECT) = fact4(DEF_VECT) * ( agrau(DEF_VECT,jnode,igaus) + fact8(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) ) & ! ( rho/dt N_j + s Nj + rho*(a.grad)Nj ) Ni
+                         +  fact6(DEF_VECT) * wgrgr(DEF_VECT,inode,jnode,igaus) & ! mu * grad(Ni) . grad(Nj)
+                         +  fact7(DEF_VECT) * agrau(DEF_VECT,jnode,igaus) * agrau(DEF_VECT,inode,igaus) ! t1 * rho*(a.grad)Nj * rho*(a.grad)Ni
+
+                         elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus) + fact5(DEF_VECT)
+                         elauu(DEF_VECT,idof2,jdof1) = elauu(DEF_VECT,idof2,jdof1) + fact2(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                         elauu(DEF_VECT,idof3,jdof1) = elauu(DEF_VECT,idof3,jdof1) + fact3(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+
+                         elauu(DEF_VECT,idof1,jdof2) = elauu(DEF_VECT,idof1,jdof2) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) 
+                         elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) + fact2(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) + fact5(DEF_VECT)
+                         elauu(DEF_VECT,idof3,jdof2) = elauu(DEF_VECT,idof3,jdof2) + fact3(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) 
+
+                         elauu(DEF_VECT,idof1,jdof3) = elauu(DEF_VECT,idof1,jdof3) + fact1(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus) 
+                         elauu(DEF_VECT,idof2,jdof3) = elauu(DEF_VECT,idof2,jdof3) + fact2(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus)
+                         elauu(DEF_VECT,idof3,jdof3) = elauu(DEF_VECT,idof3,jdof3) + fact3(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus) + fact5(DEF_VECT)
+
+                      end do
+
+                   end do
+                end do
+
+             end if
+
+             if( fvins_nsi > 0.9_rp ) then
+       !
+       ! ( mu*duj/dxi , dv/dxj ) (only div form)
+       !
+                if( ndime == 2 ) then
+                   do igaus = 1,pgaus
+                      do inode = 1,pnode
+                         do idime = 1,ndime
+                            idofv =  (inode-1)*ndime+idime
+                            do jnode = 1,pnode
+                               fact1                       = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,jnode,igaus)     
+                               jdofv                       = (jnode-1)*ndime + 1
+                               elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                               jdofv                       = (jnode-1)*ndime + 2
+                               elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                            end do
+                            if( fvins_nsi == 2.0_rp ) then
+                               fact1 = -2.0_rp/3.0_rp * gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,inode,igaus)
+                               do jnode = 1,pnode
+                                  jdofv                       = (jnode-1)*ndime + 1 
+                                  elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                                  jdofv                       = (jnode-1)*ndime + 2
+                                  elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus)
+                               end do
+                            end if
+                         end do
+                      end do
+                   end do
+                else
+                   do igaus = 1,pgaus
+                      do inode = 1,pnode
+                         do idime = 1,ndime
+                            idofv = (inode-1)*ndime + idime
+                            do jnode = 1,pnode
+                               fact1                       = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,jnode,igaus)     
+                               jdofv                       = (jnode-1)*ndime + 1
+                               elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                               jdofv                       = (jnode-1)*ndime + 2
+                               elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                               jdofv                       = (jnode-1)*ndime + 3
+                               elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,3,inode,igaus)
+                            end do
+                            if( fvins_nsi == 2.0_rp ) then
+                               fact1                          = -2.0_rp / 3.0_rp * gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,inode,igaus)
+                               do jnode = 1,pnode
+                                  jdofv                       = (jnode-1)*ndime + 1
+                                  elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                                  jdofv                       = (jnode-1)*ndime + 2
+                                  elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus)
+                                  jdofv                       = (jnode-1)*ndime + 3
+                                  elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus)
+                               end do
+                            end if
+                         end do
+                      end do
+                   end do
+                end if
+             end if
+
+       !
+       ! Lumped evolution matrix (only backward euler)
+       !
+             if( kfl_lumped == 1 ) then 
+       !
+       ! Remove Galerkin term and add lumped term 
+       ! 
+                if( ndime == 2 ) then
+                   call runend('PREGUNTAR A MATIAS QUE LO PROGRAME')
+                else
+                   do igaus = 1,pgaus
+                      gpveo(DEF_VECT,1:3) = 0.0_rp
+                      do inode = 1,pnode
+                         do idime = 1,ndime
+                            gpveo(DEF_VECT,idime) = gpveo(DEF_VECT,idime) + elvel(DEF_VECT,idime,inode,2) * gpsha(DEF_VECT,inode,igaus)
+                         end do
+                      end do
+                      do inode = 1,pnode
+                         idof1                       = 3*inode-2
+                         idof2                       = 3*inode-1
+                         idof3                       = 3*inode
+                         fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpden(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) * dtinv_loc(DEF_VECT)
+                         elauu(DEF_VECT,idof1,idof1) = elauu(DEF_VECT,idof1,idof1) + fact0(DEF_VECT)
+                         elauu(DEF_VECT,idof2,idof2) = elauu(DEF_VECT,idof2,idof2) + fact0(DEF_VECT)
+                         elauu(DEF_VECT,idof3,idof3) = elauu(DEF_VECT,idof3,idof3) + fact0(DEF_VECT)
+                         do idime = 1,ndime
+                            elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) - fact0(DEF_VECT) * gpveo(DEF_VECT,idime)
+                            elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact0(DEF_VECT) * elvel(DEF_VECT,idime,inode,2)
+                         end do
+                         do jnode = 1,pnode 
+                            jdof1                       = 3*jnode-2
+                            jdof2                       = 3*jnode-1
+                            jdof3                       = 3*jnode
+                            elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) - fact0*gpsha(DEF_VECT,jnode,igaus) 
+                            elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) - fact0*gpsha(DEF_VECT,jnode,igaus) 
+                            elauu(DEF_VECT,idof3,jdof3) = elauu(DEF_VECT,idof3,jdof3) - fact0*gpsha(DEF_VECT,jnode,igaus) 
+                         end do
+                      end do
+                   end do
+                end if
+
+             else if( kfl_lumped == 2 ) then 
+       !
+       ! No time term have been added up to now: add Galerkin term
+       !
+                do igaus = 1,pgaus
+                   fact0(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT)
+                   do inode = 1, pnode
+                      fact1(DEF_VECT) = fact0(DEF_VECT) * gpsha(DEF_VECT,inode,igaus)
+                      do idime = 1,ndime
+                         idof1                       = (inode-1) * ndime + idime
+                         elauu(DEF_VECT,idof1,idof1) = elauu(DEF_VECT,idof1,idof1) + fact1(DEF_VECT)
+                         elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact1(DEF_VECT) * elvel(DEF_VECT,idime,inode,2)
+                      end do
+                   end do
+                end do
+
+             end if
+
+       !----------------------------------------------------------------------
+       !
+       ! Apu and Aup
+       !
+       !----------------------------------------------------------------------
+       !
+       ! ( div(u) , q ) and - ( p , div(v) ) 
+       !
+             if( ndime == 2 ) then
+                do igaus = 1,pgaus
+                   do inode = 1,pnode
+                      idof1 = 2*inode-1
+                      idof2 = 2*inode
+                      do jnode = 1,pnode
+                         fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,jnode,igaus) 
+                         fact1(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                         fact2(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                         elapu(DEF_VECT,jnode,idof1) = elapu(DEF_VECT,jnode,idof1) + fact1(DEF_VECT)
+                         elapu(DEF_VECT,jnode,idof2) = elapu(DEF_VECT,jnode,idof2) + fact2(DEF_VECT)
+                         elaup(DEF_VECT,idof1,jnode) = elaup(DEF_VECT,idof1,jnode) - fact1(DEF_VECT)
+                         elaup(DEF_VECT,idof2,jnode) = elaup(DEF_VECT,idof2,jnode) - fact2(DEF_VECT)
+                      end do
+                   end do
+                end do
+             else
+                do igaus = 1,pgaus
+                   do inode = 1,pnode
+                      idof1 = 3*inode-2
+                      idof2 = 3*inode-1
+                      idof3 = 3*inode
+                      do jnode = 1,pnode
+                         fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,jnode,igaus) 
+                         fact1(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                         fact2(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                         fact3(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,3,inode,igaus)
+                         elapu(DEF_VECT,jnode,idof1) = elapu(DEF_VECT,jnode,idof1) + fact1(DEF_VECT)
+                         elapu(DEF_VECT,jnode,idof2) = elapu(DEF_VECT,jnode,idof2) + fact2(DEF_VECT)
+                         elapu(DEF_VECT,jnode,idof3) = elapu(DEF_VECT,jnode,idof3) + fact3(DEF_VECT)
+                         elaup(DEF_VECT,idof1,jnode) = elaup(DEF_VECT,idof1,jnode) - fact1(DEF_VECT)
+                         elaup(DEF_VECT,idof2,jnode) = elaup(DEF_VECT,idof2,jnode) - fact2(DEF_VECT)
+                         elaup(DEF_VECT,idof3,jnode) = elaup(DEF_VECT,idof3,jnode) - fact3(DEF_VECT)
+                      end do
+                   end do
+                end do
+             end if
+
+       !----------------------------------------------------------------------
+       !
+       ! App
+       !
+       !----------------------------------------------------------------------
+       !
+       ! Pressure: ( tau1' * grad(p) , grad(q) )
+       ! 
+             do igaus = 1,pgaus
+                do inode = 1,pnode
+                   do jnode = inode+1,pnode
+                      fact1(DEF_VECT)             = gpsp1_p(DEF_VECT,igaus) * wgrgr(DEF_VECT,jnode,inode,igaus) * gpvol(DEF_VECT,igaus)
+                      elapp(DEF_VECT,jnode,inode) = elapp(DEF_VECT,jnode,inode) + fact1(DEF_VECT)
+                      elapp(DEF_VECT,inode,jnode) = elapp(DEF_VECT,inode,jnode) + fact1(DEF_VECT)
+                   end do
+                   fact1(DEF_VECT)             = gpsp1_p(DEF_VECT,igaus) * wgrgr(DEF_VECT,inode,inode,igaus) * gpvol(DEF_VECT,igaus)
+                   elapp(DEF_VECT,inode,inode) = elapp(DEF_VECT,inode,inode) + fact1(DEF_VECT)
+                end do
+             end do
+
+       !----------------------------------------------------------------------
+       !
+       ! bu and bp
+       !
+       ! P1  = P [ tau1' * rho * a.grad(u) ]
+       ! P1' = P1 + tau1' * rho * u'n / dt
+       !
+       ! P2  = P [ tau1' * ( grad(p) - f ) ]
+       ! P2' = P2 + tau1' * rho * u'n / dt + tau1' * f 
+       !
+       !----------------------------------------------------------------------
+       !
+       ! Limiter
+       !
+             if( kfl_limit_nsi == -1 ) then
+
+                gpvep(DEF_VECT,:,:) = 0.0_rp
+
+             else if( kfl_limit_nsi > 0 ) then
+
+                do igaus = 1,pgaus
+                   c1(DEF_VECT) = 0.0_rp
+                   c2(DEF_VECT) = 0.0_rp
+                   c3(DEF_VECT) = 0.0_rp
+                   do idime = 1,ndime
+                      c4(DEF_VECT) = 0.0_rp
+                      do inode = 1,pnode
+                         c4(DEF_VECT) = c4(DEF_VECT) + agrau(DEF_VECT,inode,igaus) * elvel(DEF_VECT,idime,inode,1)
+                      end do
+                      c4(DEF_VECT) = gpsp1(DEF_VECT,igaus) * c4(DEF_VECT)
+                      c1(DEF_VECT) = c1(DEF_VECT) + ( gpvep(DEF_VECT,idime,igaus) - c4(DEF_VECT) )**2
+                      c3(DEF_VECT) = c3(DEF_VECT) + gpvep(DEF_VECT,idime,igaus) * gpvep(DEF_VECT,idime,igaus)
+                      c2(DEF_VECT) = c2(DEF_VECT) + c4(DEF_VECT) * c4(DEF_VECT)
+                   end do
+                   c3(DEF_VECT)   = sqrt( c2(DEF_VECT) ) + sqrt( c3(DEF_VECT) )
+                   c1(DEF_VECT)   = sqrt( c1(DEF_VECT) )
+                   beta(DEF_VECT) = c1(DEF_VECT) / ( c3(DEF_VECT) + epsilon(1.0_rp) )
+                   if( kfl_limit_nsi == 1 ) then
+                      alpha(DEF_VECT) = min(1.0_rp,2.0_rp*(1.0_rp-beta(DEF_VECT)))
+                   else if( kfl_limit_nsi == 2 ) then
+                      alpha(DEF_VECT) = 0.5_rp*(tanh(20.0_rp*(beta(DEF_VECT)-0.8_rp))+1.0_rp)
+                   end if
+                   do idime = 1,ndime
+                      gpvep(DEF_VECT,idime,igaus) = alpha(DEF_VECT) * gpvep(DEF_VECT,idime,igaus)
+                   end do
+                end do
+
+             end if
+       !
+       ! P2 <= P2 + tau1' * f
+       !
+             do igaus = 1,pgaus
+                do idime = 1,ndime
+                   gpgrp(DEF_VECT,idime,igaus) = gpgrp(DEF_VECT,idime,igaus) + gpsp1_p(DEF_VECT,igaus) * gprhs(DEF_VECT,idime,igaus)
+                end do
+             end do
+       !
+       ! P1 <= P1 + tau1' * rho * u'n / dt
+       ! P2 <= P2 + tau1' * rho * u'n / dt
+       !
+             if( kfl_sgsti_nsi == 1 ) then
+                do igaus = 1,pgaus 
+                   fact1(DEF_VECT)    = gpden(DEF_VECT,igaus) * dtsgs(DEF_VECT) * gpsp1_v(DEF_VECT,igaus)
+                   fact1_p (DEF_VECT) = gpden(DEF_VECT,igaus) * dtsgs(DEF_VECT) * gpsp1_p(DEF_VECT,igaus)
+                   do idime = 1,ndime
+                      gpvep(DEF_VECT,idime,igaus) = gpvep(DEF_VECT,idime,igaus) + fact1(DEF_VECT)   * gpsgs(DEF_VECT,idime,igaus,2)
+                      gpgrp(DEF_VECT,idime,igaus) = gpgrp(DEF_VECT,idime,igaus) + fact1_p(DEF_VECT) * gpsgs(DEF_VECT,idime,igaus,2)
+                   end do
+                end do
+             end if
+       !
+       ! bu = ( f + rho*u^n/dt , v ) + ( rho * a.grad(v) , tau1' * rho u'^n/dt + P1 ) 
+       !    = ( f + rho*u^n/dt , v ) + ( rho * a.grad(v) , P1' ) 
+       !
+       ! bp = ( f + rho*u'^n/dt , tau1' grad(q) ) + ( P2 , grad(q) )
+       !    = ( P2' , grad(q) ) 
+       !
+             if( ndime == 2 ) then
+                do igaus = 1,pgaus
+                   fact4(DEF_VECT) = gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT)
+                   do itime = 2,nbdfp_nsi
+                      gprhs(DEF_VECT,1,igaus) = gprhs(DEF_VECT,1,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,1,igaus,itime)  
+                      gprhs(DEF_VECT,2,igaus) = gprhs(DEF_VECT,2,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,2,igaus,itime)
+                   end do
+                   do inode = 1,pnode
+                      fact1(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) ! ( f + rho*u^n/dt , v )
+                      fact3(DEF_VECT) = gpvol(DEF_VECT,igaus) * agrau(DEF_VECT,inode,igaus) ! ( rho * a.grad(v) , P1' ) 
+                      elrbu(DEF_VECT,1,inode)  = elrbu(DEF_VECT,1,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,1,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,1,igaus) 
+                      elrbu(DEF_VECT,2,inode)  = elrbu(DEF_VECT,2,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,2,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,2,igaus) 
+                      elrbp(DEF_VECT,inode)    = elrbp(DEF_VECT,inode)   + gpvol(DEF_VECT,igaus) * ( & ! ( P2' , grad(q) ) 
+                      &    gpcar(DEF_VECT,1,inode,igaus) * gpgrp(DEF_VECT,1,igaus)  &
+                      &  + gpcar(DEF_VECT,2,inode,igaus) * gpgrp(DEF_VECT,2,igaus)  )
+                   end do
+                end do
+             else
+                do igaus = 1,pgaus
+                   fact4(DEF_VECT) = gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT)
+                   do itime = 2,nbdfp_nsi
+                      gprhs(DEF_VECT,1,igaus) = gprhs(DEF_VECT,1,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,1,igaus,itime)  
+                      gprhs(DEF_VECT,2,igaus) = gprhs(DEF_VECT,2,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,2,igaus,itime)
+                      gprhs(DEF_VECT,3,igaus) = gprhs(DEF_VECT,3,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,3,igaus,itime)
+                   end do
+                   do inode = 1,pnode
+                      fact1          = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus)
+                      fact3          = gpvol(DEF_VECT,igaus) * agrau(DEF_VECT,inode,igaus)
+                      elrbu(DEF_VECT,1,inode) = elrbu(DEF_VECT,1,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,1,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,1,igaus) 
+                      elrbu(DEF_VECT,2,inode) = elrbu(DEF_VECT,2,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,2,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,2,igaus) 
+                      elrbu(DEF_VECT,3,inode) = elrbu(DEF_VECT,3,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,3,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,3,igaus) 
+                      elrbp(DEF_VECT,inode)   = elrbp(DEF_VECT,inode)   + gpvol(DEF_VECT,igaus) * ( &
+                      &    gpcar(DEF_VECT,1,inode,igaus) * gpgrp(DEF_VECT,1,igaus) &
+                      &  + gpcar(DEF_VECT,2,inode,igaus) * gpgrp(DEF_VECT,2,igaus) &
+                      &  + gpcar(DEF_VECT,3,inode,igaus) * gpgrp(DEF_VECT,3,igaus) )
+                   end do
+                end do
+             end if
+
+             end subroutine nsi_element_assembly_split_oss
+
+     #+END_SRC
+
+***** BOAST
+****** Generate reference implementation 
+      #+BEGIN_SRC ruby :tangle /tmp/test.rb
+         require 'BOAST'
+         include BOAST
+
+         # Constants, to modify
+         VECTOR_SIZE=128
+         DEF_VECT=128
+
+         def generate_ref
+           code_ref= <<EOF
+EOF
+         end
+      #+END_SRC
+
+      #+BEGIN_SRC ruby :tangle /tmp/test.rb
+        require 'BOAST'
+        include BOAST
+
+        # Globals
+        ndime=Int("ndime") # To change
+        mnode=Int("mnode") # To change
+
+        pnode = Int("pnode", :dir => :in)
+        pgaus = Int("pgaus", :dir => :in)
+        pevat = Int("pevat", :dir => :in)
+
+        gpden = Real("gpden",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+        gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+        gppor = Real("gppor",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+        gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+        gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+        gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+        gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pgaus)])
+        gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(mnode),Dim(pgaus)])
+        gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
+        gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
+        gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])      
+        gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
+        gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
+        gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus),Dim()])
+        gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus),Dim()])
+        wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pnode),Dim(pgaus)])
+        agrau = Real("agrau",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pgaus)])
+        elvel = Real("elvel",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pnode),Dim()])
+        elauu = Real("elauu",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode*ndime),Dim(pnode*ndime)])
+        elaup = Real("elaup",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode*ndime),Dim(pnode)])
+        elapp = Real("elapp",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pnode)])
+        elapu = Real("elapu",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pnode*ndime)])
+        elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pnode)])
+        elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode)])
+        dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(VECTOR_SIZE)])
+        dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(VECTOR_SIZE)])
+
+                  
+        p = Procedure("nsi_element_assembly_split_oss",
+                      [pnode,pgaus,pevat,gpden,gpvis,gppor,gpsp1,gpsp2,
+                       gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,gpgrp,gprhs,
+                       gpvel,gpsgs,wgrgr,agrau,elvel,elauu,elaup,elapp,
+                       elapu,elrbu,elrbp,dtinv_loc,dtsgs]){
+
+          gpsp1_p = Real("gpsp1_p",:dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+          gpsp1_v = Real("gpsp1_v",:dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
+          c1 = Real("c1",:dim => [Dim(VECTOR_SIZE)])
+          c2 = Real("c2",:dim => [Dim(VECTOR_SIZE)])
+          c3 = Real("c3",:dim => [Dim(VECTOR_SIZE)])
+          c4 = Real("c4",:dim => [Dim(VECTOR_SIZE)])
+          alpha = Real("alpha", :dim => [Dim(VECTOR_SIZE)])
+          beta = Real("beta", :dim => [Dim(VECTOR_SIZE)])
+          fact0 = Real("fact0",:dim => [Dim(VECTOR_SIZE)])
+          fact1 = Real("fact1",:dim => [Dim(VECTOR_SIZE)])
+          fact2 = Real("fact2",:dim => [Dim(VECTOR_SIZE)])
+          fact3 = Real("fact3",:dim => [Dim(VECTOR_SIZE)])
+          fact4 = Real("fact4",:dim => [Dim(VECTOR_SIZE)])
+          fact5 = Real("fact5",:dim => [Dim(VECTOR_SIZE)])
+          fact6 = Real("fact6",:dim => [Dim(VECTOR_SIZE)])
+          fact7 = Real("fact7",:dim => [Dim(VECTOR_SIZE)])
+          fact8 = Real("fact8",:dim => [Dim(VECTOR_SIZE)])
+          gpveo = Real(:dim => [Dim(VECTOR_SIZE), Dim(3)])
+          fact1_p = Real(:dim => [Dim(VECTOR_SIZE)])
+          inode = Int("inode")
+          jnode = Int("jnode")
+          idofn = Int("idofn")
+          jdofn = Int("jdofn")
+          idofv = Int("idofv")
+          jdof2 = Int("jdof2")
+          jdof3 = Int("jdof3")
+          idof1 = Int("idof1")
+          idof3 = Int("idof3")
+          idof2 = Int("idof2")
+          igaus = Int("igaus")
+          idime = Int("idime")
+          jdof1 = Int("jdof1")
+          jdofv = Int("jdofv")
+          itime = Int("itime")
+
+          decl gpsp1_p, gpsp1_v, c1, c2, c3, c4, alpha, beta, 
+               fact0, fact1, fact3, fact4, fact5, fact6, fact7, 
+               fact8, gpveo, fact1_p, inode, jnode, idofn, jdofn,
+               jdof2,jdof3,idof1,idof3,idof2,igaus,idime,jdof1,jdofv,itime
+
+          pr gpsp1_p === gpsp1
+          pr gpsp1_v === gpsp1
+
+          pr elrbp === 0.0
+          pr elrbu === 0.0
+          pr elapp === 0.0
+          pr elauu === 0.0
+          pr elaup === 0.0
+          pr elapu === 0.0
+
+          # Test functions
+
+          agrau_1 = "agrau[DEF_VECT,inode,igaus] ===  gpden[DEF_VECT,igaus]" +
+                                                   "*( gpadv[DEF_VECT,1,igaus]*gpcar[DEF_VECT,1,inode,igaus]" +
+                                                    "+ gpadv[DEF_VECT,2,igaus]*gpcar[DEF_VECT,2,inode,igaus]"
+          pr If(ndime == 2 => lambda{
+                  pr For(igaus, 1, pgaus){
+                    pr For(inode, 1, pnode){
+                      pr eval agrau_1 + ")"
+                    }
+                  }      
+                }, else: lambda{
+                  agrau_1 = agrau_1 + "+ gpadv[DEF_VECT,3,igaus]*gpcar[DEF_VECT,3,inode,igaus])"
+                  pr For(igaus, 1, pgaus){
+                    pr For(inode, 1, pnode){
+                      pr eval agrau_1
+                    }
+                  }      
+                })
+
+          # Auu
+          i = Int("i")
+          decl i
+          pr For(igaus, 1, pgaus){
+            pr For(inode, 1, pnode){
+              pr For(jnode, 1, pnode){
+                for1  = For(i, 2*jnode-1, 2*jnode){
+
+                }
+              }
+            }
+          }
+
+        }
+
+        pr p
+        k = CKernel::new
+        k.procedure = p
+        k.build
+      #+END_SRC
+
+      #+RESULTS:
+
+
+       #+BEGIN_SRC fortran
+         #define PGAUS 10
+         #define PNODE 50
+         #define DEF_VECT 75
+         !     #define C 2
+
+               program test
+
+               real :: t1(DEF_VECT,PNODE,PGAUS)
+               real :: t2(DEF_VECT,PNODE,PGAUS)
+               real :: t3(DEF_VECT,PGAUS)
+               real :: res1(DEF_VECT,PNODE,PGAUS)
+               real :: res1b(DEF_VECT,PNODE,PGAUS)
+               real :: res2(DEF_VECT,PNODE,PNODE,PGAUS)
+               real :: res2b(DEF_VECT,PNODE,PNODE,PGAUS)
+               logical :: b
+               
+               call random_number(t1)
+               call random_number(t2)
+               call random_number(t3)
+
+         ! Original
+               do igaus = 1,PGAUS
+              d     o inode = 1,PNODE
+                  res1b(:,inode,igaus) = t3(:,igaus) * t1(:,inode,igaus)
+              e        nd do
+               end do
+
+         ! Simplified
+               do inode = 1,PNODE
+              r     es1(:,inode,:) = t3(:,:) * t1(:,inode,:)
+               end do
+
+         ! Verification
+               b = .true.
+               do i = 1,DEF_VECT
+              d     o igaus = 1,PGAUS
+                  do inode = 1,PNODE
+                     if (res1(i,inode,igaus) /= res1b(i,inode,igaus)) then
+                        b = .false.
+                     end if
+                  end do
+              e           nd do
+               end do
+
+               if (b) then
+              p     rint *, "Ok"
+               else
+              p        rint *, "Error"
+               end if
+
+         ! Original
+               do igaus = 1,PGAUS
+              d     o inode = 1,PNODE
+                  do jnode = 1,PNODE
+                     res2(:,inode,jnode,igaus) = t1(:,inode,igaus) * t1(:,jnode,igaus)
+                  end do
+              e           nd do
+               end do
+
+         ! Simplified
+               do inode = 1,PNODE
+              d     o jnode = 1,PNODE
+                  res2b(:,inode,jnode,:) = t1(:,inode,:) * t1(:,jnode,:)
+              e        nd do
+               end do
+
+               b = .true.
+
+               do i = 1,DEF_VECT
+              d     o igaus = 1,PGAUS
+                  do inode = 1,PNODE
+                     do jnode = 1,PNODE
+                        if (res2(i,inode,jnode,igaus) /= res2b(i,inode,jnode,igaus)) then
+                        b = .false.
+                     end if
+                  end do
+               end do
+              e        nd do
+               end do
+
+               if (b) then
+              p     rint *, "Ok"
+               else
+              p        rint *, "Error"
+               end if
+
+               end program test    
+       #+END_SRC
+
+       #+BEGIN_SRC ruby
+         require 'BOAST'
+         include BOAST
+
+         pgaus = Int("pgaus", :dir => :in)
+         pnode = Int("pnode", :dir => :in)
+         def_vect = Int("def_vect", :dir => :in)
+         gpden = Real("gpden", :dir => :in, :dim => [Dim(def_vect),Dim(pgaus)])
+         gpadv = Real("gpadv", :dir => :in, :dim => [Dim(def_vect),Dim(pgaus)])
+         gpcar = Real("gpcar", :dir => :in, :dim => [Dim(def_vect),Dim(pnode),Dim(pgaus)])
+         agrau = Real("agrau", :dir => :out, :dim => [Dim(def_vect),Dim(pnode),Dim(pgaus)])
+         wgrgr = Real("wgrgr", :dir => :out, :dim => [Dim(def_vect),Dim(pnode),Dim(pnode),Dim(pgaus)])
+
+         orig1 = Procedure("orig1", [pgaus,pnode,def_vect,gpden,gpadv,agrau,wgrgr]){
+           decl igaus = Int("igaus")
+           decl inode = Int("inode")
+
+           pr For(igaus,1,pgaus){
+             pr For(inode,1,pnode){
+pr agrau[1..def_vect,inode,igaus]
+               # pr agrau[1..def_vect,inode,igaus] === gpden[1..def_vect,igaus] * ( 
+               #                                       gpadv[1..def_vect,igaus]*gpcar[1..def_vect,inode,igaus])
+             }
+           }
+         }
+
+         k = orig1.ckernel
+         k
+
+       #+END_SRC
+
+       #+RESULTS:
+
