@@ -542,16 +542,13 @@
 ***** BOAST
 ****** BOAST preparation
       - Macros
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           require 'BOAST'
           include BOAST
-
-          vector_size=4
-          def_vect=vector_size
         #+END_SRC
       - Mocks
         Some variables/functions are not available so we need to fake them:
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           def generate_mocks
           mocks = <<EOF
           function pabdf_nsi(x) result(y)
@@ -565,7 +562,7 @@
           end
         #+END_SRC
       - BOAST declaration
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           def generate_boast_decl(vector_size)
             pnode = Int("pnode", :dir => :in)
             mnode = Int("mnode", :dir => :in)
@@ -617,7 +614,7 @@
         #+END_SRC
 ****** Generate reference implementation 
       - Function declaration:
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           def generate_ref(vector_size)        
              macros = <<EOF
           #define VECTOR_SIZE #{vector_size}
@@ -685,7 +682,7 @@
           EOF
        #+END_SRC
       - Initialization
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           init = <<EOF
              gpsp1_p = gpsp1
              gpsp1_v = gpsp1
@@ -698,7 +695,7 @@
           EOF
         #+END_SRC
       - First nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb 
           first_nest = <<EOF
              if( ndime == 2 ) then
 
@@ -737,7 +734,7 @@ EOF
         
         #+END_SRC
       - Second nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           second_nest = <<EOF
              if( ndime == 2 ) then
 
@@ -828,7 +825,7 @@ EOF
           EOF
         #+END_SRC
       - Third nest
-        #+BEGIN_SRC ruby :tangle  /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle  /tmp/alya.rb
           third_nest = <<EOF
              if( fvins_nsi > 0.9 ) then
                 if( ndime == 2 ) then
@@ -888,7 +885,7 @@ EOF
           EOF
         #+END_SRC
       - Fourth nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           fourth_nest = <<EOF
              if( kfl_lumped == 1 ) then 
                 if( ndime == 2 ) then
@@ -942,7 +939,7 @@ EOF
           EOF
         #+END_SRC
       - Fifth nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           fifth_nest = <<EOF
              if( ndime == 2 ) then
                 do igaus = 1,pgaus
@@ -984,7 +981,7 @@ EOF
           EOF
         #+END_SRC
       - Sixth nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           sixth_nest = <<EOF
              do igaus = 1,pgaus
                 do inode = 1,pnode
@@ -1000,7 +997,7 @@ EOF
           EOF
         #+END_SRC
       - Seventh nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           seventh_nest = <<EOF
              if( kfl_limit_nsi == -1 ) then
 
@@ -1039,7 +1036,7 @@ EOF
           EOF
         #+END_SRC
       - Eighth nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           eighth_nest = <<EOF
              do igaus = 1,pgaus
                 do idime = 1,ndime
@@ -1049,7 +1046,7 @@ EOF
           EOF
         #+END_SRC
       - Nineth nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           nineth_nest = <<EOF
              if( kfl_sgsti_nsi == 1 ) then
                 do igaus = 1,pgaus 
@@ -1064,7 +1061,7 @@ EOF
           EOF
         #+END_SRC
       - Tenth nest
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           tenth_nest = <<EOF
              if( ndime == 2 ) then
                 do igaus = 1,pgaus
@@ -1108,7 +1105,7 @@ EOF
           EOF
         #+END_SRC
       - Assembling pieces
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           set_lang(FORTRAN)
           k = CKernel::new
           p = generate_boast_decl(vector_size)
@@ -1117,7 +1114,7 @@ EOF
           get_output.print generate_mocks
           get_output.print decl_ref
           get_output.print init
-          # get_output.print first_nest
+          get_output.print first_nest
           # get_output.print second_nest
           # get_output.print third_nest
           # get_output.print fourth_nest
@@ -1126,7 +1123,7 @@ EOF
           # get_output.print seventh_nest
           # get_output.print eighth_nest
           # get_output.print nineth_nest
-          get_output.print tenth_nest
+          # get_output.print tenth_nest
           get_output.print "end subroutine nsi_element_assembly_split_oss"
           return k
           end  
