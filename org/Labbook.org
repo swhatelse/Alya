@@ -1127,14 +1127,160 @@ EOF
           get_output.print "end subroutine nsi_element_assembly_split_oss"
           return k
           end  
-          k_orig = generate_ref(vector_size)
-          k_orig.build(:FCFLAGS => "-cpp")
         #+END_SRC
+****** BOAST implementation
+******* First loop
+        - bak
+          #+BEGIN_SRC ruby
+          def generate_first_nest
+            code = <<EOF
+            if vector_size > 1 then
+              decl v_wgrgr = Real("v_wgrgr", :vector_length => vector_size)
+              decl v_agrau = Real("v_agrau", :vector_length => vector_size)
+              decl v_gpden = Real("v_gpden", :vector_length => vector_size)
+              decl v_gpcar = Real("v_gpcar", :vector_length => vector_size, :dim => [Dim(ndime),Dim(mnode)], :allocate => true)
+              decl v_gpadv = Real("v_gpadv", :vector_length => vector_size, :dim => [Dim(ndime)], :allocate => true)
+
+              load_gpden = "v_gpden === gpden[1,igaus]"
+              load_gpadv = "v_gpadv[dim+1] === gpadv[1,dim+1,igaus]"
+              load_gpcar = "v_gpcar[dim+1,inode] === gpcar[1,dim+1,inode,igaus]"
+              exp1 = "v_agrau ===  v_gpden *( v_gpadv[1]*v_gpcar[1,inode] + v_gpadv[2]*v_gpcar[2,inode]"
+              store = "agrau[1,inode,igaus] === v_agrau"
+            else
+              exp1 = "agrau[i,inode,igaus] ===  gpden[i,igaus] *( gpadv[i,1,igaus]*gpcar[i,1,inode,igaus] + gpadv[i,2,igaus]*gpcar[i,2,inode,igaus]"
+              store = ""
+            end
+
+            pr If(ndime == 2 => lambda{
+                    pr For(igaus, 1, pgaus){
+                      pr eval load_gpden
+                      2.times{|dim|
+                        pr eval load_gpadv
+                      }
+                      pr For(inode, 1, pnode){
+                        2.times{|dim|
+                          pr eval load_gpcar
+                        }
+                        pr eval exp1 + ")"
+                        pr eval store
+                      }
+                    } 
+                  }, else: lambda{
+                    exp1 = exp1 + "+ gpadv[i,3,igaus]*v_gpcar[i,3,inode,igaus]"
+                    pr For(igaus, 1, pgaus){
+                      pr For(inode, 1, pnode){
+                        pr eval exp1 + ")"
+                        pr eval store
+                      }
+                    }      
+                  })
+          EOF
+            return code
+          end
+        #+END_SRC
+        - Simple
+          #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+            def generate_first_nest
+              code = <<EOF
+                decl v_wgrgr = Real("v_wgrgr", :vector_length => vector_size)
+                decl v_agrau = Real("v_agrau", :vector_length => vector_size)
+                decl v_gpden = Real("v_gpden", :vector_length => vector_size)
+                decl v_gpcar = Real("v_gpcar", :vector_length => vector_size, :dim => [Dim(ndime)], :allocate =>true)
+                decl v_gpadv = Real("v_gpadv", :vector_length => vector_size, :dim => [Dim(ndime)], :allocate =>true)
+
+                pr For(igaus,1,pgaus){
+                  pr v_gpden === gpden[1,igaus]
+                  pr v_gpadv[1] === gpadv[1,1,igaus]
+                  pr v_gpadv[2] === gpadv[1,2,igaus]
+                  pr v_gpadv[3] === gpadv[1,3,igaus]
+                  pr For(inode,1,pnode){
+                    pr v_gpcar[1] === gpcar[1,1,inode,igaus]
+                    pr v_gpcar[2] === gpcar[1,2,inode,igaus]
+                    pr v_gpcar[3] === gpcar[1,3,inode,igaus]
+
+                    pr v_agrau === v_gpden * (v_gpadv[1]*v_gpcar[1] + v_gpadv[2]*v_gpcar[2] + v_gpadv[3]*v_gpcar[3])
+                    pr agrau[1,inode,igaus] === v_agrau
+                  }
+                }
+EOF
+              return code
+            end
+          #+END_SRC
+        
+******* Declaration
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          def generate_boast_implem(vector_size)
+            pnode = Int("pnode", :dir => :in)
+            mnode = Int("mnode", :dir => :in)
+            pgaus = Int("pgaus", :dir => :in)
+            pevat = Int("pevat", :dir => :in)
+            ndime = Int("ndime", :dir => :in)
+            kfl_lumped = Int("kfl_lumped", :dir => :in) 
+            kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in) 
+            kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
+            nbdfp_nsi = Int("nbdfp_nsi", :dir => :in)
+
+            fvins_nsi = Real("fvins_nsi",    :dir => :in)
+
+            gpden = Real("gpden",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
+            gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
+            gppor = Real("gppor",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
+            gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
+            gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
+            gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
+            gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
+            gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(mnode),Dim(pgaus)])
+            gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
+            gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
+            gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(vector_size),Dim(pgaus)])      
+            gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
+            gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
+            gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus),Dim()])
+            gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus),Dim()])
+            wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode),Dim(pgaus)])
+            agrau = Real("agrau",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
+            elvel = Real("elvel",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pnode),Dim()])
+            elauu = Real("elauu",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode*ndime),Dim(pnode*ndime)])
+            elaup = Real("elaup",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode*ndime),Dim(pnode)])
+            elapp = Real("elapp",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode)])
+            elapu = Real("elapu",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode*ndime)])
+            elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(vector_size),Dim(ndime),Dim(pnode)])
+            elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode)])
+            dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(vector_size)])
+            dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(vector_size)])
+
+            p = Procedure("nsi_element_assembly_split_oss",
+                          [ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
+                           gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
+                           gpgrp,gprhs,gpvel,gpsgs,wgrgr,agrau,elvel,elauu,
+                           elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,
+                           fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi]){
+
+              decl igaus = Int("igaus")
+              decl inode = Int("inode")
+
+              eval generate_first_nest
+            }
+
+            k = CKernel::new
+            k.procedure = p
+            if get_lang == C and vector_size > 1 then
+              BOAST::get_output.puts "#include <emmintrin.h>"             
+            end
+            pr p
+            return k
+          end        
+        #+END_SRC
+
+****** Comparing with ref
       - Setting parameters
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
-          pnode = 500
-          mnode = 200
-          pgaus = 50
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          vector_size=2
+          def_vect=vector_size
+
+          pnode = 8
+          mnode = 8
+          pgaus = 8
           pevat = 2
           ndime = 3
           fvins_nsi = 1.0
@@ -1144,8 +1290,100 @@ EOF
           nbdfp_nsi = 3
         #+END_SRC
       - Runing kernel
-        #+BEGIN_SRC ruby :tangle /tmp/ref.rb
-          30.times{
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          k_orig = generate_ref(vector_size)
+          k_orig.build(:FCFLAGS => "-cpp")
+
+          k_boast = generate_boast_implem(vector_size)
+          puts k_boast
+          k_boast.build
+
+          1.times{
+            gpden = NArray.float(vector_size,pgaus).random
+            gpvis = NArray.float(vector_size,pgaus).random
+            gppor = NArray.float(vector_size,pgaus).random 
+            gpsp1 = NArray.float(vector_size,pgaus).random 
+            gpsp2 = NArray.float(vector_size,pgaus).random 
+            gpvol = NArray.float(vector_size,pgaus).random 
+            gpsha = NArray.float(vector_size,pnode,pgaus).random 
+            gpcar = NArray.float(vector_size,ndime,mnode,pgaus).random
+            gpadv = NArray.float(vector_size,ndime,pgaus).random 
+            gpvep = NArray.float(vector_size,ndime,pgaus).random 
+            gpprp = NArray.float(vector_size,pgaus).random 
+            gpgrp = NArray.float(vector_size,ndime,pgaus).random 
+            gprhs = NArray.float(vector_size,ndime,pgaus).random 
+            gpvel = NArray.float(vector_size,ndime,pgaus,10).random #dynamic
+            gpsgs = NArray.float(vector_size,ndime,pgaus,10).random #dynamic 
+            elvel = NArray.float(vector_size,ndime,pnode,10).random #dynamic
+            dtinv_loc = NArray.float(vector_size).random
+            dtsgs = NArray.float(vector_size).random
+
+            wgrgr_ref = NArray.float(vector_size,pnode,pnode,pgaus)
+            agrau_ref = NArray.float(vector_size,pnode,pgaus)
+            elauu_ref = NArray.float(vector_size,pnode*ndime,pnode*ndime)
+            elaup_ref = NArray.float(vector_size,pnode*ndime,pnode)
+            elapp_ref = NArray.float(vector_size,pnode,pnode)
+            elapu_ref = NArray.float(vector_size,pnode,pnode*ndime)
+            elrbu_ref = NArray.float(vector_size,ndime,pnode)
+            elrbp_ref = NArray.float(vector_size,pnode)
+
+            wgrgr_boast = NArray.float(vector_size,pnode,pnode,pgaus)
+            agrau_boast = NArray.float(vector_size,pnode,pgaus)
+            elauu_boast = NArray.float(vector_size,pnode*ndime,pnode*ndime)
+            elaup_boast = NArray.float(vector_size,pnode*ndime,pnode)
+            elapp_boast = NArray.float(vector_size,pnode,pnode)
+            elapu_boast = NArray.float(vector_size,pnode,pnode*ndime)
+            elrbu_boast = NArray.float(vector_size,ndime,pnode)
+            elrbp_boast = NArray.float(vector_size,pnode)
+
+            k_orig.run(ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
+                       gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
+                       gpgrp,gprhs,gpvel,gpsgs,wgrgr_ref,agrau_ref,elvel,elauu_ref,
+                       elaup_ref,elapp_ref,elapu_ref,elrbu_ref,elrbp_ref,dtinv_loc,dtsgs,
+                       fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
+
+            # puts agrau_ref[agrau_ref.length-1]
+            puts "orig = " + agrau_ref.to_s
+
+            k_boast.run(ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
+                        gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
+                        gpgrp,gprhs,gpvel,gpsgs,wgrgr_boast,agrau_boast,elvel,elauu_boast,
+                        elaup_boast,elapp_boast,elapu_boast,elrbu_boast,elrbp_boast,dtinv_loc,dtsgs,
+                        fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
+
+            # puts agrau_boast[agrau_boast.length-1]
+            puts "boast = " +  agrau_boast.to_s
+
+          }
+        #+END_SRC
+
+        #+BEGIN_SRC ruby
+          require '/tmp/alya.rb'
+
+          vector_size=2
+          def_vect=vector_size
+
+          pnode = 2
+          mnode = 2
+          pgaus = 2
+          pevat = 2
+          ndime = 3
+          fvins_nsi = 1.0
+          kfl_lumped = 1
+          kfl_limit_nsi = 1
+          kfl_sgsti_nsi = 1
+          nbdfp_nsi = 3
+
+          k_orig = generate_ref(vector_size)
+          k_orig.build()
+
+          set_lang(FORTRAN)
+          k_boast = generate_boast_implem(vector_size)
+          puts k_boast
+          k_boast.build(:FCFLAGS => "-cpp")
+
+          NArray.srand(10)
+
           gpden = NArray.float(vector_size,pgaus).random
           gpvis = NArray.float(vector_size,pgaus).random
           gppor = NArray.float(vector_size,pgaus).random 
@@ -1161,275 +1399,71 @@ EOF
           gprhs = NArray.float(vector_size,ndime,pgaus).random 
           gpvel = NArray.float(vector_size,ndime,pgaus,10).random #dynamic
           gpsgs = NArray.float(vector_size,ndime,pgaus,10).random #dynamic 
-          wgrgr = NArray.float(vector_size,pnode,pnode,pgaus)
-          agrau = NArray.float(vector_size,pnode,pgaus)
           elvel = NArray.float(vector_size,ndime,pnode,10).random #dynamic
-          elauu = NArray.float(vector_size,pnode*ndime,pnode*ndime)
-          elaup = NArray.float(vector_size,pnode*ndime,pnode)
-          elapp = NArray.float(vector_size,pnode,pnode)
-          elapu = NArray.float(vector_size,pnode,pnode*ndime)
-          elrbu = NArray.float(vector_size,ndime,pnode)
-          elrbp = NArray.float(vector_size,pnode)
           dtinv_loc = NArray.float(vector_size).random
           dtsgs = NArray.float(vector_size).random
 
-            k_orig.run(ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
-                  gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
-                  gpgrp,gprhs,gpvel,gpsgs,wgrgr,agrau,elvel,elauu,
-                  elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,
-                  fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
-            puts elrbp[elrbp.length-1]
-          }
+          wgrgr_ref = NArray.float(vector_size,pnode,pnode,pgaus)
+          agrau_ref = NArray.float(vector_size,pnode,pgaus)
+          elauu_ref = NArray.float(vector_size,pnode*ndime,pnode*ndime)
+          elaup_ref = NArray.float(vector_size,pnode*ndime,pnode)
+          elapp_ref = NArray.float(vector_size,pnode,pnode)
+          elapu_ref = NArray.float(vector_size,pnode,pnode*ndime)
+          elrbu_ref = NArray.float(vector_size,ndime,pnode)
+          elrbp_ref = NArray.float(vector_size,pnode)
+
+          wgrgr_boast = NArray.float(vector_size,pnode,pnode,pgaus)
+          agrau_boast = NArray.float(vector_size,pnode,pgaus)
+          elauu_boast = NArray.float(vector_size,pnode*ndime,pnode*ndime)
+          elaup_boast = NArray.float(vector_size,pnode*ndime,pnode)
+          elapp_boast = NArray.float(vector_size,pnode,pnode)
+          elapu_boast = NArray.float(vector_size,pnode,pnode*ndime)
+          elrbu_boast = NArray.float(vector_size,ndime,pnode)
+          elrbp_boast = NArray.float(vector_size,pnode)
+
+          k_orig.run(ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
+                     gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
+                     gpgrp,gprhs,gpvel,gpsgs,wgrgr_ref,agrau_ref,elvel,elauu_ref,
+                     elaup_ref,elapp_ref,elapu_ref,elrbu_ref,elrbp_ref,dtinv_loc,dtsgs,
+                     fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
+
+          # puts agrau_ref[agrau_ref.length-1]
+          puts "orig = " + agrau_ref.to_s
+
+          k_boast.run(ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
+                      gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
+                      gpgrp,gprhs,gpvel,gpsgs,wgrgr_boast,agrau_boast,elvel,elauu_boast,
+                      elaup_boast,elapp_boast,elapu_boast,elrbu_boast,elrbp_boast,dtinv_loc,dtsgs,
+                      fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
+
+          # puts agrau_boast[agrau_boast.length-1]
+          puts "boast = " +  agrau_boast.to_s
+
+          agrau_ref == agrau_boast
+          
         #+END_SRC
-****** BOAST implementation
-******* Declaration
-      #+BEGIN_SRC ruby 
-        require 'BOAST'
-        include BOAST
 
-        # Globals
-        ndime=Int("ndime") # To change
-        mnode=Int("mnode") # To change
+        #+RESULTS:
+        : true
 
-        pnode = Int("pnode", :dir => :in)
-        pgaus = Int("pgaus", :dir => :in)
-        pevat = Int("pevat", :dir => :in)
 
-        gpden = Real("gpden",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-        gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-        gppor = Real("gppor",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-        gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-        gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-        gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-        gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pgaus)])
-        gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(mnode),Dim(pgaus)])
-        gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
-        gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
-        gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(pgaus)])      
-        gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
-        gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus)])
-        gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus),Dim()])
-        gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pgaus),Dim()])
-        wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pnode),Dim(pgaus)])
-        agrau = Real("agrau",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pgaus)])
-        elvel = Real("elvel",    :dir => :in,     :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pnode),Dim()])
-        elauu = Real("elauu",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode*ndime),Dim(pnode*ndime)])
-        elaup = Real("elaup",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode*ndime),Dim(pnode)])
-        elapp = Real("elapp",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pnode)])
-        elapu = Real("elapu",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode),Dim(pnode*ndime)])
-        elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(ndime),Dim(pnode)])
-        elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(VECTOR_SIZE),Dim(pnode)])
-        dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(VECTOR_SIZE)])
-        dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(VECTOR_SIZE)])
+        1
+        #+RESULTS:
+        : NArray.float(2,2,2): 
+        : [ [ [ 0.0, 1.18576e-322 ], 
+        :     [ 0.0, 0.0318483 ] ], 
+        :   [ [ 0.0, 0.00535672 ], 
+        :     [ 0.0, 0.0 ] ] ]
 
-                  
-        p = Procedure("nsi_element_assembly_split_oss",
-                      [pnode,pgaus,pevat,gpden,gpvis,gppor,gpsp1,gpsp2,
-                       gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,gpgrp,gprhs,
-                       gpvel,gpsgs,wgrgr,agrau,elvel,elauu,elaup,elapp,
-                       elapu,elrbu,elrbp,dtinv_loc,dtsgs]){
 
-          gpsp1_p = Real("gpsp1_p",:dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-          gpsp1_v = Real("gpsp1_v",:dim => [Dim(VECTOR_SIZE),Dim(pgaus)])
-          c1 = Real("c1",:dim => [Dim(VECTOR_SIZE)])
-          c2 = Real("c2",:dim => [Dim(VECTOR_SIZE)])
-          c3 = Real("c3",:dim => [Dim(VECTOR_SIZE)])
-          c4 = Real("c4",:dim => [Dim(VECTOR_SIZE)])
-          alpha = Real("alpha", :dim => [Dim(VECTOR_SIZE)])
-          beta = Real("beta", :dim => [Dim(VECTOR_SIZE)])
-          fact0 = Real("fact0",:dim => [Dim(VECTOR_SIZE)])
-          fact1 = Real("fact1",:dim => [Dim(VECTOR_SIZE)])
-          fact2 = Real("fact2",:dim => [Dim(VECTOR_SIZE)])
-          fact3 = Real("fact3",:dim => [Dim(VECTOR_SIZE)])
-          fact4 = Real("fact4",:dim => [Dim(VECTOR_SIZE)])
-          fact5 = Real("fact5",:dim => [Dim(VECTOR_SIZE)])
-          fact6 = Real("fact6",:dim => [Dim(VECTOR_SIZE)])
-          fact7 = Real("fact7",:dim => [Dim(VECTOR_SIZE)])
-          fact8 = Real("fact8",:dim => [Dim(VECTOR_SIZE)])
-          gpveo = Real(:dim => [Dim(VECTOR_SIZE), Dim(3)])
-          fact1_p = Real(:dim => [Dim(VECTOR_SIZE)])
-          inode = Int("inode")
-          jnode = Int("jnode")
-          idofn = Int("idofn")
-          jdofn = Int("jdofn")
-          idofv = Int("idofv")
-          jdof2 = Int("jdof2")
-          jdof3 = Int("jdof3")
-          idof1 = Int("idof1")
-          idof3 = Int("idof3")
-          idof2 = Int("idof2")
-          igaus = Int("igaus")
-          idime = Int("idime")
-          jdof1 = Int("jdof1")
-          jdofv = Int("jdofv")
-          itime = Int("itime")
+        1
+        #+RESULTS:
+        : NArray.float(2,2,2): 
+        : [ [ [ 0.802348, 0.0201173 ], 
+        :     [ 0.476318, 0.0262578 ] ], 
+        :   [ [ 0.1429, 0.607674 ], 
+        :     [ 0.172773, 0.297712 ] ] ]
 
-          decl gpsp1_p, gpsp1_v, c1, c2, c3, c4, alpha, beta, 
-               fact0, fact1, fact3, fact4, fact5, fact6, fact7, 
-               fact8, gpveo, fact1_p, inode, jnode, idofn, jdofn,
-               jdof2,jdof3,idof1,idof3,idof2,igaus,idime,jdof1,jdofv,itime
-
-          pr gpsp1_p === gpsp1
-          pr gpsp1_v === gpsp1
-
-          pr elrbp === 0.0
-          pr elrbu === 0.0
-          pr elapp === 0.0
-          pr elauu === 0.0
-          pr elaup === 0.0
-          pr elapu === 0.0
-
-          # Test functions
-
-          agrau_1 = "agrau[DEF_VECT,inode,igaus] ===  gpden[DEF_VECT,igaus]" +
-                                                   "*( gpadv[DEF_VECT,1,igaus]*gpcar[DEF_VECT,1,inode,igaus]" +
-                                                    "+ gpadv[DEF_VECT,2,igaus]*gpcar[DEF_VECT,2,inode,igaus]"
-          pr If(ndime == 2 => lambda{
-                  pr For(igaus, 1, pgaus){
-                    pr For(inode, 1, pnode){
-                      pr eval agrau_1 + ")"
-                    }
-                  }      
-                }, else: lambda{
-                  agrau_1 = agrau_1 + "+ gpadv[DEF_VECT,3,igaus]*gpcar[DEF_VECT,3,inode,igaus])"
-                  pr For(igaus, 1, pgaus){
-                    pr For(inode, 1, pnode){
-                      pr eval agrau_1
-                    }
-                  }      
-                })
-
-          # Auu
-          i = Int("i")
-          decl i
-          pr For(igaus, 1, pgaus){
-            pr For(inode, 1, pnode){
-              pr For(jnode, 1, pnode){
-                for1  = For(i, 2*jnode-1, 2*jnode){
-
-                }
-              }
-            }
-          }
-
-        }
-
-        pr p
-        k = CKernel::new
-        k.procedure = p
-        k.build
-      #+END_SRC
-
-      #+RESULTS:
-       
-******* First loop
-     #+BEGIN_SRC ruby :tangle /tmp/vec.rb
-       require 'BOAST'
-       include BOAST
-       require 'narray'
-       vector_size = 4
-
-       ndime=Int("ndime") # To change
-       pnode = Int("pnode", :dir => :in)
-       mnode = Int("mnode", :dir => :in)
-       pgaus = Int("pgaus", :dir => :in)
-       wgrgr = Real("wgrgr", :dir => :out, :dim => [Dim(vector_size),Dim(pnode),Dim(pnode),Dim(pgaus)])
-       agrau = Real("agrau", :dir => :out, :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
-       gpden = Real("gpden", :dir => :in,  :dim => [Dim(vector_size),Dim(pgaus)])
-       gpcar = Real("gpcar", :dir => :in,  :dim => [Dim(vector_size),Dim(ndime),Dim(mnode),Dim(pgaus)])
-       gpadv = Real("gpadv", :dir => :in,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-
-       p1 = Procedure("p1",[ndime,pgaus,pnode,agrau,gpden,gpadv,gpcar,wgrgr]){
-         decl igaus = Int("igaus")
-         decl inode = Int("inode")
-
-         if vector_size > 1 then
-           decl v_wgrgr = Real("v_wgrgr", :vector_length => vector_size)
-           decl v_agrau = Real("v_agrau", :vector_length => vector_size)
-           decl v_gpden = Real("v_gpden", :vector_length => vector_size)
-           decl v_gpcar = Real("v_gpcar", :vector_length => vector_size, :dim => [Dim(ndime),Dim(mnode)])
-           decl v_gpadv = Real("v_gpadv", :vector_length => vector_size, :dim => [Dim(ndime)])
-
-           load_gpden = "v_gpden === gpden[1,igaus]"
-           load_gpadv = "v_gpadv[dim+1] === gpadv[1,dim+1,igaus]"
-           load_gpcar = "v_gpcar[dim+1,inode] === gpcar[1,dim,inode,igaus]"
-           else
-           
-         end
-
-         exp1 = "v_agrau ===  v_gpden" +
-         "*( v_gpadv[1]*v_gpcar[1,inode]" +
-         "+ v_gpadv[2]*v_gpcar[2,inode]"
-
-         pr If(ndime == 2 => lambda{
-                 pr For(igaus, 1, pgaus){
-                   pr eval load_gpden
-                   2.times{|dim|
-                     pr eval load_gpadv
-                   }
-                   pr For(inode, 1, pnode){
-                     2.times{|dim|
-                       pr eval load_gpcar
-                     }
-                     pr eval exp1 + ")"
-                   }
-                 }      
-               }, else: lambda{
-                 exp1 = exp1 + "+ v_gpadv[3]*v_gpcar[3,inode]"
-                 pr For(igaus, 1, pgaus){
-                   pr For(inode, 1, pnode){
-                     pr eval exp1 + ")"
-                   }
-                 }      
-               })
-       }
-       set_lang(FORTRAN)
-       k1 = p1.ckernel
-     #+END_SRC
-
-     #+RESULTS:
-     #+begin_example
-     SUBROUTINE p1(ndime, pgaus, pnode, agrau, gpden, gpadv, gpcar, wgrgr)
-       integer, parameter :: wp=kind(1.0d0)
-       integer(kind=4) :: ndime
-       integer(kind=4), intent(in) :: pgaus
-       integer(kind=4), intent(in) :: pnode
-       real(kind=8), intent(out), dimension(4, pnode, pgaus) :: agrau
-       real(kind=8), intent(in), dimension(4, pgaus) :: gpden
-       real(kind=8), intent(in), dimension(4, ndime, pgaus) :: gpadv
-       real(kind=8), intent(in), dimension(4, ndime, mnode, pgaus) :: gpcar
-       real(kind=8), intent(out), dimension(4, pnode, pnode, pgaus) :: wgrg&
-     &r
-       integer(kind=4) :: igaus
-       integer(kind=4) :: inode
-       real(kind=8), dimension(4) :: v_wgrgr
-       real(kind=8), dimension(4) :: v_agrau
-       real(kind=8), dimension(4) :: v_gpden
-       real(kind=8), dimension(4, ndime, mnode) :: v_gpcar
-       real(kind=8), dimension(4, ndime) :: v_gpadv
-       if (ndime == 2) then
-         do igaus = 1, pgaus, 1
-           v_gpden = gpden(1:4,igaus)
-           v_gpadv(:, 1) = gpadv(1:4,1,igaus)
-           v_gpadv(:, 2) = gpadv(1:4,2,igaus)
-           do inode = 1, pnode, 1
-             v_gpcar(:, 1, inode) = gpcar(1:4,0,inode,igaus)
-             v_gpcar(:, 2, inode) = gpcar(1:4,1,inode,igaus)
-             v_agrau = (v_gpden) * ((v_gpadv(:, 1)) * (v_gpcar(:, 1, inode)&
-     &) + (v_gpadv(:, 2)) * (v_gpcar(:, 2, inode)))
-           end do
-         end do
-       else
-         do igaus = 1, pgaus, 1
-           do inode = 1, pnode, 1
-             v_agrau = (v_gpden) * ((v_gpadv(:, 1)) * (v_gpcar(:, 1, inode)&
-     &) + (v_gpadv(:, 2)) * (v_gpcar(:, 2, inode)) + (v_gpadv(:, 3)) * (v_gp&
-     &car(:, 3, inode)))
-           end do
-         end do
-       end if
-     END SUBROUTINE p1
-#+end_example
 
 * Sandbox :noexport:
 ** Fortran
