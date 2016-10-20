@@ -1288,28 +1288,22 @@ EOF
         #+END_SRC
 
 ****** Comparing with ref
-      - Setting parameters
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          vector_size=2
-          def_vect=vector_size
-
-          pnode = 8
-          mnode = 8
-          pgaus = 8
-          pevat = 2
-          ndime = 3
-          fvins_nsi = 1.0
-          kfl_lumped = 1
-          kfl_limit_nsi = 1
-          kfl_sgsti_nsi = 1
-          nbdfp_nsi = 3
-        #+END_SRC
       - Runing kernel
         #+BEGIN_SRC ruby
           require '/tmp/alya.rb'
 
           vector_size=2
-          def_vect=vector_size
+
+          k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => [1]}
+          k_boast_params = {:vector_length => vector_size, :nests => [1]}
+
+          k_orig = generate_ref(k_orig_params)
+          k_orig.build(:FCFLAGS => "-cpp")
+
+          set_lang(FORTRAN)
+          k_boast = generate_boast_implem(k_boast_params)
+          puts k_boast
+          k_boast.build
 
           pnode = 2
           mnode = 2
@@ -1321,17 +1315,6 @@ EOF
           kfl_limit_nsi = 1
           kfl_sgsti_nsi = 1
           nbdfp_nsi = 3
-          
-          k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => [1]}
-          k_boast_params = {:vector_length => vector_size, :nests => [1]}
-
-          k_orig = generate_ref(k_orig_params)
-          k_orig.build(:FCFLAGS => "-cpp")
-
-          set_lang(FORTRAN)
-          k_boast = generate_boast_implem(k_boast_params)
-          puts k_boast
-          k_boast.build
 
           NArray.srand(10)
 
@@ -1391,7 +1374,7 @@ EOF
           # puts "boast = " +  agrau_boast.to_s
 
           agrau_ref == agrau_boast
-          
+
         #+END_SRC
 
         #+RESULTS:
