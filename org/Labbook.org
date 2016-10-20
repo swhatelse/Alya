@@ -1147,12 +1147,12 @@
           #+BEGIN_SRC ruby
           def generate_first_nest
             code = <<EOF
-            if vector_size > 1 then
-              decl v_wgrgr = Real("v_wgrgr", :vector_length => vector_size)
-              decl v_agrau = Real("v_agrau", :vector_length => vector_size)
-              decl v_gpden = Real("v_gpden", :vector_length => vector_size)
-              decl v_gpcar = Real("v_gpcar", :vector_length => vector_size, :dim => [Dim(ndime),Dim(mnode)], :allocate => true)
-              decl v_gpadv = Real("v_gpadv", :vector_length => vector_size, :dim => [Dim(ndime)], :allocate => true)
+            if opts[:vector_length] > 1 then
+              decl v_wgrgr = Real("v_wgrgr", :vector_length => opts[:vector_length])
+              decl v_agrau = Real("v_agrau", :vector_length => opts[:vector_length])
+              decl v_gpden = Real("v_gpden", :vector_length => opts[:vector_length])
+              decl v_gpcar = Real("v_gpcar", :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(mnode)], :allocate => true)
+              decl v_gpadv = Real("v_gpadv", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate => true)
 
               load_gpden = "v_gpden === gpden[1,igaus]"
               load_gpadv = "v_gpadv[dim+1] === gpadv[1,dim+1,igaus]"
@@ -1195,11 +1195,11 @@
           #+BEGIN_SRC ruby :tangle /tmp/alya.rb
             def generate_first_nest
               code = <<EOF
-                decl v_wgrgr = Real("v_wgrgr", :vector_length => vector_size)
-                decl v_agrau = Real("v_agrau", :vector_length => vector_size)
-                decl v_gpden = Real("v_gpden", :vector_length => vector_size)
-                decl v_gpcar = Real("v_gpcar", :vector_length => vector_size, :dim => [Dim(ndime)], :allocate =>true)
-                decl v_gpadv = Real("v_gpadv", :vector_length => vector_size, :dim => [Dim(ndime)], :allocate =>true)
+                decl v_wgrgr = Real("v_wgrgr", :vector_length => opts[:vector_length])
+                decl v_agrau = Real("v_agrau", :vector_length => opts[:vector_length])
+                decl v_gpden = Real("v_gpden", :vector_length => opts[:vector_length])
+                decl v_gpcar = Real("v_gpcar", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
+                decl v_gpadv = Real("v_gpadv", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
 
                 pr For(igaus,1,pgaus){
                   pr v_gpden === gpden[1,igaus]
@@ -1222,7 +1222,9 @@ EOF
         
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_boast_implem(vector_size)
+          def generate_boast_implem(options)        
+            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
+            opts.update(options)
             pnode = Int("pnode", :dir => :in)
             mnode = Int("mnode", :dir => :in)
             pgaus = Int("pgaus", :dir => :in)
@@ -1235,32 +1237,32 @@ EOF
 
             fvins_nsi = Real("fvins_nsi",    :dir => :in)
 
-            gpden = Real("gpden",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gppor = Real("gppor",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
-            gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(mnode),Dim(pgaus)])
-            gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(vector_size),Dim(pgaus)])      
-            gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus),Dim()])
-            gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus),Dim()])
-            wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode),Dim(pgaus)])
-            agrau = Real("agrau",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
-            elvel = Real("elvel",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pnode),Dim()])
-            elauu = Real("elauu",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode*ndime),Dim(pnode*ndime)])
-            elaup = Real("elaup",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode*ndime),Dim(pnode)])
-            elapp = Real("elapp",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode)])
-            elapu = Real("elapu",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode*ndime)])
-            elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(vector_size),Dim(ndime),Dim(pnode)])
-            elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode)])
-            dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(vector_size)])
-            dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(vector_size)])
+            gpden = Real("gpden",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
+            gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
+            gppor = Real("gppor",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
+            gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
+            gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
+            gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
+            gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pgaus)])
+            gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(mnode),Dim(pgaus)])
+            gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
+            gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
+            gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(pgaus)])      
+            gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
+            gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
+            gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus),Dim()])
+            gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus),Dim()])
+            wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pnode),Dim(pgaus)])
+            agrau = Real("agrau",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pgaus)])
+            elvel = Real("elvel",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pnode),Dim()])
+            elauu = Real("elauu",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode*ndime),Dim(pnode*ndime)])
+            elaup = Real("elaup",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode*ndime),Dim(pnode)])
+            elapp = Real("elapp",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pnode)])
+            elapu = Real("elapu",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pnode*ndime)])
+            elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pnode)])
+            elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode)])
+            dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(opts[:vector_length])])
+            dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(opts[:vector_length])])
 
             p = Procedure("nsi_element_assembly_split_oss",
                           [ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
@@ -1277,7 +1279,7 @@ EOF
 
             k = CKernel::new
             k.procedure = p
-            if get_lang == C and vector_size > 1 then
+            if get_lang == C and opts[:vector_length] > 1 then
               BOAST::get_output.puts "#include <emmintrin.h>"             
             end
             pr p
@@ -1321,12 +1323,13 @@ EOF
           nbdfp_nsi = 3
           
           k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => [1]}
+          k_boast_params = {:vector_length => vector_size, :nests => [1]}
 
           k_orig = generate_ref(k_orig_params)
           k_orig.build(:FCFLAGS => "-cpp")
 
           set_lang(FORTRAN)
-          k_boast = generate_boast_implem(vector_size)
+          k_boast = generate_boast_implem(k_boast_params)
           puts k_boast
           k_boast.build
 
