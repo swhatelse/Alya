@@ -1558,7 +1558,7 @@ EOF
     #+END_SRC
 
 ** BOAST
-*** Rewritting the first loop
+*** Playing with vectors
 **** Vectorization in fortran
     #+BEGIN_SRC ruby 
             require 'BOAST'
@@ -1659,7 +1659,6 @@ EOF
     #+RESULTS:
     | hline | 3.4143904999999938e-06 | 3.3715627999999837e-06 |
     
-
 **** Trying using vectors
       This does not compile but the generated C code is correct.
      #+BEGIN_SRC ruby :tangle 
@@ -1930,6 +1929,103 @@ EOF
        }
      }
 #+end_example
+
+     #+BEGIN_SRC ruby :tangle /tmp/vec2D.rb
+       require 'BOAST'
+       include BOAST
+       require 'narray'
+
+       set_array_start(0)
+
+       v_len = 4
+       x = Int("x", :dir => :in)
+       a = Int("a", :dir => :in, :dim => [Dim(x),Dim(x)])
+
+       p = Procedure::new("foo", [x,a]){      
+         decl a1 = Int("a1", :vector_length => v_len, :dim => [Dim(x/v_len),Dim(x)], :allocate => true)         
+         pr a1 === a
+       }
+
+       set_lang(FORTRAN)
+       k = CKernel::new
+       if get_lang == C then
+         BOAST::get_output.puts "#include <emmintrin.h>"             
+       end
+       pr p
+       k.procedure = p
+       k.build
+
+       x = 512
+       NArray.srand(10)
+       a = NArray.int(x,x).random!(10)
+
+       k.run(x,a)
+       k
+     #+END_SRC
+
+     #+RESULTS:
+****** Verifying vectors
+       #+BEGIN_SRC ruby
+         require 'BOAST'
+         include BOAST
+         require 'narray'
+
+         v_len = 2
+         x = Int("x", :dir => :in)
+         a = Real("a", :dir => :in, :dim => [Dim(v_len),Dim(x)])
+         b = Real("b", :dir => :in, :dim => [Dim(v_len),Dim(x)])
+         c = Real("c", :dir => :out, :dim => [Dim(v_len),Dim(x)])
+
+         p1 = Procedure::new("foo", [x,a,b,c]){      
+           decl i = Int("i")       
+           decl a1 = Real("a1", :vector_length => v_len)
+           decl b1 = Real("b1", :vector_length => v_len)
+           decl c1 = Real("c1", :vector_length => v_len)
+           
+           pr For(i,1,x){
+             pr a1 === a[1,i]
+             pr b1 === b[1,i]
+             pr c1 === a1 + b1
+             pr c[1,i] === c1
+           }
+         }
+
+         p2 = Procedure::new("bar", [x,a,b,c]){      
+           decl i = Int("i")       
+           decl j = Int("j")       
+
+           pr For(i,1,x){
+             pr For(j,1,v_len){
+               pr c[j,i] === a[j,i] + b[j,i]
+             }
+           }
+         }
+
+         set_lang(FORTRAN)
+         k1 = CKernel::new
+         BOAST::get_output.puts "#include <emmintrin.h>"             
+         pr p1
+         k1.procedure = p1
+         k1.build
+
+         set_lang(C)
+         k2 = p2.ckernel
+
+         x = 8
+         NArray.srand(10)
+         a = NArray.float(v_len,x).random(x)
+         b = NArray.float(v_len,x).random(x)
+         c1 = NArray.float(v_len,x)
+         c2 = NArray.float(v_len,x)
+
+         k1.run(x,a,b,c1)
+         k2.run(x,a,b,c2)
+         c1 == c2
+
+       #+END_SRC
+
+       #+RESULTS:
+       : true
 
 ****** Vectorizing first loop
      #+BEGIN_SRC ruby
