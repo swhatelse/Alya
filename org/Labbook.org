@@ -1,7 +1,7 @@
 #+TITLE:  LabBook
 #+AUTHOR: Steven QUINITO MASNADA
 #+BABEL: :tangle yes
-#+TAGS: Arnaud(a) Brice(b) Script(s) Analysis (c) Ruby(r) R(t) deprecated(d) Modifications(m)
+#+TAGS: Arnaud(a) Brice(b) Script(s) Analysis (c) Ruby(r) R(t) deprecated(d) Modifications(m) noexport(n)
 
 * 2016
 ** October
@@ -1191,84 +1191,84 @@
             return code
           end
         #+END_SRC
-        - Simple
-          #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-            if opts[:nests].include? 1 then
-              if opts[:vector_length] > 1 then 
-                decl v_wgrgr = Real("v_wgrgr", :vector_length => opts[:vector_length])
-                decl v_agrau = Real("v_agrau", :vector_length => opts[:vector_length])
-                decl v_gpden = Real("v_gpden", :vector_length => opts[:vector_length])
-                decl v_gpcar_1 = Real("v_gpcar_1", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
-                decl v_gpcar_2 = Real("v_gpcar_2", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
-                decl v_gpadv = Real("v_gpadv", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
-              end      
+******* First loop
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 1 then
+            if opts[:vector_length] > 1 then 
+              decl v_wgrgr = Real("v_wgrgr", :vector_length => opts[:vector_length])
+              decl v_agrau = Real("v_agrau", :vector_length => opts[:vector_length])
+              decl v_gpden = Real("v_gpden", :vector_length => opts[:vector_length])
+              decl v_gpcar_1 = Real("v_gpcar_1", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
+              decl v_gpcar_2 = Real("v_gpcar_2", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
+              decl v_gpadv = Real("v_gpadv", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
+            end      
 
-              for1 = []
+            for1 = []
 
-              2.times{|j|
-                dim = j+2
-                exp1 = ""
-                exp2 = ""
-                dim.times{|i|
-                  if opts[:vector_length] > 1 then
-                    exp1 += "v_gpadv[#{i+1}]*v_gpcar_1[#{i+1}]"
-                    exp2 += "v_gpcar_1[#{i+1}]*v_gpcar_2[#{i+1}]"
-                  else
-                    exp1 += "gpadv[1, #{i+1},igaus]*gpcar[1, #{i+1},inode,igaus]"
-                    exp2 += "gpcar[1, #{i+1},inode,igaus]*gpcar[1, #{i+1},jnode,igaus]"
-                  end
-                  exp1 +=  " + " if i+1 < dim
-                  exp2 +=  " + " if i+1 < dim
-                }
-                
+            2.times{|j|
+              dim = j+2
+              exp1 = ""
+              exp2 = ""
+              dim.times{|i|
                 if opts[:vector_length] > 1 then
-                  form_agrau = "pr v_agrau === v_gpden * (#{exp1})"
-                  form_wgrgr = "pr v_wgrgr === #{exp2}"
+                  exp1 += "v_gpadv[#{i+1}]*v_gpcar_1[#{i+1}]"
+                  exp2 += "v_gpcar_1[#{i+1}]*v_gpcar_2[#{i+1}]"
                 else
-                  form_agrau = "pr agrau[1,inode,igaus] === gpden[1,igaus] * (#{exp1})"
-                  form_wgrgr = "pr wgrgr[1,inode,jnode,igaus] === #{exp2}"
+                  exp1 += "gpadv[1, #{i+1},igaus]*gpcar[1, #{i+1},inode,igaus]"
+                  exp2 += "gpcar[1, #{i+1},inode,igaus]*gpcar[1, #{i+1},jnode,igaus]"
                 end
+                exp1 +=  " + " if i+1 < dim
+                exp2 +=  " + " if i+1 < dim
+              }
+              
+              if opts[:vector_length] > 1 then
+                form_agrau = "pr v_agrau === v_gpden * (#{exp1})"
+                form_wgrgr = "pr v_wgrgr === #{exp2}"
+              else
+                form_agrau = "pr agrau[1,inode,igaus] === gpden[1,igaus] * (#{exp1})"
+                form_wgrgr = "pr wgrgr[1,inode,jnode,igaus] === #{exp2}"
+              end
 
-                for1[j] = For(igaus,1,pgaus){
+              for1[j] = For(igaus,1,pgaus){
+                if opts[:vector_length] > 1 then
+                  pr v_gpden === gpden[1,igaus]
+                  dim.times{ |i|
+                    pr v_gpadv[i+1] === gpadv[1,i+1,igaus]
+                  }
+                end 
+                pr For(inode,1,pnode){
                   if opts[:vector_length] > 1 then
-                    pr v_gpden === gpden[1,igaus]
                     dim.times{ |i|
-                      pr v_gpadv[i+1] === gpadv[1,i+1,igaus]
+                      pr v_gpcar_1[i+1] === gpcar[1,i+1,inode,igaus]                    
                     }
-                  end 
-                  pr For(inode,1,pnode){
+                  end
+                  eval form_agrau
+                  if opts[:vector_length] > 1 then
+                    pr agrau[1,inode,igaus] === v_agrau
+                  end
+                  for2 = For(jnode,1,pnode){                    
                     if opts[:vector_length] > 1 then
                       dim.times{ |i|
-                        pr v_gpcar_1[i+1] === gpcar[1,i+1,inode,igaus]                    
+                        pr v_gpcar_2[i+1] === gpcar[1,i+1,jnode,igaus]                    
                       }
                     end
-                    eval form_agrau
+                    eval form_wgrgr
                     if opts[:vector_length] > 1 then
-                      pr agrau[1,inode,igaus] === v_agrau
+                      pr wgrgr[1,inode,jnode,igaus] === v_wgrgr
                     end
-                    for2 = For(jnode,1,pnode){                    
-                      if opts[:vector_length] > 1 then
-                        dim.times{ |i|
-                          pr v_gpcar_2[i+1] === gpcar[1,i+1,jnode,igaus]                    
-                        }
-                      end
-                      eval form_wgrgr
-                      if opts[:vector_length] > 1 then
-                        pr wgrgr[1,inode,jnode,igaus] === v_wgrgr
-                      end
-                    }
-                    pr for2
                   }
+                  pr for2
                 }
               }
+            }
 
-              pr If(ndime == 2 => lambda{
-                      pr for1[0]
-                    }, else: lambda{
-                      pr for1[1]
-                    })  
-            end
-          #+END_SRC
+            pr If(ndime == 2 => lambda{
+                    pr for1[0]
+                  }, else: lambda{
+                    pr for1[1]
+                  })  
+          end
+        #+END_SRC
 ******* Closing procedure
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
 
