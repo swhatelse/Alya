@@ -574,7 +574,7 @@
             kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
             nbdfp_nsi = Int("nbdfp_nsi", :dir => :in)
 
-            fvins_nsi = Real("fvins_nsi",    :dir => :in)
+            fvins_nsi = Real("fvins_nsi",    :dir => :inout)
 
             gpden = Real("gpden",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
             gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
@@ -1203,6 +1203,20 @@
               decl v_gpadv = Real("v_gpadv", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
             end      
 
+******* Initialisation
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          pr gpsp1_p === gpsp1
+          pr gpsp1_v === gpsp1
+          pr elrbp === 0.0
+          pr elrbu === 0.0
+          pr elapp === 0.0
+          pr elauu === 0.0
+          pr elaup === 0.0
+          pr elapu === 0.0
+        #+END_SRC
+******* First loop
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 1 then
             for1 = []
 
             2.times{|j|
@@ -1246,10 +1260,10 @@
                   if opts[:vector_length] > 1 then
                     pr agrau[1,inode,igaus] === v_agrau
                   end
-                  for2 = For(jnode,1,pnode){                    
+                  pr For(jnode,1,pnode){                    
                     if opts[:vector_length] > 1 then
-                      dim.times{ |i|
-                        pr v_gpcar_2[i+1] === gpcar[1,i+1,jnode,igaus]                    
+                      dim.times{ |k|
+                        pr v_gpcar_2[k+1] === gpcar[1,k+1,jnode,igaus]                    
                       }
                     end
                     eval form_wgrgr
@@ -1257,9 +1271,15 @@
                       pr wgrgr[1,inode,jnode,igaus] === v_wgrgr
                     end
                   }
-                  pr for2
                 }
               }
+            }
+
+            pr If(ndime == 2 => lambda{
+                    pr for1[0]
+                  }, else: lambda{
+                    pr for1[1]
+                  })  
             }
 
             pr If(ndime == 2 => lambda{
