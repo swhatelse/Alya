@@ -5,13 +5,13 @@ include BOAST
 require '/tmp/alya.rb'
 
 class TestFor < Minitest::Test
-  def init(vector_size,seed)
+  def init(vector_size,dim,seed)
     NArray.srand(seed) if seed
-    @pnode = 2
-    @mnode = 2
-    @pgaus = 2
-    @pevat = 2
-    @ndime = 3
+    @pnode = 100
+    @mnode = 100
+    @pgaus = 100
+    @pevat = 100
+    @ndime = dim
     @fvins_nsi = 1.0
     @kfl_lumped = 1
     @kfl_limit_nsi = 1
@@ -56,65 +56,38 @@ class TestFor < Minitest::Test
     @elrbp_boast = NArray.float(vector_size,@pnode)
   end
   def test_nests_orig_vs_boast
-    vector_size=2
+    nests = [1,2]
+    (1..2).each{|vector_size|
+      k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
+      k_boast_params = {:vector_length => vector_size, :nests => nests}
 
-    k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => [1]}
-    k_boast_params = {:vector_length => vector_size, :nests => [1]}
+      k_orig = generate_ref(k_orig_params)
+      k_orig.build(:FCFLAGS => "-cpp")
 
-    k_orig = generate_ref(k_orig_params)
-    k_orig.build(:FCFLAGS => "-cpp")
+      (2..3).each{|dim|
+        init(vector_size,dim,10)
+        [FORTRAN].each{|lang|
+          set_lang(lang)
+          k_boast = generate_boast_implem(k_boast_params)
+          k_boast.build
 
-    set_lang(FORTRAN)
-    k_boast = generate_boast_implem(k_boast_params)
-    k_boast.build
+          k_orig.run(@ndime,@mnode,@pnode,@pgaus,@pevat,@gpden,@gpvis,@gppor,
+                     @gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,@gpvep,@gpprp,
+                     @gpgrp,@gprhs,@gpvel,@gpsgs,@wgrgr_ref,@agrau_ref,@elvel,@elauu_ref,
+                     @elaup_ref,@elapp_ref,@elapu_ref,@elrbu_ref,@elrbp_ref,@dtinv_loc,@dtsgs,
+                     @fvins_nsi,@kfl_lumped,@kfl_limit_nsi,@kfl_sgsti_nsi,@nbdfp_nsi)
 
-    init(vector_size,10)
+          k_boast.run(@ndime,@mnode,@pnode,@pgaus,@pevat,@gpden,@gpvis,@gppor,
+                      @gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,@gpvep,@gpprp,
+                      @gpgrp,@gprhs,@gpvel,@gpsgs,@wgrgr_boast,@agrau_boast,@elvel,@elauu_boast,
+                      @elaup_boast,@elapp_boast,@elapu_boast,@elrbu_boast,@elrbp_boast,@dtinv_loc,@dtsgs,
+                      @fvins_nsi,@kfl_lumped,@kfl_limit_nsi,@kfl_sgsti_nsi,@nbdfp_nsi)
 
-    k_orig.run(@ndime,@mnode,@pnode,@pgaus,@pevat,@gpden,@gpvis,@gppor,
-               @gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,@gpvep,@gpprp,
-               @gpgrp,@gprhs,@gpvel,@gpsgs,@wgrgr_ref,@agrau_ref,@elvel,@elauu_ref,
-               @elaup_ref,@elapp_ref,@elapu_ref,@elrbu_ref,@elrbp_ref,@dtinv_loc,@dtsgs,
-               @fvins_nsi,@kfl_lumped,@kfl_limit_nsi,@kfl_sgsti_nsi,@nbdfp_nsi)
-
-    k_boast.run(@ndime,@mnode,@pnode,@pgaus,@pevat,@gpden,@gpvis,@gppor,
-                @gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,@gpvep,@gpprp,
-                @gpgrp,@gprhs,@gpvel,@gpsgs,@wgrgr_boast,@agrau_boast,@elvel,@elauu_boast,
-                @elaup_boast,@elapp_boast,@elapu_boast,@elrbu_boast,@elrbp_boast,@dtinv_loc,@dtsgs,
-                @fvins_nsi,@kfl_lumped,@kfl_limit_nsi,@kfl_sgsti_nsi,@nbdfp_nsi)
-
-    assert(@agrau_ref == @agrau_boast)
-    assert(@wgrgr_ref == @wgrgr_boast)
-  end
-
-  def test_nests_fortran_vs_c
-    vector_size=2
-
-    k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => [1]}
-    k_boast_params = {:vector_length => vector_size, :nests => [1]}
-
-    set_lang(FORTRAN)
-    k_c = generate_boast_implem(k_boast_params)
-    k_c.build
-
-    set_lang(FORTRAN)
-    k_fortran = generate_boast_implem(k_boast_params)
-    k_fortran.build
-
-    init(vector_size,10)
-
-    k_c.run(@ndime,@mnode,@pnode,@pgaus,@pevat,@gpden,@gpvis,@gppor,
-               @gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,@gpvep,@gpprp,
-               @gpgrp,@gprhs,@gpvel,@gpsgs,@wgrgr_ref,@agrau_ref,@elvel,@elauu_ref,
-               @elaup_ref,@elapp_ref,@elapu_ref,@elrbu_ref,@elrbp_ref,@dtinv_loc,@dtsgs,
-               @fvins_nsi,@kfl_lumped,@kfl_limit_nsi,@kfl_sgsti_nsi,@nbdfp_nsi)
-
-    k_fortran.run(@ndime,@mnode,@pnode,@pgaus,@pevat,@gpden,@gpvis,@gppor,
-                @gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,@gpvep,@gpprp,
-                @gpgrp,@gprhs,@gpvel,@gpsgs,@wgrgr_boast,@agrau_boast,@elvel,@elauu_boast,
-                @elaup_boast,@elapp_boast,@elapu_boast,@elrbu_boast,@elrbp_boast,@dtinv_loc,@dtsgs,
-                @fvins_nsi,@kfl_lumped,@kfl_limit_nsi,@kfl_sgsti_nsi,@nbdfp_nsi)
-
-    assert(@agrau_ref == @agrau_boast)
-    assert(@wgrgr_ref == @wgrgr_boast)
+          assert(@agrau_ref == @agrau_boast)
+          assert(@wgrgr_ref == @wgrgr_boast)
+          assert(@elauu_ref == @elauu_boast)
+        }
+      }
+    }
   end
 end
