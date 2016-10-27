@@ -2430,3 +2430,217 @@ END SUBROUTINE orig1
     : NArray.int(10): 
     : [ 22, 16, 36, 22, 12, 8, 22, 22, 10, 28 ]
 
+*** Calling a function
+    #+BEGIN_SRC ruby
+      require 'BOAST'
+      include BOAST
+      require 'narray'
+
+      x = Int("x", :dir => :in)               
+      y = Int("y")               
+      a = Int("a", :dir => :inout, :dim => [Dim(x)])                
+
+      p1 = Procedure("p1", [x],:return => y){
+          pr y === 1
+      }
+
+      set_lang(FORTRAN)
+      k1 = CKernel::new
+      k1.procedure = p1
+
+      k1.build
+      k2 = CKernel::new(:kernels =>[k1])
+      p2 = Procedure("p2",[x,a]){
+        decl i = Int("i")
+        pr For(i,1,x){
+          pr a[i] === a[i] + k1.procedure.call(x)        
+        }
+      }
+
+      pr p1
+      pr p2
+      k2.procedure = p2
+           
+      x = 10
+      a = NArray.int(x)
+      puts k2
+      k2.build
+      k2.run(x,a)
+    #+END_SRC
+
+    #+RESULTS:
+
+    #+BEGIN_SRC ruby
+      require 'BOAST'
+      include BOAST
+      require 'narray'
+
+      x = Int("x", :dir => :in)               
+      y = Int("y")               
+      a = Int("a", :dir => :inout, :dim => [Dim(x)])                
+
+      p1 = Procedure("p1", [x],:return => y){
+        pr y === 1
+      }
+
+      set_lang(FORTRAN)
+      k1 = CKernel::new
+      k1.procedure = p1
+
+      k1.build
+      k2 = CKernel::new
+      p2 = Procedure("p2",[x,a],:functions => [p1]){
+        decl i = Int("i")
+        pr For(i,1,x){
+          pr a[i] === a[i] + k1.procedure.call(x)        
+        }
+      }
+
+      pr p1
+      pr p2
+      k2.procedure = p2
+
+      x = 10
+      a = NArray.int(x)
+      puts k2
+      k2.build
+      k2.run(x,a)
+
+    #+END_SRC
+
+    #+RESULTS:
+    | :duration=>1.037e-06 |
+
+** Ruby
+*** Meta
+**** Eval string of string 
+    This one would be good but it does not work, it fails to find the
+    variable i:
+    #+BEGIN_SRC ruby 
+      exp1 = ""
+      code=<<EOF
+        dim = 3
+        dim.times{|i|
+          exp1 += "v_gpadv[#{i+1}]"
+          exp1 +=  " + " if i+1 < dim
+        }
+      EOF
+      eval code
+      exp1
+    #+END_SRC
+
+    #+RESULTS:
+
+     This solution works but is a little bit ugly, it is more
+     difficult to read the expression:
+    #+BEGIN_SRC ruby 
+      exp1 = ""
+      code=<<EOF
+        dim = 3
+        dim.times{|i|
+          exp1 += "v_gpadv[" + (i+1).to_s + "]"
+          exp1 +=  " + " if i+1 < dim
+        }
+      EOF
+      eval code
+      exp1
+    #+END_SRC
+
+    #+RESULTS:
+
+     This one is better, we can still read the expression and it is
+     concise:
+     #+BEGIN_SRC ruby 
+      exp1 = ""
+      code=<<EOF
+        dim = 3
+        dim.times{|i|
+          exp1 += sprintf("v_gpadv[%d]", i)
+          exp1 +=  " + " if i+1 < dim
+        }
+      EOF
+      eval code
+      exp1     
+     #+END_SRC
+
+     #+RESULTS:
+     : v_gpadv[0] + v_gpadv[1] + v_gpadv[2]
+
+     #+BEGIN_SRC ruby 
+     a = "a_1"
+     b = "b_1"
+     a_1 = [1,2,3]
+     b_1 = [4,5,6]
+     i = 2
+     exp = "#{a_1}[#{i}] + #{b_1}[#{i}]"
+     eval exp
+     #+END_SRC
+
+     #+RESULTS:
+     : 9
+
+**** Generate array of blocks
+     - Array of a block
+       #+BEGIN_SRC ruby
+         exp1 = ["",""]
+         x = []
+         2.times{|j|
+           x[j] = Proc.new{
+             dim = j+2
+             dim.times{|i|
+               exp1[j] += "v_gpadv[" + (i+1).to_s + "]*v_gpcar[" + (i+1).to_s + "]"
+               exp1[j] +=  " + " if i+1 < dim
+             }
+           }
+         }
+         x[0].call
+         x[1].call
+         exp1
+       #+END_SRC
+
+       #+RESULTS:
+     | v_gpadv[1]*v_gpcar[1] + v_gpadv[2]*v_gpcar[2] | v_gpadv[1]*v_gpcar[1] + v_gpadv[2]*v_gpcar[2] + v_gpadv[3]*v_gpcar[3] |
+
+     - Array of For:
+       #+BEGIN_SRC ruby 
+         require 'BOAST'
+         include BOAST
+
+         x = Int("x", :dir => :in)
+         a = Int("a", :dir => :in, :dim => [Dim(x)])
+         b = Int("b", :dir => :in, :dim => [Dim(x)])
+         c = Int("c", :dir => :in, :dim => [Dim(x)])
+
+         p = Procedure("foo",[x,a,b,c]){         
+           decl i = Int("i")
+           for1 = []
+           3.times{|j|
+             for1[j] =  For(i,0,x){
+               pr c[i] === a[i] * j  + b[i] * j
+             }
+           }
+           pr for1[1]
+           pr for1[2]
+         }
+         k = p.ckernel
+       #+END_SRC
+
+       #+RESULTS:
+       #+begin_example
+       SUBROUTINE foo(x, a, b, c)
+         integer, parameter :: wp=kind(1.0d0)
+         integer(kind=4), intent(in) :: x
+         integer(kind=4), intent(in), dimension(x) :: a
+         integer(kind=4), intent(in), dimension(x) :: b
+         integer(kind=4), intent(in), dimension(x) :: c
+         integer(kind=4) :: i
+         do i = 0, x, 1
+           c(i) = (a(i)) * (1) + (b(i)) * (1)
+         end do
+         do i = 0, x, 1
+           c(i) = (a(i)) * (2) + (b(i)) * (2)
+         end do
+       END SUBROUTINE foo
+#+end_example
+
+     
