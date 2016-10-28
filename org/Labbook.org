@@ -641,6 +641,9 @@
                 gpgrp,gprhs,gpvel,gpsgs,wgrgr,agrau,elvel,elauu,&
                 elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
 
+                integer, parameter  :: ip    = 4
+                integer, parameter  :: rp    = 8
+
                 integer(kind=4), intent(in)    :: ndime,mnode,pnode,pgaus,pevat,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi
                 real(kind=8),    intent(in)    :: gpden(#{p_vector_length},pgaus)
                 real(kind=8),    intent(in)    :: gpvis(#{p_vector_length},pgaus)
@@ -703,12 +706,12 @@
           init = <<EOF
              gpsp1_p = gpsp1
              gpsp1_v = gpsp1
-             elrbp = 0.0
-             elrbu = 0.0
-             elapp = 0.0
-             elauu = 0.0
-             elaup = 0.0
-             elapu = 0.0
+             elrbp = 0.0_rp
+             elrbu = 0.0_rp
+             elapp = 0.0_rp
+             elauu = 0.0_rp
+             elaup = 0.0_rp
+             elapu = 0.0_rp
           EOF
         #+END_SRC
       - First nest
@@ -843,7 +846,7 @@
       - Third nest
         #+BEGIN_SRC ruby :tangle  /tmp/alya.rb
           third_nest = <<EOF
-             if( fvins_nsi > 0.9 ) then
+             if( fvins_nsi > 0.9_rp ) then
                 if( ndime == 2 ) then
                    do igaus = 1,pgaus
                       do inode = 1,pnode
@@ -856,8 +859,8 @@
                                jdofv                       = (jnode-1)*ndime + 2
                                elauu(#{p_def_vect},idofv,jdofv) = elauu(#{p_def_vect},idofv,jdofv) + fact1(#{p_def_vect}) * gpcar(#{p_def_vect},2,inode,igaus)
                             end do
-                            if( fvins_nsi == 2.0 ) then
-                               fact1 = -2.0/3.0 * gpvis(#{p_def_vect},igaus) * gpvol(#{p_def_vect},igaus) * gpcar(#{p_def_vect},idime,inode,igaus)
+                            if( fvins_nsi == 2.0_rp ) then
+                               fact1 = -2.0_rp/3.0_rp * gpvis(#{p_def_vect},igaus) * gpvol(#{p_def_vect},igaus) * gpcar(#{p_def_vect},idime,inode,igaus)
                                do jnode = 1,pnode
                                   jdofv                       = (jnode-1)*ndime + 1 
                                   elauu(#{p_def_vect},idofv,jdofv) = elauu(#{p_def_vect},idofv,jdofv) + fact1(#{p_def_vect}) * gpcar(#{p_def_vect},1,jnode,igaus)
@@ -908,7 +911,7 @@
                    call runend('PREGUNTAR A MATIAS QUE LO PROGRAME')
                 else
                    do igaus = 1,pgaus
-                      gpveo(#{p_def_vect},1:3) = 0.0
+                      gpveo(#{p_def_vect},1:3) = 0.0_rp
                       do inode = 1,pnode
                          do idime = 1,ndime
                             gpveo(#{p_def_vect},idime) = gpveo(#{p_def_vect},idime) + elvel(#{p_def_vect},idime,inode,2) * gpsha(#{p_def_vect},inode,igaus)
@@ -1017,16 +1020,16 @@
           seventh_nest = <<EOF
              if( kfl_limit_nsi == -1 ) then
 
-                gpvep(#{p_def_vect},:,:) = 0.0
+                gpvep(#{p_def_vect},:,:) = 0.0_rp
 
              else if( kfl_limit_nsi > 0 ) then
 
                 do igaus = 1,pgaus
-                   c1(#{p_def_vect}) = 0.0
-                   c2(#{p_def_vect}) = 0.0
-                   c3(#{p_def_vect}) = 0.0
+                   c1(#{p_def_vect}) = 0.0_rp
+                   c2(#{p_def_vect}) = 0.0_rp
+                   c3(#{p_def_vect}) = 0.0_rp
                    do idime = 1,ndime
-                      c4(#{p_def_vect}) = 0.0
+                      c4(#{p_def_vect}) = 0.0_rp
                       do inode = 1,pnode
                          c4(#{p_def_vect}) = c4(#{p_def_vect}) + agrau(#{p_def_vect},inode,igaus) * elvel(#{p_def_vect},idime,inode,1)
                       end do
@@ -1037,11 +1040,11 @@
                    end do
                    c3(#{p_def_vect})   = sqrt( c2(#{p_def_vect}) ) + sqrt( c3(#{p_def_vect}) )
                    c1(#{p_def_vect})   = sqrt( c1(#{p_def_vect}) )
-                   beta(#{p_def_vect}) = c1(#{p_def_vect}) / ( c3(#{p_def_vect}) + epsilon(1.0) )
+                   beta(#{p_def_vect}) = c1(#{p_def_vect}) / ( c3(#{p_def_vect}) + epsilon(1.0_rp) )
                    if( kfl_limit_nsi == 1 ) then
-                      alpha(#{p_def_vect}) = min(1.0,2.0*(1.0-beta(#{p_def_vect})))
+                      alpha(#{p_def_vect}) = min(1.0_rp,2.0_rp*(1.0-beta(#{p_def_vect})))
                    else if( kfl_limit_nsi == 2 ) then
-                      alpha(#{p_def_vect}) = 0.5*(tanh(20.0*(beta(#{p_def_vect})-0.8))+1.0)
+                      alpha(#{p_def_vect}) = 0.5_rp*(tanh(20.0_rp*(beta(#{p_def_vect})-0.8_rp))+1.0_rp)
                    end if
                    do idime = 1,ndime
                       gpvep(#{p_def_vect},idime,igaus) = alpha(#{p_def_vect}) * gpvep(#{p_def_vect},idime,igaus)
