@@ -3,6 +3,9 @@
 #+BABEL: :tangle yes
 #+TAGS: Arnaud(a) Brice(b) Script(s) Analysis (c) Ruby(r) R(t) deprecated(d) Modifications(m) noexport(n)
 
+* Todo 
+  - [ ] Finish alya kernel
+      DEADLINE: <2016-11-10 jeu.> 
 * 2016
 ** October
 *** 2016-10-04
