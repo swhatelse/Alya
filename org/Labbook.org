@@ -1335,44 +1335,44 @@
         #+END_SRC
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          pnode = Int("pnode", :dir => :in)
-          mnode = Int("mnode", :dir => :in)
-          pgaus = Int("pgaus", :dir => :in)
-          pevat = Int("pevat", :dir => :in)
-          ndime = Int("ndime", :dir => :in)
-          kfl_lumped = Int("kfl_lumped", :dir => :in) 
+          pnode = Int("pnode",                 :dir => :in)
+          mnode = Int("mnode",                 :dir => :in)
+          pgaus = Int("pgaus",                 :dir => :in)
+          pevat = Int("pevat",                 :dir => :in)
+          ndime = Int("ndime",                 :dir => :in)
+          kfl_lumped = Int("kfl_lumped",       :dir => :in) 
           kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in) 
           kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
-          nbdfp_nsi = Int("nbdfp_nsi", :dir => :in)
+          nbdfp_nsi = Int("nbdfp_nsi",         :dir => :in)
 
-          fvins_nsi = Real("fvins_nsi",    :dir => :inout)
+          fvins_nsi = Real("fvins_nsi",        :dir => :inout)
 
-          gpden = Real("gpden",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-          gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-          gppor = Real("gppor",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-          gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-          gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-          gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-          gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pgaus)])
-          gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(mnode),Dim(pgaus)])
-          gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
-          gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
-          gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(pgaus)])      
-          gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
-          gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus)])
-          gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus),Dim()])
-          gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pgaus),Dim()])
-          wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pnode),Dim(pgaus)])
-          agrau = Real("agrau",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pgaus)])
-          elvel = Real("elvel",    :dir => :in,     :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pnode),Dim()])
-          elauu = Real("elauu",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode*ndime),Dim(pnode*ndime)])
-          elaup = Real("elaup",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode*ndime),Dim(pnode)])
-          elapp = Real("elapp",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pnode)])
-          elapu = Real("elapu",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode),Dim(pnode*ndime)])
-          elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(ndime),Dim(pnode)])
-          elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(opts[:vector_length]),Dim(pnode)])
-          dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(opts[:vector_length])])
-          dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(opts[:vector_length])])
+          gpden = Real("gpden",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+          gpvis = Real("gpvis",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+          gppor = Real("gppor",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+          gpsp1 = Real("gpsp1",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+          gpsp2 = Real("gpsp2",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+          gpvol = Real("gpvol",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+          gpsha = Real("gpsha",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pgaus)])
+          gpcar = Real("gpcar",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(mnode),Dim(pgaus)])
+          gpadv = Real("gpadv",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus)])
+          gpvep = Real("gpvep",                :dir => :inout,   :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus)])
+          gpprp = Real("gpprp",                :dir => :inout,   :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])      
+          gpgrp = Real("gpgrp",                :dir => :inout,   :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus)])
+          gprhs = Real("gprhs",                :dir => :inout,   :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus)])
+          gpvel = Real("gpvel",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus),Dim()])
+          gpsgs = Real("gpsgs",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus),Dim()])
+          wgrgr = Real("wgrgr",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pnode),Dim(pgaus)])
+          agrau = Real("agrau",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pgaus)])
+          elvel = Real("elvel",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pnode),Dim()])
+          elauu = Real("elauu",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode*ndime),Dim(pnode*ndime)])
+          elaup = Real("elaup",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode*ndime),Dim(pnode)])
+          elapp = Real("elapp",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pnode)])
+          elapu = Real("elapu",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pnode*ndime)])
+          elrbu = Real("elrbu",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pnode)])
+          elrbp = Real("elrbp",                :dir => :out,     :vector_length => opts[:vector_length], :dim => [Dim(pnode)])
+          dtinv_loc = Real("dtinv_loc",        :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(1)])
+          dtsgs = Real("dtsgs",                :dir => :in,      :vector_length => opts[:vector_length], :dim => [Dim(1)])
 
           p = Procedure("nsi_element_assembly_split_oss",
                         [ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
@@ -1389,29 +1389,8 @@
             decl jdime = Int("jdime")
             decl idofv = Int("idofv")
             decl jdofv = Int("jdofv")
-            decl gpsp1_p = Real("gpsp1_p", :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-            decl gpsp1_v = Real("gpsp1_v", :dim => [Dim(opts[:vector_length]),Dim(pgaus)])
-
-            if opts[:vector_length] > 1 then
-              decl v_wgrgr = Real("v_wgrgr", :vector_length => opts[:vector_length])
-              decl v_agrau = Real("v_agrau", :vector_length => opts[:vector_length])
-              decl v_gpden = Real("v_gpden", :vector_length => opts[:vector_length])
-              decl v_gpcar_1 = Real("v_gpcar_1", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
-              decl v_gpcar_2 = Real("v_gpcar_2", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
-              decl v_gpadv = Real("v_gpadv", :vector_length => opts[:vector_length], :dim => [Dim(ndime)], :allocate =>true)
-
-              decl v_gpsp2 = Real("v_gpsp2", :vector_length => opts[:vector_length]) 
-              decl v_gpvol = Real("v_gpvol", :vector_length => opts[:vector_length]) 
-              decl v_gpvis = Real("v_gpvis", :vector_length => opts[:vector_length]) 
-              decl v_gpsp1_p = Real("v_gpsp1_p", :vector_length => opts[:vector_length]) 
-              decl v_gpsp1_v = Real("v_gpsp1_v", :vector_length => opts[:vector_length]) 
-              decl v_gppor = Real("v_gppor", :vector_length => opts[:vector_length]) 
-              decl v_dtinv_loc = Real("v_dtinv_loc", :vector_length => opts[:vector_length]) 
-              decl v_gpsha = Real("v_gpsha", :vector_length => opts[:vector_length]) 
-              decl v_agrau1 = Real("v_agrau_1", :vector_length => opts[:vector_length])
-              decl v_agrau2 = Real("v_agrau_2", :vector_length => opts[:vector_length])
-              decl v_elauu = Real("v_elauu", :vector_length => opts[:vector_length])
-            end
+            decl gpsp1_p = Real("gpsp1_p", :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+            decl gpsp1_v = Real("gpsp1_v", :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
 
             fact = []
             (0..8).each{|i|
@@ -1428,7 +1407,6 @@
             }
 
         #+END_SRC
-
 ******* Initialisation
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           pr gpsp1_p === gpsp1
@@ -1450,52 +1428,20 @@
               exp1 = ""
               exp2 = ""
               dim.times{|i|
-                if opts[:vector_length] > 1 then
-                  exp1 += "v_gpadv[#{i+1}]*v_gpcar_1[#{i+1}]"
-                  exp2 += "v_gpcar_1[#{i+1}]*v_gpcar_2[#{i+1}]"
-                else
-                  exp1 += "gpadv[1, #{i+1},igaus]*gpcar[1, #{i+1},inode,igaus]"
-                  exp2 += "gpcar[1, #{i+1},inode,igaus]*gpcar[1, #{i+1},jnode,igaus]"
-                end
+                exp1 += "gpadv[#{i+1},igaus]*gpcar[#{i+1},inode,igaus]"
+                exp2 += "gpcar[#{i+1},inode,igaus]*gpcar[#{i+1},jnode,igaus]"
                 exp1 +=  " + " if i+1 < dim
                 exp2 +=  " + " if i+1 < dim
               }
               
-              if opts[:vector_length] > 1 then
-                form_agrau = "pr v_agrau === v_gpden * (#{exp1})"
-                form_wgrgr = "pr v_wgrgr === #{exp2}"
-              else
-                form_agrau = "pr agrau[1,inode,igaus] === gpden[1,igaus] * (#{exp1})"
-                form_wgrgr = "pr wgrgr[1,inode,jnode,igaus] === #{exp2}"
-              end
+              form_agrau = "pr agrau[inode,igaus] === gpden[igaus] * (#{exp1})"
+              form_wgrgr = "pr wgrgr[inode,jnode,igaus] === #{exp2}"
 
               for1[j] = For(igaus,1,pgaus){
-                if opts[:vector_length] > 1 then
-                  pr v_gpden === gpden[1,igaus]
-                  dim.times{ |i|
-                    pr v_gpadv[i+1] === gpadv[1,i+1,igaus]
-                  }
-                end 
                 pr For(inode,1,pnode){
-                  if opts[:vector_length] > 1 then
-                    dim.times{ |i|
-                      pr v_gpcar_1[i+1] === gpcar[1,i+1,inode,igaus]                    
-                    }
-                  end
                   eval form_agrau
-                  if opts[:vector_length] > 1 then
-                    pr agrau[1,inode,igaus] === v_agrau
-                  end
                   pr For(jnode,1,pnode){                    
-                    if opts[:vector_length] > 1 then
-                      dim.times{ |k|
-                        pr v_gpcar_2[k+1] === gpcar[1,k+1,jnode,igaus]                    
-                      }
-                    end
                     eval form_wgrgr
-                    if opts[:vector_length] > 1 then
-                      pr wgrgr[1,inode,jnode,igaus] === v_wgrgr
-                    end
                   }
                 }
               }
@@ -1511,105 +1457,46 @@
 ******* Second loop
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 2 then
-            if opts[:vector_length] > 1 then
-              block_fact0 = lambda{
-                pr v_gpsp2 === gpsp2[1,igaus]
-                pr v_gpvol === gpvol[1,igaus]
-                pr fact[0] === v_gpsp2 * v_gpvol
-              }
+            block_fact0 = lambda{
+              pr fact[0] === gpsp2[igaus] * gpvol[igaus]
+            }
 
-              block_fact6 = lambda{
-                pr v_gpvis === gpvis[1,igaus]
-                pr fact[6] === v_gpvis * v_gpvol
-              }
+            block_fact6 = lambda{
+              pr fact[6] === gpvis[igaus] * gpvol[igaus]
+            }
 
-              block_fact7 = lambda{
-                pr v_gpsp1_v === gpsp1_v[1,igaus]
-                pr fact[7] === v_gpsp1_v * v_gpvol
-              }
-              
-              block_fact8 = lambda{
-                pr v_gpden === gpden[1,igaus]
-                pr v_dtinv_loc === dtinv_loc[1]
-                pr v_gppor === gppor[1,igaus]
-                pr fact[8] ===  v_gpden * k_pabdf_nsi.procedure.call(1) * v_dtinv_loc + v_gppor
-              }
+            block_fact7 = lambda{
+              pr fact[7] === gpsp1_v[igaus] * gpvol[igaus]
+            }
+            
+            block_fact8 = lambda{
+              pr fact[8] ===  gpden[igaus] * k_pabdf_nsi.procedure.call(1) * dtinv_loc[1] + gppor[igaus]
+            }
 
-              block_fact5 = lambda{
-                pr v_gpsha === gpsha[1,jnode,igaus]
-                pr v_agrau2 === agrau[1,jnode,igaus]
-                pr v_wgrgr === wgrgr[1,inode,jnode,igaus]
-                pr fact[5] === fact[4] * (v_agrau2 + fact[8] * v_gpsha ) + fact[6] * v_wgrgr + fact[7] * v_agrau2 * v_agrau1
+            block_fact5 = lambda{
+              pr fact[5] === fact[4] * (agrau[jnode,igaus] + fact[8] * gpsha[jnode,igaus] ) + fact[6] * wgrgr[inode,jnode,igaus] + fact[7] * agrau[jnode,igaus] * agrau[inode,igaus]
+            }
+            
+            block_factn = lambda{|dim|
+              dim.times{|i|
+                pr fact[i+1] === fact[0] * gpcar[i+1,inode,igaus]
               }
-              
-              block_factn = lambda{|dim|
-                (1..dim).each{|i|
-                  pr v_gpcar_1[i] === gpcar[1,i,inode,igaus]
-                  pr fact[i] === fact[0] * v_gpcar_1[i]
-                }
-              }
+            }
 
-              block_fact4 = lambda {
-                pr v_gpsha === gpsha[1,inode,igaus]
-                pr fact[4] === v_gpsha * v_gpvol
-              }
+            block_fact4 = lambda {
+              pr fact[4] === gpsha[inode,igaus] * gpvol[igaus]
+            }
 
-              block_elauu = lambda{|dim|              
-                (1..dim).each{|i|
-                  pr v_gpcar_1[i] === gpcar[1,i,jnode,igaus]                    
-                }
-
-                for i in 0...dim do 
-                  for j in 0...dim do
-                    eval "pr v_elauu === elauu[1,idof[#{j}],jdof[#{i}]]"
-                    exp = "pr v_elauu === v_elauu + fact[#{j+1}] * v_gpcar_1[#{i+1}]"
-                    exp = exp + " + fact[#{5}]" if i == j
-                    eval exp
-                    eval "pr elauu[1,idof[#{j}],jdof[#{i}]] === v_elauu"
-                  end
+            block_elauu = lambda{|dim|              
+              for i in 0...dim do 
+                for j in 0...dim do
+                  exp = "pr elauu[idof[#{j}],jdof[#{i}]] === elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+1}] * gpcar[#{i+1},jnode,igaus]"
+                  exp = exp + " + fact[#{5}]" if i == j
+                  eval exp
                 end
-              }
-            else
-              block_fact0 = lambda{
-                pr fact[0] === gpsp2[1,igaus] * gpvol[1,igaus]
-              }
-
-              block_fact6 = lambda{
-                pr fact[6] === gpvis[1,igaus] * gpvol[1,igaus]
-              }
-
-              block_fact7 = lambda{
-                pr fact[7] === gpsp1_v[1,igaus] * gpvol[1,igaus]
-              }
-              
-              block_fact8 = lambda{
-                pr fact[8] ===  gpden[1,igaus] * k_pabdf_nsi.procedure.call(1) * dtinv_loc[1] + gppor[1,igaus]
-              }
-
-              block_fact5 = lambda{
-                pr fact[5] === fact[4] * (agrau[1,jnode,igaus] + fact[8] * gpsha[1,jnode,igaus] ) + fact[6] * wgrgr[1,inode,jnode,igaus] + fact[7] * agrau[1,jnode,igaus] * agrau[1,inode,igaus]
-              }
-              
-              block_factn = lambda{|dim|
-                dim.times{|i|
-                  pr fact[i+1] === fact[0] * gpcar[1,i+1,inode,igaus]
-                }
-              }
-
-              block_fact4 = lambda {
-                pr fact[4] === gpsha[1,inode,igaus] * gpvol[1,igaus]
-              }
-
-              block_elauu = lambda{|dim|              
-                for i in 0...dim do 
-                  for j in 0...dim do
-                    exp = "pr elauu[1,idof[#{j}],jdof[#{i}]] === elauu[1,idof[#{j}],jdof[#{i}]] + fact[#{j+1}] * gpcar[1,#{i+1},jnode,igaus]"
-                    exp = exp + " + fact[#{5}]" if i == j
-                    eval exp
-                  end
-                end
-              }
-            end            
+              end
+            }
+            # end            
 
             for1 = []
             2.times{|j|
@@ -1627,8 +1514,6 @@
                   block_factn.call(dim)
                   block_fact4.call
                   
-                  pr v_agrau1 === agrau[1,inode,igaus] if opts[:vector_length] > 1
-
                   pr For(jnode,1,pnode){
                     dim.times{|i|
                       pr jdof[i] === jnode*dim - dim+i+1
@@ -1669,7 +1554,7 @@
             for_jdime = lambda{ |dim| return For(jdime,1,dim) }
 
             block1 = lambda{
-              pr fact[1] === gpvis[1,igaus] * gpvol[1,igaus] * gpcar[1,idime,jnode,igaus]
+              pr fact[1] === gpvis[igaus] * gpvol[igaus] * gpcar[idime,jnode,igaus]
             }
 
             block2 = lambda{
@@ -1678,17 +1563,17 @@
 
             block3 = lambda{
               pr jdofv === (jnode-1)*ndime + jdime
-              pr elauu[1,idofv,jdofv] === elauu[1,idofv,jdofv] + fact[1] * gpcar[1,jdime,inode,igaus]
+              pr elauu[idofv,jdofv] === elauu[idofv,jdofv] + fact[1] * gpcar[jdime,inode,igaus]
             }
 
             block4 = lambda{
               # pr fact[1] === gpvis[1,igaus] * -0.66666668653488159 * gpvol[1,igaus] * gpcar[1,idime,inode,igaus]
-              pr fact[1] === gpvis[1,igaus] * (-2.0 / 3.0) * gpvol[1,igaus] * gpcar[1,idime,inode,igaus]
+              pr fact[1] === gpvis[igaus] * (-2.0 / 3.0) * gpvol[igaus] * gpcar[idime,inode,igaus]
             }
 
             block5 = lambda{
               pr jdofv === (jnode-1)*ndime + jdime
-              pr elauu[1,idofv,jdofv] === elauu[1,idofv,jdofv] + fact[1] * gpcar[1,jdime,jnode,igaus]
+              pr elauu[idofv,jdofv] === elauu[idofv,jdofv] + fact[1] * gpcar[jdime,jnode,igaus]
             }
 
 
