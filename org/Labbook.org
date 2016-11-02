@@ -566,52 +566,85 @@
         #+END_SRC
       - BOAST declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_boast_decl(vector_size)
-            pnode = Int("pnode", :dir => :in)
-            mnode = Int("mnode", :dir => :in)
-            pgaus = Int("pgaus", :dir => :in)
-            pevat = Int("pevat", :dir => :in)
-            ndime = Int("ndime", :dir => :in)
-            kfl_lumped = Int("kfl_lumped", :dir => :in) 
-            kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in) 
-            kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
-            nbdfp_nsi = Int("nbdfp_nsi", :dir => :in)
+          def generate_boast_decl(opts)
+            $ndime         = Int("ndime", :dir => :in )
+            $kfl_lumped    = Int("kfl_lumped",    :dir => :in)
+            $mnode         = Int("mnode",         :dir => :in)
+            $ntens         = Int("ntens",         :dir => :in)
+            $kfl_duatss    = Int("kfl_duatss",    :dir => :in)
+            $fact_duatss   = Int("fact_duatss",   :dir => :in)
+            $kfl_stabi_nsi = Int("kfl_stabi_nsi", :dir => :in)
+            $fvins_nsi     = Real("fvins_nsi",    :dir => :in)
+            $fcons_nsi     = Real("fcons_nsi",    :dir => :in)
+            $bemol_nsi     = Real("bemol_nsi",    :dir => :in)
+            $kfl_regim_nsi = Int("kfl_regim_nsi", :dir => :in)
+            $fvela_nsi     = Real("fvela_nsi",    :dir => :in, :dim => [Dim(3)])
+            $kfl_rmom2_nsi = Int("kfl_rmom2_nsi", :dir => :in)
+            $kfl_press_nsi = Int("kfl_press_nsi", :dir => :in)
+            $kfl_p1ve2_nsi = Int("kfl_p1ve2_nsi", :dir => :in)
+            $kfl_linea_nsi = Int("kfl_linea_nsi", :dir => :in)
+            $kfl_confi_nsi = Int("kfl_confi_nsi", :dir => :in)
+            $nbdfp_nsi     = Int("nbdfp_nsi",     :dir => :in)
+            $kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
+            $kfl_nota1_nsi = Int("kfl_nota1_nsi", :dir => :in)
+            $kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in)
+            $kfl_penal_nsi = Int("kfl_penal_nsi", :dir => :in)
+            $penal_nsi     = Real("penal_nsi",    :dir => :in)
+            $kfl_bubbl_nsi = Int("kfl_bubbl_nsi", :dir => :in)
 
-            fvins_nsi = Real("fvins_nsi",    :dir => :inout)
-
-            gpden = Real("gpden",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpvis = Real("gpvis",   :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gppor = Real("gppor",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpsp1 = Real("gpsp1",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpsp2 = Real("gpsp2",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpvol = Real("gpvol",    :dir => :in,     :dim => [Dim(vector_size),Dim(pgaus)])
-            gpsha = Real("gpsha",    :dir => :in,     :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
-            gpcar = Real("gpcar",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(mnode),Dim(pgaus)])
-            gpadv = Real("gpadv",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gpvep = Real("gpvep",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gpprp = Real("gpprp",    :dir => :inout,  :dim => [Dim(vector_size),Dim(pgaus)])      
-            gpgrp = Real("gpgrp",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gprhs = Real("gprhs",    :dir => :inout,  :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus)])
-            gpvel = Real("gpvel",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus),Dim()])
-            gpsgs = Real("gpsgs",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pgaus),Dim()])
-            wgrgr = Real("wgrgr",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode),Dim(pgaus)])
-            agrau = Real("agrau",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pgaus)])
-            elvel = Real("elvel",    :dir => :in,     :dim => [Dim(vector_size),Dim(ndime),Dim(pnode),Dim()])
-            elauu = Real("elauu",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode*ndime),Dim(pnode*ndime)])
-            elaup = Real("elaup",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode*ndime),Dim(pnode)])
-            elapp = Real("elapp",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode)])
-            elapu = Real("elapu",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode),Dim(pnode*ndime)])
-            elrbu = Real("elrbu",    :dir => :out,    :dim => [Dim(vector_size),Dim(ndime),Dim(pnode)])
-            elrbp = Real("elrbp",    :dir => :out,    :dim => [Dim(vector_size),Dim(pnode)])
-            dtinv_loc = Real("dtinv_loc",    :dir => :in,     :dim  => [Dim(vector_size)])
-            dtsgs = Real("dtsgs",    :dir => :in,     :dim  => [Dim(vector_size)])
+            $pnode     = Int("pnode",             :dir => :in)
+            $pgaus     = Int("pgaus",             :dir => :in)
+            $gpden     = Real("gpden",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpvis     = Real("gpvis",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gppor     = Real("gppor",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpsp1     = Real("gpsp1",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpsp2     = Real("gpsp2",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpvol     = Real("gpvol",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpsha     = Real("gpsha",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pgaus)])
+            $gpcar     = Real("gpcar",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($mnode),Dim($pgaus)])
+            $gpadv     = Real("gpadv",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
+            $gpvep     = Real("gpvep",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
+            $gpgrp     = Real("gpgrp",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
+            $gprhs     = Real("gprhs",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
+            $gprhc     = Real("gprhc",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpvel     = Real("gpvel",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus),Dim()])
+            $gpsgs     = Real("gpsgs",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus),Dim()])
+            $elvel     = Real("elvel",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pnode),Dim()])
+            $elpre     = Real("elpre",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim()])
+            $elbub     = Real("elbub",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            # Matrices
+            $elauu     = Real("elauu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode*$ndime),Dim($pnode*$ndime)])
+            $elaup     = Real("elaup",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode*$ndime),Dim($pnode)])
+            $elapp     = Real("elapp",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pnode)])
+            $elapu     = Real("elapu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pnode*$ndime)])
+            $elrbu     = Real("elrbu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pnode)])
+            $elrbp     = Real("elrbp",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode)])
+            # Others
+            $dtinv_loc = Real("dtinv_loc",        :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            $dtsgs     = Real("dtsgs",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            $pbubl     = Int("pbubl",             :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            $gpsha_bub = Real("gpsha_bub",        :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
+            $gpcar_bub = Real("gpcar_bub",        :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
+            # Enrichement Element matrices
+            $elauq     = Real("elauq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode*$ndime),Dim(1)])
+            $elapq     = Real("elapq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim(1)])
+            $elaqu     = Real("elaqu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1),Dim($pnode*$ndime)])
+            $elaqp     = Real("elaqp",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1),Dim($pnode)])
+            $elaqq     = Real("elaqq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1),Dim(1)])
+            $elrbq     = Real("elrbq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1)])
 
             p = Procedure("nsi_element_assembly_split_oss",
-                          [ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,
-                           gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,
-                           gpgrp,gprhs,gpvel,gpsgs,wgrgr,agrau,elvel,elauu,
-                           elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,
-                           fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi])
+                          [$pnode,$pgaus,$gpden,$gpvis,$gppor,$gpsp1,$gpsp2,$gpvol,$gpsha,$gpcar,$gpadv,
+                           $gpvep,$gpgrp,$gprhs,$gprhc,$gpvel,$gpsgs,$elvel,$elpre,$elbub,$elauu,$elaup,
+                           $elapp,$elapu,$elrbu,$elrbp,$dtinv_loc,$dtsgs,$pbubl,$gpsha_bub,$gpcar_bub,
+                           $elauq,$elapq,$elaqu,$elaqp,$elaqq,$elrbq,
+                           # Original global variables
+                           $kfl_lumped,$mnode,$ntens,$kfl_duatss,$fact_duatss,$kfl_stabi_nsi,$fvins_nsi,
+                           $fcons_nsi,$bemol_nsi,$kfl_regim_nsi,$fvela_nsi,$kfl_rmom2_nsi,$kfl_press_nsi,
+                           $kfl_p1ve2_nsi,$kfl_linea_nsi,$kfl_confi_nsi,$nbdfp_nsi,
+                           $kfl_sgsti_nsi,$kfl_nota1_nsi,$kfl_limit_nsi,$kfl_penal_nsi,$penal_nsi,
+                           $kfl_bubbl_nsi,$ndime]
+                          )
             return p
           end
         #+END_SRC
@@ -646,92 +679,159 @@
       - Function declaration:
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           def generate_ref(options)        
-             opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
-             opts.update(options)
+            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
+            opts.update(options)
             macros = ""
 
-             if opts[:preprocessor] then
-               p_vector_length = "VECTOR_SIZE"
-               p_def_vect = "DEF_VECT"
-               macros = <<EOF
-          #define VECTOR_SIZE #{opts[:vector_length]}
+            if opts[:preprocessor] then
+              p_vector_length = "VECTOR_SIZE"
+              p_def_vect = "DEF_VECT"
+              macros = <<EOF
+                #define VECTOR_SIZE #{opts[:vector_length]}
           EOF
-             else
-               p_vector_length = "#{opts[:vector_length]}"
-               p_def_vect = "1:#{opts[:vector_length]}"
-             end
+            else
+              p_vector_length = "#{opts[:vector_length]}"
+              p_def_vect = "1:#{opts[:vector_length]}"
+            end
 
-             decl_ref = <<EOF
-                subroutine nsi_element_assembly_split_oss(&
-                ndime,mnode,pnode,pgaus,pevat,gpden,gpvis,gppor,&
-                gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,&
-                gpgrp,gprhs,gpvel,gpsgs,wgrgr,agrau,elvel,elauu,&
-                elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
+            decl_ref = <<EOF
+               subroutine nsi_element_assembly_split_oss(&
+               pnode,pgaus,gpden,gpvis,gppor,gpsp1,gpsp2,gpvol,   &
+               gpsha,gpcar,gpadv,gpvep,gpgrp,gprhs,gprhc,gpvel,   &
+               gpsgs,elvel,elpre,elbub,elauu,elaup,elapp,elapu,   &
+               elrbu,elrbp,dtinv_loc,dtsgs,pbubl,gpsha_bub,       &
+               gpcar_bub,elauq,elapq,elaqu,elaqp,elaqq,elrbq,&
+               ! Original global variables
+               kfl_lumped,&
+               mnode,ntens,&
+               kfl_duatss,&
+               fact_duatss,&
+               kfl_stabi_nsi,&
+               fvins_nsi,fcons_nsi,bemol_nsi,kfl_regim_nsi,&
+               fvela_nsi,kfl_rmom2_nsi,kfl_press_nsi,&
+               kfl_p1ve2_nsi,kfl_linea_nsi,&
+               kfl_confi_nsi,nbdfp_nsi,kfl_sgsti_nsi,&
+               kfl_nota1_nsi,kfl_limit_nsi,kfl_penal_nsi,&
+               penal_nsi,&
+               kfl_bubbl_nsi,&
+               ndime)
 
-                #{gen_def_parameters}
+               #{gen_def_parameters}
 
-                integer(kind=4), intent(in)    :: ndime,mnode,pnode,pgaus,pevat,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi
-                real(kind=8),    intent(in)    :: gpden(#{p_vector_length},pgaus)
-                real(kind=8),    intent(in)    :: gpvis(#{p_vector_length},pgaus)
-                real(kind=8),    intent(in)    :: gppor(#{p_vector_length},pgaus)
-                real(kind=8),    intent(in)    :: gpsp1(#{p_vector_length},pgaus)
-                real(kind=8),    intent(in)    :: gpsp2(#{p_vector_length},pgaus)
-                real(kind=8),    intent(in)    :: gpvol(#{p_vector_length},pgaus)
-                real(kind=8),    intent(in)    :: gpsha(#{p_vector_length},pnode,pgaus)
-                real(kind=8),    intent(in)    :: gpcar(#{p_vector_length},ndime,mnode,pgaus)
-                real(kind=8),    intent(in)    :: gpadv(#{p_vector_length},ndime,pgaus)
-                real(kind=8),    intent(inout) :: gpvep(#{p_vector_length},ndime,pgaus)
-                real(kind=8),    intent(inout) :: gpprp(#{p_vector_length},pgaus)      
-                real(kind=8),    intent(inout) :: gpgrp(#{p_vector_length},ndime,pgaus)
-                real(kind=8),    intent(inout) :: gprhs(#{p_vector_length},ndime,pgaus)
-                real(kind=8),    intent(in)    :: gpvel(#{p_vector_length},ndime,pgaus,*)
-                real(kind=8),    intent(in)    :: gpsgs(#{p_vector_length},ndime,pgaus,*)
-                real(kind=8),    intent(out)   :: wgrgr(#{p_vector_length},pnode,pnode,pgaus)
-                real(kind=8),    intent(out)   :: agrau(#{p_vector_length},pnode,pgaus)
-                real(kind=8),    intent(in)    :: elvel(#{p_vector_length},ndime,pnode,*)
-                real(kind=8),    intent(out)   :: elauu(#{p_vector_length},pnode*ndime,pnode*ndime)
-                real(kind=8),    intent(out)   :: elaup(#{p_vector_length},pnode*ndime,pnode)
-                real(kind=8),    intent(out)   :: elapp(#{p_vector_length},pnode,pnode)
-                real(kind=8),    intent(out)   :: elapu(#{p_vector_length},pnode,pnode*ndime)
-                real(kind=8),    intent(out)   :: elrbu(#{p_vector_length},ndime,pnode)
-                real(kind=8),    intent(out)   :: elrbp(#{p_vector_length},pnode)
-                real(kind=8),    intent(in)    :: dtinv_loc(#{p_vector_length})
-                real(kind=8),    intent(in)    :: dtsgs(#{p_vector_length})
-                real(kind=8),    intent(inout)    :: fvins_nsi
-                real(kind=8)                   :: gpsp1_p(#{p_vector_length},pgaus)
-                real(kind=8)                   :: gpsp1_v(#{p_vector_length},pgaus)
-                real(kind=8)                   :: c1(#{p_vector_length}),c2(#{p_vector_length})
-                real(kind=8)                   :: c3(#{p_vector_length}),c4(#{p_vector_length})
-                real(kind=8)                   :: alpha(#{p_vector_length}),beta(#{p_vector_length})
-                real(kind=8)                   :: fact0(#{p_vector_length})
-                real(kind=8)                   :: fact1(#{p_vector_length})
-                real(kind=8)                   :: fact2(#{p_vector_length})
-                real(kind=8)                   :: fact3(#{p_vector_length})
-                real(kind=8)                   :: fact4(#{p_vector_length})
-                real(kind=8)                   :: fact5(#{p_vector_length})
-                real(kind=8)                   :: fact6(#{p_vector_length})
-                real(kind=8)                   :: fact7(#{p_vector_length})
-                real(kind=8)                   :: fact8(#{p_vector_length})
-                real(kind=8)                   :: gpveo(#{p_vector_length},3)
-                real(kind=8)                   :: fact1_p(#{p_vector_length})
-                integer(kind=4)                :: inode,jnode,idofn,jdofn,idofv,jdof2,jdof3
-                integer(kind=4)                :: idof1,idof3,idof2,igaus,idime,jdof1,jdofv,itime
+               integer(ip), intent(in)    :: ndime 
+               integer(ip), intent(in)    :: kfl_lumped
+               integer(ip), intent(in)    :: mnode
+               integer(ip), intent(in)    :: ntens
+               integer(ip), intent(in)    :: kfl_duatss
+               integer(ip), intent(in)    :: fact_duatss
+               integer(ip), intent(in)    :: kfl_stabi_nsi
+               real(rp),    intent(in)    :: fvins_nsi
+               real(rp),    intent(in)    :: fcons_nsi
+               real(rp),    intent(in)    :: bemol_nsi
+               integer(ip), intent(in)    :: kfl_regim_nsi
+               real(rp),    intent(in)    :: fvela_nsi(3)
+               integer(ip), intent(in)    :: kfl_rmom2_nsi
+               integer(ip), intent(in)    :: kfl_press_nsi
+               integer(ip), intent(in)    :: kfl_p1ve2_nsi
+               integer(ip), intent(in)    :: kfl_linea_nsi
+               integer(ip), intent(in)    :: kfl_confi_nsi
+               integer(ip), intent(in)    :: nbdfp_nsi
+               integer(ip), intent(in)    :: kfl_sgsti_nsi
+               integer(ip), intent(in)    :: kfl_nota1_nsi
+               integer(ip), intent(in)    :: kfl_limit_nsi
+               integer(ip), intent(in)    :: kfl_penal_nsi
+               real(rp),    intent(in)    :: penal_nsi
+               integer(ip), intent(in)    :: kfl_bubbl_nsi
+
+               integer(ip), intent(in)    :: pnode,pgaus
+               real(rp),    intent(in)    :: gpden(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpvis(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gppor(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpsp1(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpsp2(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpvol(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpsha(#{opts[:vector_length]},pnode,pgaus)
+               real(rp),    intent(in)    :: gpcar(#{opts[:vector_length]},ndime,mnode,pgaus)
+               real(rp),    intent(in)    :: gpadv(#{opts[:vector_length]},ndime,pgaus)
+               real(rp),    intent(inout) :: gpvep(#{opts[:vector_length]},ndime,pgaus)
+               real(rp),    intent(inout) :: gpgrp(#{opts[:vector_length]},ndime,pgaus)
+               real(rp),    intent(inout) :: gprhs(#{opts[:vector_length]},ndime,pgaus)
+               real(rp),    intent(inout) :: gprhc(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpvel(#{opts[:vector_length]},ndime,pgaus,*)
+               real(rp),    intent(in)    :: gpsgs(#{opts[:vector_length]},ndime,pgaus,*)
+               real(rp),    intent(in)    :: elvel(#{opts[:vector_length]},ndime,pnode,*)
+               real(rp),    intent(in)    :: elpre(#{opts[:vector_length]},pnode,*)
+               real(rp),    intent(in)    :: elbub(#{opts[:vector_length]})
+               ! Matrices
+               real(rp),    intent(out)   :: elauu(#{opts[:vector_length]},pnode*ndime,pnode*ndime)
+               real(rp),    intent(out)   :: elaup(#{opts[:vector_length]},pnode*ndime,pnode)
+               real(rp),    intent(out)   :: elapp(#{opts[:vector_length]},pnode,pnode)
+               real(rp),    intent(out)   :: elapu(#{opts[:vector_length]},pnode,pnode*ndime)
+               real(rp),    intent(out)   :: elrbu(#{opts[:vector_length]},ndime,pnode)
+               real(rp),    intent(out)   :: elrbp(#{opts[:vector_length]},pnode)
+               ! Others
+               real(rp),    intent(in)    :: dtinv_loc(#{opts[:vector_length]})
+               real(rp),    intent(in)    :: dtsgs(#{opts[:vector_length]})
+               integer(ip), intent(in)    :: pbubl(#{opts[:vector_length]})
+               real(rp),    intent(in)    :: gpsha_bub(#{opts[:vector_length]},pgaus)
+               real(rp),    intent(in)    :: gpcar_bub(#{opts[:vector_length]},ndime,pgaus)
+               ! Enrichement Element matrices
+               real(rp),    intent(out)   :: elauq(#{opts[:vector_length]},pnode*ndime,1)
+               real(rp),    intent(out)   :: elapq(#{opts[:vector_length]},pnode,1)
+               real(rp),    intent(out)   :: elaqu(#{opts[:vector_length]},1,pnode*ndime)
+               real(rp),    intent(out)   :: elaqp(#{opts[:vector_length]},1,pnode)
+               real(rp),    intent(out)   :: elaqq(#{opts[:vector_length]},1,1)
+               real(rp),    intent(out)   :: elrbq(#{opts[:vector_length]},1)
+               ! Local arrays
+               real(rp)                   :: wgrgr(#{opts[:vector_length]},pnode,pnode,pgaus)
+               real(rp)                   :: agrau(#{opts[:vector_length]},pnode,pgaus)
+               real(rp)                   :: gpsp1_p(#{opts[:vector_length]},pgaus)
+               real(rp)                   :: gpsp1_v(#{opts[:vector_length]},pgaus)
+               real(rp)                   :: gpsp2_v(#{opts[:vector_length]},pgaus)
+               real(rp)                   :: c1(#{opts[:vector_length]})
+               real(rp)                   :: c2(#{opts[:vector_length]})
+               real(rp)                   :: c3(#{opts[:vector_length]})
+               real(rp)                   :: c4(#{opts[:vector_length]})
+               real(rp)                   :: alpha(#{opts[:vector_length]})
+               real(rp)                   :: beta(#{opts[:vector_length]})
+               real(rp)                   :: fact0(#{opts[:vector_length]})
+               real(rp)                   :: fact1(#{opts[:vector_length]})
+               real(rp)                   :: fact2(#{opts[:vector_length]})
+               real(rp)                   :: fact3(#{opts[:vector_length]})
+               real(rp)                   :: fact4(#{opts[:vector_length]})
+               real(rp)                   :: fact5(#{opts[:vector_length]})
+               real(rp)                   :: fact6(#{opts[:vector_length]})
+               real(rp)                   :: fact7(#{opts[:vector_length]})
+               real(rp)                   :: fact8(#{opts[:vector_length]})
+               real(rp)                   :: gpveo(#{opts[:vector_length]},3)
+               real(rp)                   :: fact1_p(#{opts[:vector_length]})
+               real(rp)                   :: dtinv_mod(#{opts[:vector_length]})
+               integer(ip)                :: inode,jnode,jdime
+               integer(ip)                :: idofv,jdof2,jdof3,ivect
+               integer(ip)                :: idof1,idof3,idof2,igaus
+               integer(ip)                :: idime,jdof1,jdofv,itime
           EOF
-          if opts[:preprocessor] then
-            decl_ref = decl_ref + <<EOF
-          #ifdef OPENACC
-          #define DEF_VECT ivect
-          #else
-          #define DEF_VECT 1:#{p_vector_length}
-          #endif
+            if opts[:preprocessor] then
+              decl_ref = decl_ref + <<EOF
+              #ifdef OPENACC
+              #define DEF_VECT ivect
+              #else
+              #define DEF_VECT 1:#{opts[:vector_length]}
+              #endif
           EOF
-          end
+            end
        #+END_SRC
       - Initialization
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           init = <<EOF
+             dtinv_mod = dtinv_loc
+
              gpsp1_p = gpsp1
              gpsp1_v = gpsp1
+             gpsp2_v = gpsp2
+
+             if( kfl_nota1_nsi == 1 ) gpsp1_v = 0.0_rp 
+
              elrbp = 0.0_rp
              elrbu = 0.0_rp
              elapp = 0.0_rp
@@ -741,7 +841,7 @@
           EOF
         #+END_SRC
       - First nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb 
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           first_nest = <<EOF
            if( ndime == 2 ) then
 
@@ -1152,8 +1252,8 @@
       - Assembling pieces
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           set_lang(FORTRAN)
-          k = CKernel::new
-          p = generate_boast_decl(opts[:vector_length])
+          k = CKernel::new(:includes => "immintrin.h")
+          p = generate_boast_decl(opts)
           k.procedure = p
           get_output.print macros
           get_output.print generate_mocks
