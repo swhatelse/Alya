@@ -1612,11 +1612,8 @@
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
 
             }
-            k = CKernel::new
+            k = CKernel::new( :includes => "immintrin.h" )
             k.procedure = p
-            if get_lang == C and opts[:vector_length] > 1 then
-              BOAST::get_output.puts "#include <emmintrin.h>"             
-            end
             pr k_pabdf_nsi.procedure
             pr p
             return k
