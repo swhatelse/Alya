@@ -615,6 +615,33 @@
             return p
           end
         #+END_SRC
+****** Def parameters
+       We can get rid of ndime and vector_size because we can easily
+       modif these parameters in boast
+       #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         def gen_def_parameters
+           parameters =<<EOF
+           integer,     parameter  :: ip    = 4               ! 4-byte integer
+           integer,     parameter  :: rp    = 8               ! Double precision 
+
+           real(rp),    parameter  :: zeror = epsilon(1.0_rp) ! Almost zero
+           integer(ip), parameter  :: TET04 = 30              ! 3D 
+           integer(ip), parameter  :: TET10 = 31              ! 3D 
+           integer(ip), parameter  :: PYR05 = 32              ! 3D 
+           integer(ip), parameter  :: PYR14 = 33              ! 3D 
+           integer(ip), parameter  :: PEN06 = 34              ! 3D  
+           integer(ip), parameter  :: PEN15 = 35              ! 3D 
+           integer(ip), parameter  :: PEN18 = 36              ! 3D 
+           integer(ip), parameter  :: HEX08 = 37              ! 3D 
+           integer(ip), parameter  :: HEX20 = 38              ! 3D 
+           integer(ip), parameter  :: HEX27 = 39              ! 3D 
+           integer(ip), parameter  :: HEX64 = 40              ! 3D 
+           integer(ip), parameter  :: SHELL = 51              ! 3D shell element
+           integer(ip), parameter  :: BAR3D = 52              ! 3D bar element
+         EOF
+           return parameters
+         end
+       #+END_SRC
 ****** Generate reference implementation 
       - Function declaration:
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
@@ -641,8 +668,7 @@
                 gpgrp,gprhs,gpvel,gpsgs,wgrgr,agrau,elvel,elauu,&
                 elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,fvins_nsi,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi)
 
-                integer, parameter  :: ip    = 4
-                integer, parameter  :: rp    = 8
+                #{gen_def_parameters}
 
                 integer(kind=4), intent(in)    :: ndime,mnode,pnode,pgaus,pevat,kfl_lumped,kfl_limit_nsi,kfl_sgsti_nsi,nbdfp_nsi
                 real(kind=8),    intent(in)    :: gpden(#{p_vector_length},pgaus)
