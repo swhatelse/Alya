@@ -6,57 +6,57 @@ require '/tmp/alya.rb'
 
 class TestFor < Minitest::Test
   def init(vector_size,dim,seed)
-    NArray.srand(seed) if seed
+    ANArray.srand(seed) if seed
     @pnode = 100
     @mnode = 100
     @pgaus = 100
     @pevat = 100
     @ndime = dim
-    @fvins_nsi = 1.0
+    @fvins_nsi = 2.0
     @kfl_lumped = 1
     @kfl_limit_nsi = 1
     @kfl_sgsti_nsi = 1
     @nbdfp_nsi = 3
 
-    @gpden = NArray.float(vector_size,@pgaus).random
-    @gpvis = NArray.float(vector_size,@pgaus).random
-    @gppor = NArray.float(vector_size,@pgaus).random 
-    @gpsp1 = NArray.float(vector_size,@pgaus).random 
-    @gpsp2 = NArray.float(vector_size,@pgaus).random 
-    @gpvol = NArray.float(vector_size,@pgaus).random 
-    @gpsha = NArray.float(vector_size,@pnode,@pgaus).random 
-    @gpcar = NArray.float(vector_size,@ndime,@mnode,@pgaus).random
-    @gpadv = NArray.float(vector_size,@ndime,@pgaus).random 
-    @gpvep = NArray.float(vector_size,@ndime,@pgaus).random 
-    @gpprp = NArray.float(vector_size,@pgaus).random 
-    @gpgrp = NArray.float(vector_size,@ndime,@pgaus).random 
-    @gprhs = NArray.float(vector_size,@ndime,@pgaus).random 
-    @gpvel = NArray.float(vector_size,@ndime,@pgaus,10).random
-    @gpsgs = NArray.float(vector_size,@ndime,@pgaus,10).random
-    @elvel = NArray.float(vector_size,@ndime,@pnode,10).random
-    @dtinv_loc = NArray.float(vector_size).random
-    @dtsgs = NArray.float(vector_size).random
+    @gpden = ANArray.float(64,vector_size,@pgaus).random!
+    @gpvis = ANArray.float(64,vector_size,@pgaus).random!
+    @gppor = ANArray.float(64,vector_size,@pgaus).random! 
+    @gpsp1 = ANArray.float(64,vector_size,@pgaus).random! 
+    @gpsp2 = ANArray.float(64,vector_size,@pgaus).random! 
+    @gpvol = ANArray.float(64,vector_size,@pgaus).random! 
+    @gpsha = ANArray.float(64,vector_size,@pnode,@pgaus).random! 
+    @gpcar = ANArray.float(64,vector_size,@ndime,@mnode,@pgaus).random!
+    @gpadv = ANArray.float(64,vector_size,@ndime,@pgaus).random! 
+    @gpvep = ANArray.float(64,vector_size,@ndime,@pgaus).random! 
+    @gpprp = ANArray.float(64,vector_size,@pgaus).random! 
+    @gpgrp = ANArray.float(64,vector_size,@ndime,@pgaus).random! 
+    @gprhs = ANArray.float(64,vector_size,@ndime,@pgaus).random! 
+    @gpvel = ANArray.float(64,vector_size,@ndime,@pgaus,10).random!
+    @gpsgs = ANArray.float(64,vector_size,@ndime,@pgaus,10).random!
+    @elvel = ANArray.float(64,vector_size,@ndime,@pnode,10).random!
+    @dtinv_loc = ANArray.float(64,vector_size).random!
+    @dtsgs = ANArray.float(64,vector_size).random!
 
-    @wgrgr_ref = NArray.float(vector_size,@pnode,@pnode,@pgaus)
-    @agrau_ref = NArray.float(vector_size,@pnode,@pgaus)
-    @elauu_ref = NArray.float(vector_size,@pnode*@ndime,@pnode*@ndime)
-    @elaup_ref = NArray.float(vector_size,@pnode*@ndime,@pnode)
-    @elapp_ref = NArray.float(vector_size,@pnode,@pnode)
-    @elapu_ref = NArray.float(vector_size,@pnode,@pnode*@ndime)
-    @elrbu_ref = NArray.float(vector_size,@ndime,@pnode)
-    @elrbp_ref = NArray.float(vector_size,@pnode)
+    @wgrgr_ref = ANArray.float(64,vector_size,@pnode,@pnode,@pgaus)
+    @agrau_ref = ANArray.float(64,vector_size,@pnode,@pgaus)
+    @elauu_ref = ANArray.float(64,vector_size,@pnode*@ndime,@pnode*@ndime)
+    @elaup_ref = ANArray.float(64,vector_size,@pnode*@ndime,@pnode)
+    @elapp_ref = ANArray.float(64,vector_size,@pnode,@pnode)
+    @elapu_ref = ANArray.float(64,vector_size,@pnode,@pnode*@ndime)
+    @elrbu_ref = ANArray.float(64,vector_size,@ndime,@pnode)
+    @elrbp_ref = ANArray.float(64,vector_size,@pnode)
 
-    @wgrgr_boast = NArray.float(vector_size,@pnode,@pnode,@pgaus)
-    @agrau_boast = NArray.float(vector_size,@pnode,@pgaus)
-    @elauu_boast = NArray.float(vector_size,@pnode*@ndime,@pnode*@ndime)
-    @elaup_boast = NArray.float(vector_size,@pnode*@ndime,@pnode)
-    @elapp_boast = NArray.float(vector_size,@pnode,@pnode)
-    @elapu_boast = NArray.float(vector_size,@pnode,@pnode*@ndime)
-    @elrbu_boast = NArray.float(vector_size,@ndime,@pnode)
-    @elrbp_boast = NArray.float(vector_size,@pnode)
+    @wgrgr_boast = ANArray.float(64,vector_size,@pnode,@pnode,@pgaus)
+    @agrau_boast = ANArray.float(64,vector_size,@pnode,@pgaus)
+    @elauu_boast = ANArray.float(64,vector_size,@pnode*@ndime,@pnode*@ndime)
+    @elaup_boast = ANArray.float(64,vector_size,@pnode*@ndime,@pnode)
+    @elapp_boast = ANArray.float(64,vector_size,@pnode,@pnode)
+    @elapu_boast = ANArray.float(64,vector_size,@pnode,@pnode*@ndime)
+    @elrbu_boast = ANArray.float(64,vector_size,@ndime,@pnode)
+    @elrbp_boast = ANArray.float(64,vector_size,@pnode)
   end
   def test_nests_orig_vs_boast
-    nests = [1,2]
+    nests = [1,2,3]
     (1..2).each{|vector_size|
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
       k_boast_params = {:vector_length => vector_size, :nests => nests}
