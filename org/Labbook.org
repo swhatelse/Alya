@@ -886,7 +886,7 @@
                                elauu(#{p_def_vect},idofv,jdofv) = elauu(#{p_def_vect},idofv,jdofv) + fact1(#{p_def_vect}) * gpcar(#{p_def_vect},3,inode,igaus)
                             end do
                             if( fvins_nsi == 2.0 ) then
-                               fact1                          = -2.0 / 3.0 * gpvis(#{p_def_vect},igaus) * gpvol(#{p_def_vect},igaus) * gpcar(#{p_def_vect},idime,inode,igaus)
+                               fact1                          = -2.0_rp / 3.0_rp * gpvis(#{p_def_vect},igaus) * gpvol(#{p_def_vect},igaus) * gpcar(#{p_def_vect},idime,inode,igaus)
                                do jnode = 1,pnode
                                   jdofv                       = (jnode-1)*ndime + 1
                                   elauu(#{p_def_vect},idofv,jdofv) = elauu(#{p_def_vect},idofv,jdofv) + fact1(#{p_def_vect}) * gpcar(#{p_def_vect},1,jnode,igaus)
