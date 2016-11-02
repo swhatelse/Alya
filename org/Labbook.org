@@ -1450,7 +1450,7 @@
             opts.update(options)
 
             x = Int("x", :dir => :in)
-            y = Int("y")
+            y = Real("y")
             pabdf_nsi = Procedure("pabdf_nsi",[x], :return => y){
               pr y === 1.0
             }          
