@@ -109,7 +109,7 @@ class TestFor < Minitest::Test
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
       k_boast_params = {:vector_length => vector_size, :nests => nests}
 
-      k_orig = generate_ref(k_orig_params)
+      k_orig = generate_ref_v2(k_orig_params)
       k_orig.build(:FCFLAGS => "-cpp")
 
       (2..3).each{|dim|
@@ -128,7 +128,7 @@ class TestFor < Minitest::Test
                            @fcons_nsi,@bemol_nsi,@kfl_regim_nsi,@fvela_nsi,@kfl_rmom2_nsi,@kfl_press_nsi,
                            @kfl_p1ve2_nsi,@kfl_linea_nsi,@kfl_confi_nsi,@nbdfp_nsi,
                            @kfl_sgsti_nsi,@kfl_nota1_nsi,@kfl_limit_nsi,@kfl_penal_nsi,@penal_nsi,
-                           @kfl_bubbl_nsi,@ndime)
+                           @kfl_bubbl_nsi,@ndime,@agrau_ref,@wgrgr_ref)
 
           k_boast.run(@pnode,@pgaus,@gpden,@gpvis,@gppor,@gpsp1,@gpsp2,@gpvol,@gpsha,@gpcar,@gpadv,
                            @gpvep,@gpgrp,@gprhs,@gprhc,@gpvel,@gpsgs,@elvel,@elpre,@elbub,@elauu_boast,@elaup_boast,
@@ -139,7 +139,7 @@ class TestFor < Minitest::Test
                            @fcons_nsi,@bemol_nsi,@kfl_regim_nsi,@fvela_nsi,@kfl_rmom2_nsi,@kfl_press_nsi,
                            @kfl_p1ve2_nsi,@kfl_linea_nsi,@kfl_confi_nsi,@nbdfp_nsi,
                            @kfl_sgsti_nsi,@kfl_nota1_nsi,@kfl_limit_nsi,@kfl_penal_nsi,@penal_nsi,
-                           @kfl_bubbl_nsi,@ndime)
+                           @kfl_bubbl_nsi,@ndime,@agrau_boast,@wgrgr_boast)
 
           assert(@agrau_ref == @agrau_boast)
           assert(@wgrgr_ref == @wgrgr_boast)
