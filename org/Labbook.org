@@ -2237,6 +2237,24 @@
             
           end
         #+END_SRC
+******* Sixth nest
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 6 then
+            pr If($kfl_stabi_nsi != -1){
+              pr For(igaus,1,$pgaus){
+                pr For(inode,1,$pnode){
+                  pr For(jnode,inode+1,$pnode){
+                    pr fact[1]             === gpsp1_p[igaus] * $wgrgr[jnode,inode,igaus] * $gpvol[igaus]
+                    pr $elapp[jnode,inode] === $elapp[jnode,inode] + fact[1]
+                    pr $elapp[inode,jnode] === $elapp[inode,jnode] + fact[1]
+                  }
+                  pr fact[1]             === gpsp1_p[igaus] * $wgrgr[inode,inode,igaus] * $gpvol[igaus]
+                  pr $elapp[inode,inode] === $elapp[inode,inode] + fact[1]
+                }
+              }
+            }
+          end
+        #+END_SRC
 ******* Closing procedure
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
             close p
