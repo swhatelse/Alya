@@ -2255,6 +2255,22 @@
             }
           end
         #+END_SRC
+******* Seventh nest
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 7 then
+            pr For(igaus,1,$pgaus){
+              pr fact[1] === $penal_nsi * $gpvol[igaus]
+              pr For(inode,1,$pnode){
+                pr $elapp[inode,inode] === $elapp[inode,inode] + fact[1] * $gpsha[inode,igaus]
+                pr $elrbp[inode]       === $elrbp[inode]       + fact[1] * $gpsha[inode,igaus] * $elpre[inode,1]
+              }
+            }
+          end
+        #+END_SRC        
+******* Eighth nest
+******* Nineth nest
+******* Tenth nest
+******* Eleventh nest
 ******* Closing procedure
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
             close p
