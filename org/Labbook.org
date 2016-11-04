@@ -2393,6 +2393,46 @@
     #+END_SRC
 
 ** BOAST
+*** Expression
+    #+BEGIN_SRC ruby 
+      require 'BOAST'
+      include BOAST
+
+      p = Procedure("foo"){
+        decl x = Int("x")
+        exp = x === 1
+        pr exp
+      }
+              
+      k = p.ckernel
+      k.build
+    #+END_SRC
+
+    #+RESULTS:
+    : SUBROUTINE foo()
+    :   integer, parameter :: wp=kind(1.0d0)
+    :   integer(kind=4) :: x
+    :   x = 1
+    : END SUBROUTINE foo
+
+*** Arrays
+    #+BEGIN_SRC ruby 
+      require 'BOAST'
+      include BOAST
+
+      set_lang(FORTRAN)
+      p = Procedure("foo"){
+        decl a = Real('a', :vector_length => 2, :dim => [Dim(10)])
+        # decl a = Real('a', :dim => [Dim(10)])
+        pr a[1,1..2] === 0.0
+      }
+
+      k = p.ckernel
+      k.build
+    #+END_SRC
+
+    #+RESULTS:
+
 *** Playing with vectors
 **** Vectorization in fortran
     #+BEGIN_SRC ruby 
