@@ -2102,88 +2102,139 @@
 ******* Fourth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 4 then
-          exp_fact0 = fact[0] === $gpvol[igaus] * $gpden[igaus] * dtinv_mod[1]            
-          exp_fact1 = fact[1] === fact[0] *$gpsha[inode,igaus]
+            exp_fact0 = fact[0] === $gpvol[igaus] * $gpden[igaus] * dtinv_mod[1]            
+            exp_fact1 = fact[1] === fact[0] *$gpsha[inode,igaus]
+            exp_elrbu = $elrbu[idime,inode] === $elrbu[idime,inode] + fact[1] * $elvel[idime,inode,2]
 
-          for_elauu = []
-          ['i','j'].each{|e|
-            code = <<EOF
-              for_elauu[for_elauu.length] = For(#{e}dime,1,3){
-                pr #{e}dof[#{e}dime] === $ndime*#{e}node-$ndime+#{e}dime
-                if e == 'i' then
-                  pr $elauu[idof[idime],idof[idime]] === $elauu[idof[idime],idof[idime]] + fact[1]
-                else
-                  pr $elauu[idof[jdime],jdof[jdime]] === $elauu[idof[jdime],jdof[jdime]] - fact[1] * $gpsha[jnode,igaus]
-                end
+            for_elauu1 = []           
+            for_elbru2 = []
+            (2..3).each{|dim|
+              for_elauu1[for_elauu1.length] = For(idime,1,dim){
+                pr idof[idime] === (inode-1)*dim+idime
+                pr $elauu[idof[idime],idof[idime]] === $elauu[idof[idime],idof[idime]] + fact[1]
               }
-          EOF
-          eval code
-          }
-
-          for_elbru = []
-          2.times{|i|
-            for_elbru[i] = For(idime,1,3){
-              pr $elrbu[idime,inode] === $elrbu[idime,inode] - fact[1] * gpveo[idime]
-              pr $elrbu[idime,inode] === $elrbu[idime,inode] + fact[1] * $elvel[idime,inode,2] if i == 0 
+              for_elbru2[for_elbru2.length] = For(idime,1,dim){
+                pr exp_elrbu
+              }
             }
-          }
 
+            for_elauu2 = For(jdime,1,3){
+              pr jdof[jdime] === (jnode-1)*$ndime+jdime
+              pr $elauu[idof[jdime],jdof[jdime]] === $elauu[idof[jdime],jdof[jdime]] - fact[1] * $gpsha[jnode,igaus]
+            }
 
-          block1 = lambda{
-            pr For(igaus,1,$pgaus){
-              pr gpveo === 0.0 
-              pr For(inode,1,$pnode){
-                for1 = For(idime,1,3){
-                  pr gpveo[idime] === gpveo[idime] + $elvel[idime,inode,2] * $gpsha[inode,igaus] 
-                }
-                if opts[:unroll] then
-                  pr for1.unroll
-                else
-                  pr for1
-                end
-              }
-              pr exp_fact0
-              pr For(inode,1,$pnode){
-                pr exp_fact1
-                if opts[:unroll] then
-                  pr for_elauu[0].unroll
-                  pr for_elbru[0].unroll
-                else
-                  pr for_elauu[0]
-                  pr for_elbru[0]
-                end
-                pr For(jnode,1,$pnode){
+            for_elbru1 = For(idime,1,3){
+              pr $elrbu[idime,inode] ===  $elrbu[idime,inode] - fact[1] * gpveo[idime]
+              pr exp_elrbu
+            }
+
+            block_kfl_lumped_1 = lambda{
+              pr For(igaus,1,$pgaus){
+                pr gpveo === 0.0 
+                pr For(inode,1,$pnode){
+                  for1 = For(idime,1,3){
+                    pr gpveo[idime] === gpveo[idime] + $elvel[idime,inode,2] * $gpsha[inode,igaus] 
+                  }
                   if opts[:unroll] then
-                    pr for_elauu[1].unroll
+                    pr for1.unroll
                   else
-                    pr for_elauu[1]
+                    pr for1
                   end
                 }
+                pr exp_fact0
+                pr For(inode,1,$pnode){
+                  pr exp_fact1
+                  if opts[:unroll] then
+                    pr for_elauu1[1].unroll
+                    pr for_elbru1.unroll
+                  else
+                    pr for_elauu1[1]
+                    pr for_elbru1
+                  end
+                  pr For(jnode,1,$pnode){
+                    if opts[:unroll] then
+                      pr for_elauu2.unroll
+                    else
+                      pr for_elauu2
+                    end
+                  }
+                }
               }
             }
-          }
 
-          block2 = lambda{
-            pr If($ndime == 2 => lambda{}, :else => block1)
-          }      
-
-          block3 = lambda{
-            pr For(igaus,1,$pgaus){
-              pr exp_fact0
-              pr For(inode,1,$pnode){
-                pr exp_fact1
-                if opts[:unroll] then
-                  pr for_elauu[0].unroll
-                  pr for_elbru[1].unroll
-                else
-                  pr for_elauu[0]
-                  pr for_elbru[1]
-                end
+            block_kfl_lumped_2 = []
+            2.times{|i|
+              block_kfl_lumped_2[i] = lambda{
+                pr For(igaus,1,$pgaus){
+                  pr exp_fact0
+                  pr For(inode,1,$pnode){
+                    pr exp_fact1
+                    if opts[:unroll] then
+                      pr for_elauu1[i].unroll
+                      pr for_elbru2[i].unroll
+                    else
+                      pr for_elauu1[i]
+                      pr for_elbru2[i]
+                    end
+                  }
+                }
               }
             }
-          }
 
-          pr If($kfl_lumped == 1 => block2, $kfl_lumped == 2 => block3)  
+            if_kfl_lumped_1 = lambda{ pr If($ndime == 2 => lambda{}, :else => block_kfl_lumped_1) }      
+            if_kfl_lumped_2 = lambda{ pr If($ndime == 2 => block_kfl_lumped_2[0] , :else => block_kfl_lumped_2[1])}
+
+            pr If($kfl_lumped == 1 => if_kfl_lumped_1, $kfl_lumped == 2 => if_kfl_lumped_2)  
+          end
+        #+END_SRC
+
+******* Fifth nest
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 5 then
+            for1 = []
+            (2..3).each{|dim|
+              for1[for1.length] = For(igaus,1,$pgaus){
+                pr For(inode,1,$pnode){
+                  for2 = For(idime,1,dim){
+                    pr idof[idime] === (inode-1)*dim + idime
+                  }
+                  if opts[:unroll] then
+                    pr for2.unroll
+                  else
+                    pr for2
+                  end
+                  pr For(jnode,1,$pnode){
+                    pr fact[0] === $gpvol[igaus] * $gpsha[jnode,igaus]
+                    for i in 1..dim do
+                      pr fact[i] === fact[0] * $gpcar[i,inode,igaus]
+                    end
+                    for2 = For(jdime,1,dim){
+                      pr $elapu[jnode,idof[jdime]] === $elapu[jnode,idof[jdime]] + fact[jdime]
+                    }
+                    if opts[:unroll] then
+                      pr for2.unroll
+                    else
+                      pr for2
+                    end
+                    for2 = For(jdime,1,dim){
+                      pr $elaup[idof[jdime],jnode] === $elaup[idof[jdime],jnode] - fact[jdime]
+                    }
+                    if opts[:unroll] then
+                      pr for2.unroll
+                    else
+                      pr for2
+                    end
+                  }
+                }
+              }
+            }
+
+            pr If($ndime == 2 => lambda{
+                    pr for1[0]
+                  }, else: lambda{
+                    pr for1[1]
+                  })  
+            
           end
         #+END_SRC
 ******* Closing procedure
