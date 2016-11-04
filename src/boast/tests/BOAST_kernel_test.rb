@@ -141,9 +141,15 @@ class TestFor < Minitest::Test
                            @kfl_sgsti_nsi,@kfl_nota1_nsi,@kfl_limit_nsi,@kfl_penal_nsi,@penal_nsi,
                            @kfl_bubbl_nsi,@ndime,@agrau_boast,@wgrgr_boast)
 
-          assert(@agrau_ref == @agrau_boast)
-          assert(@wgrgr_ref == @wgrgr_boast)
-          assert(@elauu_ref == @elauu_boast)
+          diff_agrau = (@agrau_ref - @agrau_boast).abs
+          diff_wgrgr = (@wgrgr_ref - @wgrgr_boast).abs
+          diff_elauu = (@elauu_ref - @elauu_boast).abs
+          diff_elrbu = (@elrbu_ref - @elrbu_boast).abs
+          
+          assert((diff_agrau > epsilon).to_a.flatten.include? 1)
+          assert((diff_wgrgr > epsilon).to_a.flatten.include? 1)
+          assert((diff_elauu > epsilon).to_a.flatten.include? 1)
+          assert((diff_elrbu > epsilon).to_a.flatten.include? 1)
         }
       }
     }
