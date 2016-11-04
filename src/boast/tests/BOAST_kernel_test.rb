@@ -101,7 +101,7 @@ class TestFor < Minitest::Test
   def test_nests_orig_vs_boast
     epsilon = 10e-15
     set_fortran_line_length(100)
-    nests = [1,2,3,4,5,6]
+    nests = [1,2,3,4,5,6,7]
 
     (1..2).each{|vector_size|
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
@@ -153,11 +153,31 @@ class TestFor < Minitest::Test
                 diff_wgrgr = (@wgrgr_ref - @wgrgr_boast).abs
                 diff_elauu = (@elauu_ref - @elauu_boast).abs
                 diff_elrbu = (@elrbu_ref - @elrbu_boast).abs
+                diff_elapu = (@elapu_ref - @elapu_boast).abs
+                diff_elaqu = (@elaqu_ref - @elaqu_boast).abs
+                diff_elaqp = (@elaqp_ref - @elaqp_boast).abs
+                diff_elaqq = (@elaqq_ref - @elaqq_boast).abs
+                diff_elapq = (@elapq_ref - @elapq_boast).abs
+                diff_elauq = (@elauq_ref - @elauq_boast).abs
+                diff_elaup = (@elaup_ref - @elaup_boast).abs
+                diff_elapp = (@elapp_ref - @elapp_boast).abs
+                diff_elrbp = (@elrbp_ref - @elrbp_boast).abs
+                diff_elrbq = (@elrbq_ref - @elrbq_boast).abs
                 
                 assert( (not (diff_agrau > epsilon).to_a.flatten.include? 1))
                 assert( (not (diff_wgrgr > epsilon).to_a.flatten.include? 1))
                 assert( (not (diff_elauu > epsilon).to_a.flatten.include? 1))
                 assert( (not (diff_elrbu > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elapu > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elaqu > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elaqp > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elaqq > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elapq > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elauq > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elaup > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elapp > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elrbp > epsilon).to_a.flatten.include? 1))
+                assert( (not (diff_elrbq > epsilon).to_a.flatten.include? 1))
               }
             }
           }
