@@ -2269,6 +2269,69 @@
         #+END_SRC        
 ******* Eighth nest
 ******* Nineth nest
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 9 then
+            for_igaus = []
+            for_igaus[0] = []
+            for_igaus[1] = []
+            
+            if opts[:unroll] then
+              dimensions = [2,3]
+            else
+              dimensions = [$ndime]
+            end
+          
+            dimensions.each{|dim|
+          
+              for_igaus[0][for_igaus[0].length] = For(igaus,1,$pgaus){
+                for1 = For(idime,1,dim){
+                  pr $gpgrp[idime,igaus] === $gpgrp[idime,igaus] + gpsp1_p[igaus] * $gprhs[idime,igaus]
+                }
+                if opts[:unroll] then
+                  pr for1.unroll
+                else
+                  pr for1
+                end
+              }
+                    
+              for_igaus[1][for_igaus[1].length] = For(igaus,1,$pgaus){
+                pr fact[1]     === $gpden[igaus] * $dtsgs[1] * gpsp1_v[igaus]
+                pr fact1_p[1]  === $gpden[igaus] * $dtsgs[1] * gpsp1_p[igaus]
+                for1 = For(idime,1,dim){
+                  pr $gpvep[idime,igaus] === $gpvep[idime,igaus] + fact[1]    * $gpsgs[idime,igaus,2]
+                  pr $gpgrp[idime,igaus] === $gpgrp[idime,igaus] + fact1_p[1] * $gpsgs[idime,igaus,2]
+                }
+                if opts[:unroll] then
+                  pr for1.unroll
+                else
+                  pr for1
+                end
+              }
+            }
+          
+            if_ndime = []
+            2.times{|i|
+              if opts[:unroll] then
+                if_ndime[i] = If($ndime == 2 => lambda{
+                                   pr for_igaus[i][0]
+                                 }, :else => lambda{
+                                   pr for_igaus[i][1]
+                                 })
+              else
+                if_ndime[i] = for_igaus[i][0]
+              end
+            }
+            
+            block = lambda{
+              pr if_ndime[0]
+              pr If($kfl_sgsti_nsi == 1){
+                pr if_ndime[1]
+              }
+            }
+          
+            pr If($kfl_stabi_nsi == -1 => lambda{ pr $gpgrp === 0.0 }, :else => block)
+          end
+        #+END_SRC        
 ******* Tenth nest
 ******* Eleventh nest
 ******* Closing procedure
