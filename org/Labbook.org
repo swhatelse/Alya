@@ -1894,7 +1894,12 @@
             decl jdof = Int("jdof", :dim => [Dim(3)])
         #+END_SRC
 ******* Initialisation
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb 
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:unroll] then
+            dimensions = [2,3]
+          else
+            dimensions = [$ndime]
+          end
           pr dtinv_mod === $dtinv_loc
           pr gpsp1_p === $gpsp1
           pr gpsp1_v === $gpsp1
@@ -2333,6 +2338,54 @@
           end
         #+END_SRC        
 ******* Tenth nest
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 10 then
+            for_igaus = []
+            dimensions.each{|dim|
+              for_igaus[for_igaus.length] = For(igaus,1,$pgaus){
+                pr fact[4] === $gpden[igaus] * dtinv_mod[1]
+                pr For(itime,2,$nbdfp_nsi){
+                  for_idime = For(idime,1,dim){
+                    pr $gprhs[idime,igaus] === $gprhs[idime,igaus] - k_pabdf_nsi.procedure.call(itime) * fact[4] * $gpvel[idime,igaus,itime]
+                  }
+                  if opts[:unroll] then
+                    pr for_idime.unroll
+                  else
+                    pr for_idime
+                  end
+                }
+                pr For(inode,1,$pnode){
+                  pr fact[1] === $gpvol[igaus] * $gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
+                  pr fact[3] === $gpvol[igaus] * $agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
+                  for_idime = For(idime,1,dim){
+                    pr $elrbu[idime,inode] === $elrbu[idime,inode] + fact[1] * $gprhs[idime,igaus] + fact[3] * $gpvep[idime,igaus]
+                  }
+                  if opts[:unroll] then
+                    pr for_idime.unroll
+                  else
+                    pr for_idime
+                  end
+                  pr $elrbp[inode] === $elrbp[inode] + $gpvol[igaus] * $gpsha[inode,igaus] * $gprhc[igaus]  # ( rhs, q )
+                  for_idime = For(idime,1,dim){
+                    pr $elrbp[inode] === $elrbp[inode] + $gpvol[igaus] * $gpcar[idime,inode,igaus] * $gpgrp[idime,igaus] # ( P2' , grad(q) ) 
+                  }
+                  if opts[:unroll] then
+                    pr for_idime.unroll
+                  else
+                    pr for_idime
+                  end
+                }
+              }
+            }
+            
+            if opts[:unroll] then
+              pr If($ndime == 2 => lambda{ pr for_igaus[0] }, :else => lambda{ pr for_igaus[1] })
+            else
+              pr for_igaus[0]
+            end
+          end
+        #+END_SRC        
+
 ******* Eleventh nest
 ******* Closing procedure
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
