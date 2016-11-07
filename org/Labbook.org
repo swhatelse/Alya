@@ -1860,7 +1860,7 @@
             k_pabdf_nsi = CKernel::new
             k_pabdf_nsi.procedure = pabdf_nsi
             k_pabdf_nsi.build
-
+            
         #+END_SRC
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
@@ -2278,6 +2278,50 @@
           end
         #+END_SRC        
 ******* Eighth nest
+        Maybe blocking can be interesting for the first nested loop.
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          if opts[:nests].include? 8 then
+            for_igaus = For(igaus,1,$pgaus){
+              pr c1[1] === 0.0 
+              pr c2[1] === 0.0 
+              pr c3[1] === 0.0 
+              
+              pr For(idime,1,$ndime){
+                pr c4[1] === 0.0
+                pr For(inode,1,$pnode){
+                  pr c4[1] === c4[1] + $agrau[inode,igaus] * $elvel[idime,inode,1]
+                }
+                pr c4[1] === $gpsp1[igaus] * c4[1]
+                pr c1[1] === c1[1] + ( $gpvep[idime,igaus] - c4[1] )**2
+                pr c3[1] === c3[1] + $gpvep[idime,igaus] * $gpvep[idime,igaus]
+                pr c2[1] === c2[1] + c4[1] * c4[1]
+              }
+
+              # Impossible to have operator with register functions
+              # pr c3[1]   === sqrt( c2[1] ) + sqrt( c3[1] )  
+              pr c3[1]   === sqrt( c3[1] )  
+              pr c3[1]   === c3[1] + sqrt( c2[1] )
+              pr c1[1]   === sqrt( c1[1] )
+              pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0) )
+
+              pr If($kfl_limit_nsi == 1 => lambda{
+                      pr alpha[1] === min(1.0,(-beta[1]+1.0)*2.0)
+                    }, $kfl_limit_nsi == 2 => lambda{
+                      pr alpha[1] === (tanh((beta[1]-0.8)*20.0)+1.0)*0.5
+                    })
+              pr For(idime,1,$ndime){
+                pr $gpvep[idime,igaus] === alpha[1] * $gpvep[idime,igaus]
+              }
+            }
+
+            
+            pr If( $kfl_stabi_nsi == -1 => lambda{
+                     pr $gpvep === 0.0
+                   }, $kfl_limit_nsi == -1 => lambda{
+                     pr $gpvep === 0.0
+                   }, $kfl_limit_nsi > 0 => lambda{ pr for_igaus } )
+          end
+        #+END_SRC        
 ******* Nineth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 9 then
