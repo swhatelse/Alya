@@ -2473,7 +2473,9 @@
 
             pr If(maxval($pbubl) == 1){
               pr If($kfl_stabi_nsi != -1){
-
+                if get_lang == FORTRAN then
+                  stop
+                end
               }
               
               pr $elauq === 0.0
