@@ -2205,7 +2205,7 @@
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 5 then
             for1 = []
-            (2..3).each{|dim|
+            dimensions.each{|dim|
               for1[for1.length] = For(igaus,1,$pgaus){
                 pr For(inode,1,$pnode){
                   for2 = For(idime,1,dim){
@@ -2218,10 +2218,8 @@
                   end
                   pr For(jnode,1,$pnode){
                     pr fact[0] === $gpvol[igaus] * $gpsha[jnode,igaus]
-                    for i in 1..dim do
-                      pr fact[i] === fact[0] * $gpcar[i,inode,igaus]
-                    end
                     for2 = For(jdime,1,dim){
+                      pr fact[jdime] === fact[0] * $gpcar[jdime,inode,igaus]
                       pr $elapu[jnode,idof[jdime]] === $elapu[jnode,idof[jdime]] + fact[jdime]
                     }
                     if opts[:unroll] then
@@ -2242,12 +2240,15 @@
               }
             }
 
-            pr If($ndime == 2 => lambda{
-                    pr for1[0]
-                  }, else: lambda{
+            if opts[:unroll] then
+              pr If($ndime == 2 => lambda{
+                      pr for1[0]
+                    }, else: lambda{
                     pr for1[1]
-                  })  
-            
+                    })  
+              else
+              pr for1[0]
+            end
           end
         #+END_SRC
 ******* Sixth nest
