@@ -2106,6 +2106,9 @@
                     }, else: lambda{
                       pr for1[1]
                     })  
+              else
+                pr for1[0]
+              end
             }
           end
         #+END_SRC
