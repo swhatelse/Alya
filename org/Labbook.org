@@ -2316,9 +2316,7 @@
               }
 
               # Impossible to have operator with register functions
-              # pr c3[1]   === sqrt( c2[1] ) + sqrt( c3[1] )  
-              pr c3[1]   === sqrt( c3[1] )  
-              pr c3[1]   === c3[1] + sqrt( c2[1] )
+              pr c3[1]   === sqrt( c2[1] ) + sqrt( c3[1] )  
               pr c1[1]   === sqrt( c1[1] )
               pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0) )
 
