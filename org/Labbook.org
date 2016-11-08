@@ -1851,6 +1851,7 @@
             register_funccall("min")
             register_funccall("epsilon")
             register_funccall("tanh")
+            register_funccall("stop") if get_lang == FORTRAN
 
             x = Int("x", :dir => :in)
             y = Real("y")
