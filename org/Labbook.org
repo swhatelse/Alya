@@ -2080,32 +2080,41 @@
 
             pr If($fvins_nsi > 0.9){
               for1 = []
-              2.times{|j|
-                dim = j+2
-                for1[j] = For(igaus,1,$pgaus){ 
+              dimensions.each{|dim|
+                for1[for1.length] = For(igaus,1,$pgaus){ 
 
                   opn for_inode
                     opn for_idime
                       block2.call
                       opn for_jnode
                         block1.call
-                        pr for_jdime.call(dim).unroll, &block3
+                        if opts[:unroll] then
+                          pr for_jdime.call(dim).unroll, &block3
+                        else
+                          pr for_jdime.call(dim), &block3
+                        end
                       close for_jnode
                       pr If($fvins_nsi == 2.0){
                         block4.call
                         opn for_jnode
+                        if opts[:unroll] then
                           pr for_jdime.call(dim).unroll, &block5
+                        else
+                          pr for_jdime.call(dim), &block5
+                        end
                         close for_jnode
                       }
                     close for_idime
                   close for_inode
                 }
               }
-              pr If($ndime == 2 => lambda{
-                      pr for1[0]
-                    }, else: lambda{
-                      pr for1[1]
-                    })  
+              
+              if opts[:unroll] then
+                pr If($ndime == 2 => lambda{
+                        pr for1[0]
+                      }, else: lambda{
+                        pr for1[1]
+                      })  
               else
                 pr for1[0]
               end
