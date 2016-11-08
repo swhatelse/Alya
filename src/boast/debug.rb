@@ -5,9 +5,9 @@ require './mod_set_params.rb'
 class Debug
   include Params
   def self.run
-    nests = [10]
+    nests = [1,2,3,4,5,6,7,8,9,10]
     vector_size=1
-    dimension=3
+    dimension=2
     seed = 10
 
     k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
@@ -40,9 +40,9 @@ class Debug
     # # # 100.times{|i|
     i = 1
     Params.init(vector_size,dimension,seed)
-    @@kfl_lumped = 2 # 1
+    @@kfl_lumped = 1 # 2
     @@kfl_limit_nsi = 1 # 2
-    @@kfl_stabi_nsi = -1 # 1
+    @@kfl_stabi_nsi = 1 # -1
     
     k_orig.run(@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,@@gpsha,@@gpcar,@@gpadv,
                @@gpvep_ref,@@gpgrp_ref,@@gprhs_ref,@@gprhc_ref,@@gpvel,@@gpsgs,@@elvel,@@elpre,@@elbub,@@elauu_ref,@@elaup_ref,
