@@ -1846,7 +1846,6 @@
           def generate_boast_implem(options) 
             opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false}
             opts.update(options)
-            register_funccall("sqrt")
             register_funccall("maxval")
             register_funccall("min")
             register_funccall("epsilon")
@@ -2257,7 +2256,7 @@
               pr If($ndime == 2 => lambda{
                       pr for1[0]
                     }, else: lambda{
-                    pr for1[1]
+                      pr for1[1]
                     })  
               else
               pr for1[0]
@@ -2314,8 +2313,8 @@
                 pr c2[1] === c2[1] + c4[1] * c4[1]
               }
 
-              pr c3[1]   === sqrt( c2[1] ) + sqrt( c3[1] )  
-              pr c1[1]   === sqrt( c1[1] )
+              pr c3[1]   === Sqrt( c2[1] ) + Sqrt( c3[1] )  
+              pr c1[1]   === Sqrt( c1[1] )
               pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0.to_var) )
 
               pr If($kfl_limit_nsi == 1 => lambda{
