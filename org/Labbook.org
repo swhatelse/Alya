@@ -2611,12 +2611,45 @@
 ** November
 *** 2016-11-09
 **** Report
-     Working on kernel matrix assembly.
-     Porting kernel using BOAST (meta programming framework):
-     - Refactoring and targeting C,Fortran,Cuda,OpenCL
-     - Testing different optimization strategies (unrolling, tiling, loop reordering)
-     - Tuning the kernels according to the target architecture( size
-       of vector, blocking size, unrolling factor,etc...)
+***** Structure     
+     1. Intro
+       - Porting on Accelerators \to one of the current model of HPC
+         programming. Target last Xeon Phi KNL \to Vector instructions
+         AVX 512 \to should bring speedup. 
+       - What is BOAST
+         - Porting over architecture time consumming \to BOAST allows to
+           write portable code \to  ease developer's task using meta
+           programming to describe the kernels. 
+         - Code factorization
+         - Multiple targets CPUs, GPUs and accelerators (C, Fortran,
+           CUDA, OpenCL)
+         - Generate multiple variant of same code \to test different
+           optimization strategies.
+         - Tuning to find the best optimizations.
+     2. Using BOAST
+       - What we have already done
+         Working on kernel matrix assembly.
+         - Porting with BOAST:
+           Vectorized code \to Provide example of AVX vectorization
+           along with fortran vectorization.
+       - To be done
+         - Comparing optimization strategies(tiling, unrolling, loop
+           reordering, etc...)
+         - Tuning (size of vector, block size, unrolling factors, etc..)
+***** Writing
+      1. Intro
+         The third approach consist in using accelerators, they are
+         now part of the current HPC programming model
+         porting some of Alya kernels on
+         accelerators such as Knight Landing Xeon Phi. Accelerators
+         are now part of the current programming model along with CPU.
+         Our goal is to try to take advantage such hardware by
+         exploiting for instance their vectorization capabilities,
+         etc... We were given 2 matrix assembly kernels and in order
+         to port these kernels we relied on BOAST, a meta programming
+         framework. 
+      2. Using BOAST
+         
 * Sandbox :noexport:
 ** Fortran
 *** Loop vectorization
