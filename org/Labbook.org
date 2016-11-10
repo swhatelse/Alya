@@ -2608,6 +2608,15 @@
         #+RESULTS:
         | 0.16196962300999998 | 0.034613893740000005 |
 
+** November
+*** 2016-11-09
+**** Report
+     Working on kernel matrix assembly.
+     Porting kernel using BOAST (meta programming framework):
+     - Refactoring and targeting C,Fortran,Cuda,OpenCL
+     - Testing different optimization strategies (unrolling, tiling, loop reordering)
+     - Tuning the kernels according to the target architecture( size
+       of vector, blocking size, unrolling factor,etc...)
 * Sandbox :noexport:
 ** Fortran
 *** Loop vectorization
