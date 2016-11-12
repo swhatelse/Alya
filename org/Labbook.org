@@ -2638,16 +2638,27 @@
          - Tuning (size of vector, block size, unrolling factors, etc..)
 ***** Writing
       1. Intro
-         The third approach consist in using accelerators, they are
-         now part of the current HPC programming model
-         porting some of Alya kernels on
-         accelerators such as Knight Landing Xeon Phi. Accelerators
-         are now part of the current programming model along with CPU.
-         Our goal is to try to take advantage such hardware by
-         exploiting for instance their vectorization capabilities,
-         etc... We were given 2 matrix assembly kernels and in order
-         to port these kernels we relied on BOAST, a meta programming
-         framework. 
+         Along with GPUs, accelerators are also part of the current
+         programming model and the third approach consists in using
+         them. In order to port kernels on accelerators such as the
+         Intel Knight Landing Xeon Phi, we rely on BOAST. BOAST
+         provides scientific application developers with a framework
+         to develop and test application computing kernels. It put
+         the focus on portability by allowing the developer to
+         meta-program his kernels using a dedicated langugage with
+         orthogonal optimizations and it can generate code in C, Fortran,
+         CUDA and OpenCL. Thus, with this framework it is easy to
+         generate different optimized versions of the same kernel to
+         tune the performances according to the target plateform. 
+         We were given 2 matrices assembly kernels and our goal is to:
+         - use BOAST to factorize them, 
+         - vectorize them in order to take advantage of the new AVX 512
+           instructions set, 
+         - test different optimizations strategies such as loop
+           unrolling, loop tiling, loop reordering, etc... 
+         - and find the right unrolling factor, tile size, vector
+           size, etc... 
+
       2. Using BOAST
          
 * Sandbox :noexport:
