@@ -1865,24 +1865,30 @@
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           p = generate_boast_decl(opts, [pabdf_nsi])
-          k = CKernel::new( :includes => "immintrin.h" )
+          includes = ["immintrin.h"]
+          includes.push("string.h", "math.h", "float.h") if get_lang == C
+          k = CKernel::new( :includes => includes )
           k.procedure = p
           pr k_pabdf_nsi.procedure
           opn p
+            allocate = false
+            if get_lang == C then
+              allocate = true
+            end
             # Local arrays
-            decl gpsp1_p   = Real("gpsp1_p",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            decl gpsp1_v   = Real("gpsp1_v",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            decl gpsp2_v   = Real("gpsp2_v",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            decl c1        = Real("c1",        :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            decl c2        = Real("c2",        :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            decl c3        = Real("c3",        :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            decl c4        = Real("c4",        :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            decl alpha     = Real("alpha",     :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            decl beta      = Real("beta",      :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            decl gpsp1_p   = Real("gpsp1_p",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)], :allocate => allocate)
+            decl gpsp1_v   = Real("gpsp1_v",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)], :allocate => allocate)
+            decl gpsp2_v   = Real("gpsp2_v",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)], :allocate => allocate)
+            decl c1        = Real("c1",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl c2        = Real("c2",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl c3        = Real("c3",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl c4        = Real("c4",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl alpha     = Real("alpha",     :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl beta      = Real("beta",      :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
 
-            decl gpveo     = Real("gpveo",     :vector_length => opts[:vector_length], :dim => [Dim(3)])
-            decl fact1_p   = Real("fact1_p",   :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            decl dtinv_mod = Real("dtinv_mod", :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            decl gpveo     = Real("gpveo",     :vector_length => opts[:vector_length], :dim => [Dim(3)], :allocate => allocate)
+            decl fact1_p   = Real("fact1_p",   :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl dtinv_mod = Real("dtinv_mod", :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
             decl inode     = Int("inode")
             decl jnode     = Int("jnode")
             decl jdime     = Int("jdime")
@@ -1893,10 +1899,10 @@
             decl jdofv     = Int("jdofv")
             decl itime     = Int("itime")
 
-            decl fact = Real('fact',           :vector_length => opts[:vector_length], :dim => [Dim(8)])
+            decl fact = Real('fact',           :vector_length => opts[:vector_length], :dim => [Dim(8)], :allocate => allocate)
 
-            decl idof = Int("idof", :dim => [Dim(3)])
-            decl jdof = Int("jdof", :dim => [Dim(3)])
+            decl idof = Int("idof", :dim => [Dim(3)], :allocate => allocate)
+            decl jdof = Int("jdof", :dim => [Dim(3)], :allocate => allocate)
         #+END_SRC
 ******* Initialisation
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
@@ -1905,19 +1911,39 @@
           else
             dimensions = [$ndime]
           end
-          pr dtinv_mod === $dtinv_loc
-          pr gpsp1_p === $gpsp1
-          pr gpsp1_v === $gpsp1
-          pr gpsp2_v === $gpsp2
+          
+          if get_lang == FORTRAN
+            pr dtinv_mod === $dtinv_loc
+            pr gpsp1_p === $gpsp1
+            pr gpsp1_v === $gpsp1
+            pr gpsp2_v === $gpsp2
+          
+            pr If( $kfl_nota1_nsi == 1 => lambda{ pr gpsp1_v === 0.0 } )
+          
+            pr $elrbp === 0.0
+            pr $elrbu === 0.0
+            pr $elapp === 0.0
+            pr $elauu === 0.0
+            pr $elaup === 0.0
+            pr $elapu === 0.0
+          elsif get_lang == C
+            code =<<EOF
+            memcpy(dtinv_mod, dtinv_loc, sizeof(dtinv_mod));
+            memcpy(gpsp1_p, gpsp1, sizeof(gpsp1_p));
+            memcpy(gpsp1_v, gpsp1, sizeof(gpsp1_v));
+            memcpy(gpsp2_v, gpsp2, sizeof(gpsp2_v));
 
-          pr If( $kfl_nota1_nsi == 1 => lambda{ pr gpsp1_v === 0.0 } )
+            if (kfl_nota1_nsi == 1) memset(gpsp1_v, 0, sizeof(gpsp1_v));
 
-          pr $elrbp === 0.0
-          pr $elrbu === 0.0
-          pr $elapp === 0.0
-          pr $elauu === 0.0
-          pr $elaup === 0.0
-          pr $elapu === 0.0
+            memset(elrbp, 0, sizeof(#{$elrbp.type.decl}) * pnode);
+            memset(elrbu, 0, sizeof(#{$elrbu.type.decl}) * ndime * pnode);
+            memset(elapp, 0, sizeof(#{$elapp.type.decl}) * pnode * pnode);
+            memset(elauu, 0, sizeof(#{$elauu.type.decl}) * pnode * ndime * pnode * ndime);
+            memset(elaup, 0, sizeof(#{$elaup.type.decl}) * pnode * ndime * pnode);
+            memset(elapu, 0, sizeof(#{$elapu.type.decl}) * pnode * pnode * ndime);
+          EOF
+            get_output.print code
+          end
         #+END_SRC
 ******* First loop
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
@@ -1971,7 +1997,8 @@
             }
             
             block_fact8 = lambda{
-              pr fact[8] ===  $gpden[igaus] * k_pabdf_nsi.procedure.call(1) * $dtinv_loc[1] + $gppor[igaus]
+              # pr fact[8] ===  $gpden[igaus] * k_pabdf_nsi.procedure.call(1) * $dtinv_loc[1] + $gppor[igaus]
+              pr fact[8] ===  $gpden[igaus] * $dtinv_loc[1] + $gppor[igaus]
             }
 
             block_fact5 = lambda{
@@ -2068,7 +2095,7 @@
             }
 
             block4 = lambda{
-              pr fact[1] === (-2.0).to_var / 3.0.to_var * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
+              pr fact[1] === Set(-2.0.to_var,Real(:tmp,:vector_length => opts[:vector_length])) / Set(3.0.to_var,Real(:tmp,:vector_length => opts[:vector_length])) * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
             }
 
             block5 = lambda{
@@ -2126,7 +2153,7 @@
             exp_fact0 = fact[0] === $gpvol[igaus] * $gpden[igaus] * dtinv_mod[1]            
             exp_fact1 = fact[1] === fact[0] *$gpsha[inode,igaus]
             exp_elrbu = $elrbu[idime,inode] === $elrbu[idime,inode] + fact[1] * $elvel[idime,inode,2]
-
+          
             for_elauu1 = []           
             for_elbru2 = []
             dimensions.each{|dim|
@@ -2138,20 +2165,27 @@
                 pr exp_elrbu
               }
             }
-
+          
             for_elauu2 = For(jdime,1,3){
               pr jdof[jdime] === (jnode-1)*$ndime+jdime
               pr $elauu[idof[jdime],jdof[jdime]] === $elauu[idof[jdime],jdof[jdime]] - fact[1] * $gpsha[jnode,igaus]
             }
-
+          
             for_elbru1 = For(idime,1,3){
               pr $elrbu[idime,inode] ===  $elrbu[idime,inode] - fact[1] * gpveo[idime]
               pr exp_elrbu
             }
-
+          
             block_kfl_lumped_1 = lambda{
               pr For(igaus,1,$pgaus){
-                pr gpveo === 0.0 
+                if get_lang == FORTRAN then
+                  pr gpveo === 0.0.to_var
+                elsif get_lang == C
+                  code =<<EOF
+                  memset(gpveo,0,sizeof(gpveo));
+EOF
+                  get_output.print code
+                end
                 pr For(inode,1,$pnode){
                   for1 = For(idime,1,3){
                     pr gpveo[idime] === gpveo[idime] + $elvel[idime,inode,2] * $gpsha[inode,igaus] 
@@ -2182,7 +2216,7 @@
                 }
               }
             }
-
+          
             block_kfl_lumped_2 = []
             dimensions.length.times{|i|
               block_kfl_lumped_2[i] = lambda{
@@ -2201,14 +2235,14 @@
                 }
               }
             }
-
+          
             if_kfl_lumped_1 = lambda{ pr If($ndime == 2 => lambda{}, :else => block_kfl_lumped_1) }      
             if opts[:unroll] then
               if_kfl_lumped_2 = lambda{ pr If($ndime == 2 => block_kfl_lumped_2[0] , :else => block_kfl_lumped_2[1])}
             else
               if_kfl_lumped_2 = block_kfl_lumped_2[0]
             end
-
+          
             pr If($kfl_lumped == 1 => if_kfl_lumped_1, $kfl_lumped == 2 => if_kfl_lumped_2)  
           end
         #+END_SRC
@@ -2285,7 +2319,7 @@
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 7 then
             pr For(igaus,1,$pgaus){
-              pr fact[1] === $penal_nsi * $gpvol[igaus]
+                pr fact[1] === Set($penal_nsi, Real(:tmp, :vector_length => opts[:vector_length])) * $gpvol[igaus]
               pr For(inode,1,$pnode){
                 pr $elapp[inode,inode] === $elapp[inode,inode] + fact[1] * $gpsha[inode,igaus]
                 pr $elrbp[inode]       === $elrbp[inode]       + fact[1] * $gpsha[inode,igaus] * $elpre[inode,1]
@@ -2298,12 +2332,27 @@
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 8 then
             for_igaus = For(igaus,1,$pgaus){
-              pr c1[1] === 0.0.to_var 
-              pr c2[1] === 0.0.to_var 
-              pr c3[1] === 0.0.to_var 
-              
+              if get_lang == FORTRAN then
+                pr c1[1] === 0.0.to_var 
+                pr c2[1] === 0.0.to_var 
+                pr c3[1] === 0.0.to_var 
+              elsif get_lang == C
+                code =<<EOF
+                memset(c1,0,sizeof(c1));
+                memset(c2,0,sizeof(c2));
+                memset(c3,0,sizeof(c3));
+EOF
+                get_output.print code
+              end
               pr For(idime,1,$ndime){
-                pr c4[1] === 0.0.to_var
+                if get_lang == FORTRAN then
+                  pr c4[1] === 0.0.to_var
+                elsif get_lang == C
+                  code =<<EOF
+                  memset(c4,0,sizeof(c4));
+EOF
+                  get_output.print code
+                end
                 pr For(inode,1,$pnode){
                   pr c4[1] === c4[1] + $agrau[inode,igaus] * $elvel[idime,inode,1]
                 }
@@ -2312,26 +2361,50 @@
                 pr c3[1] === c3[1] + $gpvep[idime,igaus] * $gpvep[idime,igaus]
                 pr c2[1] === c2[1] + c4[1] * c4[1]
               }
-
+          
               pr c3[1]   === Sqrt( c2[1] ) + Sqrt( c3[1] )  
               pr c1[1]   === Sqrt( c1[1] )
-              pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0.to_var) )
-
+              if get_lang == FORTRAN then
+                pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0.to_var) )
+              elsif get_lang == C
+                code =<<EOF
+                beta[0] = c1[0] / ( c3[0] + DBL_EPSILON );
+EOF
+                get_output.print code
+              end
+          
               pr If($kfl_limit_nsi == 1 => lambda{
-                      pr alpha[1] === min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var - beta[1] ) )
+                      if get_lang == FORTRAN then
+                        pr alpha[1] === min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var - beta[1] ) )
+                      elsif get_lang == C
+                        # pr alpha[1] === Ternary( 1.0.to_var < 2.0.to_var * ( 1.0.to_var - beta[1] ), 1.0.to_var, 2.0.to_var * ( 1.0.to_var - beta[1] ) )
+                        pr alpha[1] === Ternary( 1.0.to_var < Set(2.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) * ( Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) - beta[1] ), 1.0.to_var, Set(2.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) * ( Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) - beta[1] ) )
+                      end
                     }, $kfl_limit_nsi == 2 => lambda{
-                      pr alpha[1] === 0.5.to_var * ( tanh( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
+                      pr alpha[1] === Set(0.5.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( tanh( Set(20.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( beta[1] - Set(0.8.to_var,Real(:tmp, :vector_length => opts[:vector_length])) ) ) + Set(1.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) )
                     })
               pr For(idime,1,$ndime){
                 pr $gpvep[idime,igaus] === alpha[1] * $gpvep[idime,igaus]
               }
             }
-
-            
+          
+            if get_lang == C then
+              code =<<EOF
+              memset(gpvep,0,sizeof(#{$gpvep.type.decl}) * ndime * pgaus);
+EOF
+            end
             pr If( $kfl_stabi_nsi == -1 => lambda{
-                     pr $gpvep === 0.0
+                     if get_lang == FORTRAN then
+                       pr $gpvep === 0.0
+                     elsif get_lang == C
+                       get_output.print code
+                     end           
                    }, $kfl_limit_nsi == -1 => lambda{
-                     pr $gpvep === 0.0
+                     if get_lang == FORTRAN then
+                       pr $gpvep === 0.0
+                     elsif get_lang == C
+                       get_output.print code
+                     end           
                    }, $kfl_limit_nsi > 0 => lambda{ pr for_igaus } )
           end
         #+END_SRC        
@@ -2396,7 +2469,16 @@
               }
             }
           
-            pr If($kfl_stabi_nsi == -1 => lambda{ pr $gpgrp === 0.0 }, :else => block)
+            pr If($kfl_stabi_nsi == -1 => lambda{ 
+                    if get_lang == FORTRAN then
+                      pr $gpgrp === 0.0 
+                    elsif get_lang == C
+                      code =<<EOF
+                      memset(gpgrp,0,sizeof(#{$gpgrp.type.decl}) * ndime * pgaus);
+EOF
+                    end
+                      get_output.print code
+                    }, :else => block)
           end
         #+END_SRC        
 ******* Tenth nest
@@ -2454,7 +2536,7 @@
             exp_elauq = []
             exp_elauq[0] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] - fact[1] * $gpcar[idime,inode,igaus]"
             exp_elauq[1] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] + $gpvol[igaus] * $gpsha[inode,igaus] * $gpcar_bub[idime,igaus]"
-
+          
             block_igaus = lambda{|dim,exp|
               return For(igaus,1,$pgaus){
                 pr fact[1] === $gpvol[igaus] * $gpsha_bub[igaus]
@@ -2472,7 +2554,7 @@
                 }
               }
             }
-
+          
             if opts[:unroll] then
               if_kfl_press_nsi_1 = If($ndime == 2 => lambda{ pr block_igaus.call(dimensions[0],exp_elauq[0]) }, :else => lambda{ pr block_igaus.call(dimensions[1],exp_elauq[0]) })
               if_kfl_press_nsi_else = If($ndime == 2 => lambda{ pr block_igaus.call(dimensions[0],exp_elauq[1]) }, :else => lambda{ pr block_igaus.call(dimensions[1],exp_elauq[1]) })
@@ -2480,7 +2562,7 @@
               if_kfl_press_nsi_1 = block_igaus.call(dimensions[0],exp_elauq[0])
               if_kfl_press_nsi_else = block_igaus.call(dimensions[0],exp_elauq[1])
             end
-
+          
             pr If(maxval($pbubl) == 1){
               pr If($kfl_stabi_nsi != -1){
                 if get_lang == FORTRAN then
@@ -2488,15 +2570,26 @@
                 end
               }
               
-              pr $elauq === 0.0
-              pr $elapq === 0.0
-              pr $elaqu === 0.0
-              pr $elaqp === 0.0
-              pr $elaqq === 0.0
-              pr $elrbq === 0.0
-
+              if get_lang == FORTRAN then
+                pr $elauq === 0.0
+                pr $elapq === 0.0
+                pr $elaqu === 0.0
+                pr $elaqp === 0.0
+                pr $elaqq === 0.0
+                pr $elrbq === 0.0
+              elsif get_lang == C
+                code =<<EOF
+                memset(elauq, 0, sizeof(#{$elauq.type.decl}) * pnode * ndime);
+                memset(elapq, 0, sizeof(#{$elapq.type.decl}) * pnode);
+                memset(elaqu, 0, sizeof(#{$elaqu.type.decl}) * pnode * ndime);
+                memset(elaqp, 0, sizeof(#{$elaqp.type.decl}) * pnode);
+                memset(elaqq, 0, sizeof(#{$elaqq.type.decl}));
+                memset(elbrq, 0, sizeof(#{$elbrq.type.decl}));
+EOF
+                get_output.print code
+              end
               pr If($kfl_press_nsi == 1 => lambda{ pr if_kfl_press_nsi_1}, :else => lambda{ pr if_kfl_press_nsi_else })
-
+          
               pr For(igaus,1,$pgaus){
                 pr $elaqq[1,1] === $elaqq[1,1] + $gpvol[igaus] * $gpsha_bub[igaus] * $penal_nsi
                 pr $elrbq[1]   === $elrbq[1]   + $gpvol[igaus] * $gpsha_bub[igaus] * $penal_nsi * $elbub[1]
