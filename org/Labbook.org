@@ -3455,6 +3455,33 @@ EOF
     end do
   end do
 END SUBROUTINE orig1
+*** Model
+    #+BEGIN_SRC ruby
+      require 'BOAST'
+      include BOAST
+      
+      set_model(:knl)
+      set_lang(C)
+      v_len = 8
+      
+      p = Procedure("p"){
+        decl x = Real("x", :vector_length => v_len)
+        decl y = Real("y", :vector_length => v_len)
+        pr y === x + y
+      }
+
+      k = p.ckernel
+      # k.build
+      k
+    #+END_SRC
+
+    #+RESULTS:
+    : void p(){
+    :   __m512d x;
+    :   __m512d y;
+    :   y = _mm512_add_pd( x, y );
+    : }
+
 *** Vector addition: Loop vs vectorization
        Code not portable, vector style works only in Fortran.
        #+BEGIN_SRC ruby
