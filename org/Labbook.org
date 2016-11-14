@@ -2748,7 +2748,66 @@ EOF
            size, etc... 
 
       2. Using BOAST
+         Along with the porting of these kernels we provide a tutorial
+         explaining how these kernels have been ported in order to
+         help the porting of other kernels. The tutorial is available
+         at https://github.com/Nanosim-LIG/boast/wiki/Alya
+         For now, we are able to generate correct vectorized version using C
+         intrinsics (including AVX512) for only some parts of one of
+         the given kernels see code.  
+         For the parts we successfully ported using BOAST, by just using a
+         vector size of 2 and unrolling some loops we were able get at leat
+         a mean speedup of x1.5 and we hope reaching the proportionnal level of
+         speedup on hardware supporting AVX 512.
          
+         We are able to have speedup with only few optimizations and
+         testing different major optimization strategies and tuning remains
+         to be done in order to reach the maximum gain of performance.
+         
+         #+begin_src R :results output :session :exports both
+           df = read.csv('../experiments/2016_11_14/titan/15_18_23/Data.csv',strip.white=T,header=T)
+           boast <- df[df$kernel == "boast",]
+           ref <- df[df$kernel == "ref",]
+           speedup <- ref$time / boast$time
+
+           df2 <- data.frame(nest = boast$nest, speedup = speedup)
+           df3 <- ddply(df2, c("nest"), summarise, speedup = mean(speedup), err = 2*sd(df2$speedup)/sqrt(length(df2$speedup)))
+           summary(df3)         
+         #+end_src
+
+         #+RESULTS:
+         :       nest          speedup           err         
+         :  Min.   :1.000   Min.   :1.502   Min.   :0.01529  
+         :  1st Qu.:2.750   1st Qu.:1.859   1st Qu.:0.01529  
+         :  Median :4.500   Median :2.133   Median :0.01529  
+         :  Mean   :4.625   Mean   :2.121   Mean   :0.01529  
+         :  3rd Qu.:6.250   3rd Qu.:2.317   3rd Qu.:0.01529  
+         :  Max.   :9.000   Max.   :2.817   Max.   :0.01529
+
+         #+begin_src R :results output graphics :file ./experiments/xp1/plots/speedup.png :exports both :width 800 :height 600 :session
+           library(ggplot2)
+           library(plyr)
+
+           df = read.csv('../experiments/2016_11_14/titan/15_18_23/Data.csv',strip.white=T,header=T)
+           boast <- df[df$kernel == "boast",]
+           ref <- df[df$kernel == "ref",]
+           speedup <- ref$time / boast$time
+
+           df2 <- data.frame(nest = boast$nest, speedup = speedup)
+           df3 <- ddply(df2, c("nest"), summarise, speedup = mean(speedup), err = 2*sd(df2$speedup)/sqrt(length(df2$speedup)))
+           ggplot(df3, aes(x = factor(nest), y = speedup)) + 
+               geom_bar(stat = "identity", position="dodge") +
+               geom_errorbar(aes(ymax = speedup + err, ymin = speedup - err), position = position_dodge(0.9),
+               width = 0.25) +
+               labs(y="Speedup", x="Loop Nest") +
+               ggtitle("Speedup compared to the reference implementation on different loop nests")
+
+
+         #+end_src
+
+         #+RESULTS:
+         [[file:./experiments/xp1/plots/speedup.png]]
+
 * Sandbox :noexport:
 ** Fortran
 *** Loop vectorization
