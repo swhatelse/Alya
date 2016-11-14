@@ -1,15 +1,18 @@
 require '/tmp/alya.rb'
 require 'narray_ffi'
-require './mod_set_params.rb'
+require_relative './mod_set_params.rb'
 require 'yaml'
 require 'pp'
 require 'csv'
 require 'optparse'
+require_relative './LogInfo.rb'
 
 class Experiment
   include Params
-  def self.run
+  def self.run(output_info)
     # nests = (1..11).to_a
+    LogInfo.init(output_info)
+    LogInfo.get_info
     nests = [1,2,3,4,5,6,7,9]
     vector_size=2
     dimension=2
@@ -26,10 +29,12 @@ class Experiment
 
       set_fortran_line_length(100)
       k[h_ref] = generate_ref_v2(opts)
+      LogInfo.register_kernel_info(h_ref, k[h_ref].to_s)
       k[h_ref].build(:FCFLAGS => "-O3")
 
       set_lang(C)
       k[h_boast] = generate_boast_implem(opts)
+      LogInfo.register_kernel_info(h_boast, k[h_boast].to_s)
       k[h_boast].build(:CFLAGS => "-O3")
       
       stats[h_ref] = []
@@ -131,9 +136,8 @@ class Experiment
         raise "Error: residue too big for gprhc" if (diff_gprhc > epsilon).to_a.flatten.include? 1
         raise "Error: residue too big for gpvep" if (diff_gpvep > epsilon).to_a.flatten.include? 1
       }
-      k[h_ref] = k[h_ref].to_s
-      k[h_boast] = k[h_boast].to_s
     }
+    LogInfo.dump_info
     puts "Done"
     return stats,k
   end
@@ -158,15 +162,10 @@ opt_parser = OptionParser.new { |opts|
   }
 }.parse!
 
-stats, infos = Experiment.run
+stats, infos = Experiment.run(options[:info_path])
+
 if options[:data_path] then
   File::open( options[:data_path], "w") { |f|
     f.print YAML::dump(stats)
-  }
-end
-
-if options[:data_path] then
-  File::open( options[:info_path], "w") { |f|
-    f.print YAML::dump(infos.to_s)
   }
 end
