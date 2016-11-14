@@ -5,8 +5,9 @@ require './mod_set_params.rb'
 class Debug
   include Params
   def self.run
-    nests = [1,2,3,4,5,6,7,8,9,10]
-    vector_size=1
+    # nests = [1,2,3,4,5,6,7,8,9,10]
+    nests = [8]
+    vector_size=2
     dimension=2
     seed = 10
 
@@ -93,9 +94,19 @@ class Debug
     raise "Error: residue too big for elauu" if (diff_elauu > epsilon).to_a.flatten.include? 1
     raise "Error: residue too big for elrbu" if (diff_elrbu > epsilon).to_a.flatten.include? 1
     raise "Error: residue too big for elapu" if (diff_elapu > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for elaqu" if (diff_elaqu > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for elaqp" if (diff_elaqp > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for elaqq" if (diff_elaqq > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for elapq" if (diff_elapq > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for elauq" if (diff_elauq > epsilon).to_a.flatten.include? 1
     raise "Error: residue too big for elaup" if (diff_elaup > epsilon).to_a.flatten.include? 1
     raise "Error: residue too big for elapp" if (diff_elapp > epsilon).to_a.flatten.include? 1
     raise "Error: residue too big for elrbp" if (diff_elrbp > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for elrbq" if (diff_elrbq > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for gpgrp" if (diff_gpgrp > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for gprhs" if (diff_gprhs > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for gprhc" if (diff_gprhc > epsilon).to_a.flatten.include? 1
+    raise "Error: residue too big for gpvep" if (diff_gpvep > epsilon).to_a.flatten.include? 1
 
     puts "Done"
 
