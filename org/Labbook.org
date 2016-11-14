@@ -1847,9 +1847,7 @@
             opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false}
             opts.update(options)
             register_funccall("maxval")
-            register_funccall("min")
             register_funccall("epsilon")
-            register_funccall("tanh")
             register_funccall("stop") if get_lang == FORTRAN
 
             x = Int("x", :dir => :in)
@@ -2374,14 +2372,11 @@ EOF
               end
           
               pr If($kfl_limit_nsi == 1 => lambda{
-                      if get_lang == FORTRAN then
-                        pr alpha[1] === min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var - beta[1] ) )
-                      elsif get_lang == C
-                        # pr alpha[1] === Ternary( 1.0.to_var < 2.0.to_var * ( 1.0.to_var - beta[1] ), 1.0.to_var, 2.0.to_var * ( 1.0.to_var - beta[1] ) )
-                        pr alpha[1] === Ternary( 1.0.to_var < Set(2.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) * ( Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) - beta[1] ), 1.0.to_var, Set(2.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) * ( Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) - beta[1] ) )
-                      end
+                        pr alpha[1] === Min( Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])), 
+                                             Set(2.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) * 
+                                             (Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) - beta[1] ) )
                     }, $kfl_limit_nsi == 2 => lambda{
-                      pr alpha[1] === Set(0.5.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( tanh( Set(20.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( beta[1] - Set(0.8.to_var,Real(:tmp, :vector_length => opts[:vector_length])) ) ) + Set(1.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) )
+                      pr alpha[1] === Set(0.5.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( Tanh( Set(20.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( beta[1] - Set(0.8.to_var,Real(:tmp, :vector_length => opts[:vector_length])) ) ) + Set(1.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) )
                     })
               pr For(idime,1,$ndime){
                 pr $gpvep[idime,igaus] === alpha[1] * $gpvep[idime,igaus]
