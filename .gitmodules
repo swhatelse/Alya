@@ -1,0 +1,3 @@
+[submodule "boast"]
+	path = boast
+	url = git@github.com:Nanosim-LIG/boast.git
