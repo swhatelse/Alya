@@ -2733,16 +2733,16 @@ EOF
          provides scientific application developers with a framework
          to develop and test application computing kernels. It put
          the focus on portability by allowing the developer to
-         meta-program his kernels using a dedicated langugage with
-         orthogonal optimizations and it can generate code in C, Fortran,
+         meta-program his kernels using a dedicated language with
+         orthogonal optimization and it can generate code in C, FORTRAN,
          CUDA and OpenCL. Thus, with this framework it is easy to
          generate different optimized versions of the same kernel to
-         tune the performances according to the target plateform. 
+         tune the performances according to the target platform. 
          We were given 2 matrices assembly kernels and our goal is to:
          - use BOAST to factorize them, 
          - vectorize them in order to take advantage of the new AVX 512
            instructions set, 
-         - test different optimizations strategies such as loop
+         - test different optimization's strategies such as loop
            unrolling, loop tiling, loop reordering, etc... 
          - and find the right unrolling factor, tile size, vector
            size, etc... 
@@ -2751,58 +2751,47 @@ EOF
          Along with the porting of these kernels we provide a tutorial
          explaining how these kernels have been ported in order to
          help the porting of other kernels. The tutorial is available
-         at https://github.com/Nanosim-LIG/boast/wiki/Alya
+         at https://github.com/Nanosim-LIG/boast/wiki/Alya.
          For now, we are able to generate correct vectorized version using C
          intrinsics (including AVX512) for only some parts of one of
          the given kernels see code.  
          For the parts we successfully ported using BOAST, by just using a
-         vector size of 2 and unrolling some loops we were able get at leat
-         a mean speedup of x1.5 and we hope reaching the proportionnal level of
+         vector size of 2 and unrolling some loops we were able get at least
+         a mean speedup of x1.5 and we hope reaching a proportional level of
          speedup on hardware supporting AVX 512.
          
-         We are able to have speedup with only few optimizations and
+         We are able to have speedup with only few optimization and
          testing different major optimization strategies and tuning remains
          to be done in order to reach the maximum gain of performance.
          
          #+begin_src R :results output :session :exports both
+           library(ggplot2)
+           library(plyr)
+           
            df = read.csv('../experiments/2016_11_14/titan/15_18_23/Data.csv',strip.white=T,header=T)
-           boast <- df[df$kernel == "boast",]
-           ref <- df[df$kernel == "ref",]
-           speedup <- ref$time / boast$time
 
-           df2 <- data.frame(nest = boast$nest, speedup = speedup)
-           df3 <- ddply(df2, c("nest"), summarise, speedup = mean(speedup), err = 2*sd(df2$speedup)/sqrt(length(df2$speedup)))
-           summary(df3)         
+           boast <- data.frame( nest = df[df$kernel == "boast",]$nest, acc = df[df$kernel == "ref",]$time / df[df$kernel == "boast",]$time )
+           df2 <- ddply(boast, c("nest"), summarise, speedup = mean(acc), err = 2*sd(acc)/sqrt(length(acc)))
+
+           summary(df2)
          #+end_src
 
          #+RESULTS:
-         :       nest          speedup           err         
-         :  Min.   :1.000   Min.   :1.502   Min.   :0.01529  
-         :  1st Qu.:2.750   1st Qu.:1.859   1st Qu.:0.01529  
-         :  Median :4.500   Median :2.133   Median :0.01529  
-         :  Mean   :4.625   Mean   :2.121   Mean   :0.01529  
-         :  3rd Qu.:6.250   3rd Qu.:2.317   3rd Qu.:0.01529  
-         :  Max.   :9.000   Max.   :2.817   Max.   :0.01529
+         :       nest          speedup           err          
+         :  Min.   :1.000   Min.   :1.502   Min.   :0.009819  
+         :  1st Qu.:2.750   1st Qu.:1.859   1st Qu.:0.015442  
+         :  Median :4.500   Median :2.133   Median :0.023402  
+         :  Mean   :4.625   Mean   :2.121   Mean   :0.029015  
+         :  3rd Qu.:6.250   3rd Qu.:2.317   3rd Qu.:0.031896  
+         :  Max.   :9.000   Max.   :2.817   Max.   :0.074835
 
          #+begin_src R :results output graphics :file ./experiments/xp1/plots/speedup.png :exports both :width 800 :height 600 :session
-           library(ggplot2)
-           library(plyr)
-
-           df = read.csv('../experiments/2016_11_14/titan/15_18_23/Data.csv',strip.white=T,header=T)
-           boast <- df[df$kernel == "boast",]
-           ref <- df[df$kernel == "ref",]
-           speedup <- ref$time / boast$time
-
-           df2 <- data.frame(nest = boast$nest, speedup = speedup)
-           df3 <- ddply(df2, c("nest"), summarise, speedup = mean(speedup), err = 2*sd(df2$speedup)/sqrt(length(df2$speedup)))
-           ggplot(df3, aes(x = factor(nest), y = speedup)) + 
-               geom_bar(stat = "identity", position="dodge") +
-               geom_errorbar(aes(ymax = speedup + err, ymin = speedup - err), position = position_dodge(0.9),
-               width = 0.25) +
-               labs(y="Speedup", x="Loop Nest") +
-               ggtitle("Speedup compared to the reference implementation on different loop nests")
-
-
+           ggplot(df2, aes(x = factor(nest), y = speedup)) + 
+               geom_bar(fill="grey38",stat = "identity", position="dodge") +
+               geom_errorbar(aes(ymax = speedup + err, ymin = speedup - err), position = position_dodge(0.9), width = 0.5) +
+               labs(title = "Speedup compared to the reference implementation on different loop nests", y="Speedup", x="Loop Nest") +
+               theme(axis.text=element_text(size=14,color="black"), axis.title=element_text(size=16,face="bold"), plot.title = element_text(size=16,face="bold")) +
+               theme_bw()
          #+end_src
 
          #+RESULTS:
