@@ -2100,7 +2100,7 @@
             }
 
             block4 = lambda{
-              pr fact[1] === Set(-2.0.to_var,Real(:tmp,:vector_length => opts[:vector_length])) / Set(3.0.to_var,Real(:tmp,:vector_length => opts[:vector_length])) * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
+              pr fact[1] === -2.0.to_var / 3.0.to_var * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
             }
 
             block5 = lambda{
@@ -2324,7 +2324,7 @@ EOF
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 7 then
             pr For(igaus,1,$pgaus){
-                pr fact[1] === Set($penal_nsi, Real(:tmp, :vector_length => opts[:vector_length])) * $gpvol[igaus]
+                pr fact[1] === $penal_nsi * $gpvol[igaus]
               pr For(inode,1,$pnode){
                 pr $elapp[inode,inode] === $elapp[inode,inode] + fact[1] * $gpsha[inode,igaus]
                 pr $elrbp[inode]       === $elrbp[inode]       + fact[1] * $gpsha[inode,igaus] * $elpre[inode,1]
@@ -2379,11 +2379,10 @@ EOF
               end
           
               pr If($kfl_limit_nsi == 1 => lambda{
-                        pr alpha[1] === Min( Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])), 
-                                             Set(2.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) * 
-                                             (Set(1.0.to_var, Real(:tmp, :vector_length => opts[:vector_length])) - beta[1] ) )
+                        pr alpha[1] === Min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
                     }, $kfl_limit_nsi == 2 => lambda{
-                      pr alpha[1] === Set(0.5.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( Tanh( Set(20.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) * ( beta[1] - Set(0.8.to_var,Real(:tmp, :vector_length => opts[:vector_length])) ) ) + Set(1.0.to_var,Real(:tmp, :vector_length => opts[:vector_length])) )
+                      # Tanh works only with ICC
+                      pr alpha[1] === 0.5.to_var, * ( Tanh( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
                     })
               pr For(idime,1,$ndime){
                 pr $gpvep[idime,igaus] === alpha[1] * $gpvep[idime,igaus]
