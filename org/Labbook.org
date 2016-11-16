@@ -4465,6 +4465,74 @@ END SUBROUTINE orig1
     END SUBROUTINE foo
 #+end_example
 
+*** Inlining
+    #+BEGIN_SRC ruby 
+      require 'BOAST'
+      include BOAST
+
+      set_lang(FORTRAN)
+
+      def generate_p(inline = false)
+        x = Int("x", :dim => [Dim(10)], :dir => :in)
+        y = Int("y", :dim => [Dim(10)], :dir => :inout)
+        z = Int("z")
+
+        block = lambda{
+          decl i = Int("i")
+          pr For(i,1,10){
+            pr y[i] === x[i] * 2
+          }
+        }
+       
+        p = Procedure("p", [x,y], :return => z, :inline => inline, &block)
+        k1 = p.ckernel 
+
+        q = Procedure("q", [x,y], :functions => [p]){
+          pr y === x + 2
+          if inline then
+            pr p.call(x,  y )
+          else
+            block.call
+          end
+        }
+
+        k2 = CKernel::new
+        pr p if inline
+        pr q
+        k2.procedure = q
+        return k2
+      end
+
+      NArray.srand(10)
+      x = NArray.int(10).random!(9)
+      y = NArray.int(10)
+
+      # ks = {:false => generate_p(false), :true => generate_p(true)}
+      # 10.times{|i|
+      #   ks.each{|k,v|
+      #     v.run(x,y)
+      #   }
+      # }
+      # ks  
+generate_p(false)
+    #+END_SRC
+
+    #+RESULTS:
+    #+begin_example
+    SUBROUTINE q(x, y)
+      integer, parameter :: wp=kind(1.0d0)
+      integer(kind=4), intent(in), dimension(10) :: x
+      integer(kind=4), intent(inout), dimension(10) :: y
+      integer(kind=4) :: p
+      y = x + 2
+      integer(kind=4) :: i
+      do i = 1, 10, 1
+        y(i) = (x(i)) * (2)
+      end do
+    END SUBROUTINE q
+#+end_example
+
+
 ** Ruby
 *** Meta
 **** Eval string of string 
