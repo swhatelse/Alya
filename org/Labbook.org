@@ -2362,7 +2362,9 @@ EOF
                   pr c4[1] === c4[1] + $agrau[inode,igaus] * $elvel[idime,inode,1]
                 }
                 pr c4[1] === $gpsp1[igaus] * c4[1]
-                pr c1[1] === c1[1] + ( $gpvep[idime,igaus] - c4[1] )**2
+                # Exponential intrinsics works only with ICC
+                # pr c1[1] === c1[1] + ( $gpvep[idime,igaus] - c4[1] )**2
+                pr c1[1] === c1[1] + ( $gpvep[idime,igaus] - c4[1] ) * ( $gpvep[idime,igaus] - c4[1] )
                 pr c3[1] === c3[1] + $gpvep[idime,igaus] * $gpvep[idime,igaus]
                 pr c2[1] === c2[1] + c4[1] * c4[1]
               }
