@@ -4538,7 +4538,106 @@ generate_p(false)
     END SUBROUTINE q
 #+end_example
 
+*** Loop tiling
+    #+BEGIN_SRC ruby
+      require 'BOAST'
+      include BOAST
 
+      def getstartend(x,block)
+        return [[{:start => x-x%block+1, :end => x}, {:start => 1, :end => x-x%block}],
+                [{:start => 1, :end => x-x%block}, {:start => x-x%block+1, :end => x}],
+                [{:start => x-x%block+1, :end => x}, {:start => x-x%block+1, :end => x}]]
+      end
+
+      def gen(block)
+        x = Int("x", :dir => :in)
+        a = Int("a", :dir => :in, :dim => [Dim(x),Dim(x)])
+        b = Int("b", :dir => :in, :dim => [Dim(x),Dim(x)])
+        c = Int("c", :dir => :out, :dim => [Dim(x),Dim(x)])
+
+        p = Procedure("p",[x,a,b,c]){
+          decl i = Int("i")
+          decl j = Int("j")
+
+          exp1 = c[j,i] === c[j,i] + a[j,i] + b[i,j]
+
+          if block > 1 then
+            decl ii = Int("ii")
+            decl jj = Int("jj")
+            
+            exp = For(ii,i,i+block-1){
+              pr For(jj,0,block-1){
+                pr c[jj+j,ii] === c[jj+j,ii] + a[jj+j,ii] + b[ii,jj+j]
+              }.unroll
+            }
+            
+            bounds = getstartend(x,block)
+
+            block_remaining = lambda{
+              pr If(x%block != 0){
+                bounds.each{|e|
+                  pr For(i,e[0][:start],e[0][:end]){
+                    pr For(j,e[1][:start],e[1][:end]){
+                      pr exp1
+                    }
+                  }
+                }
+              }
+            }
+          else
+            exp = exp1
+          end
+
+          pr For(i,1,x-block+1, :step => block){
+            pr For(j,1,x-block+1, :step => block){
+              pr exp
+            }
+          }
+          block_remaining.call if block > 1
+        }
+        k = p.ckernel
+        return k
+      end
+
+      set_lang(C)
+      blk = {:block1 => 1, :block2 => 64}
+      kernels = {:block1 => 1, :block2 => 2}
+
+      blk.each{|k,v|
+        kernels[k] = gen(v)
+        puts kernels[k]
+        kernels[k].build
+      }
+
+      x = 1024
+      c = {:block1 => [], :block2 => []}
+      stats = {:block1 => [], :block2 => []}
+
+      1000.times{|i|
+        a = NArray.int(x,x).random!(999)
+        b = NArray.int(x,x).random!(999)
+        blk.each_key{|j|
+          c[j] = NArray.int(x,x)
+          stats[j][i] = kernels[j].run(x,a,b,c[j])
+        }
+        raise "Not correct" if ((c[:block1] - c[:block2]).abs > 0).to_a.flatten.include? 1 
+      }
+
+      res = {}
+      blk.each_key{|k|
+        res[k] = stats[k].inject(0){|sum,e| sum+e[:duration]} / stats[k].length
+      }
+
+      puts res
+      # x.times{|i|
+      #   s = ""
+      #   x.times{|j|
+      #     s += "#{c[0].to_a[j][i]} "
+      #   }
+      #   puts s
+      # }
+
+    #+END_SRC
 ** Ruby
 *** Meta
 **** Eval string of string 
