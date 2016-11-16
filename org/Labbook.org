@@ -6,6 +6,13 @@
 * Todo 
   - [ ] Finish alya kernel
       DEADLINE: <2016-11-10 jeu.> 
+  - [ ] SVML Intrinsics
+    - Works only with intel compiler
+    - Only for 128 and 256
+  - [ ] Blocking
+  - [ ] Unrolling step
+  - [ ] Loop reordering
+  - [ ] Moving parts into functions
 * 2016
 ** October
 *** 2016-10-04
