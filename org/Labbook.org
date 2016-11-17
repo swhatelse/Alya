@@ -2464,7 +2464,7 @@
             decl jdofv     = Int("jdofv")
             decl itime     = Int("itime")
 
-            decl fact = Real('fact',           :vector_length => opts[:vector_length], :dim => [Dim(8)], :allocate => allocate)
+            decl fact = Real('fact',           :vector_length => opts[:vector_length], :dim => [Dim(9)], :allocate => allocate)
 
             decl idof = Int("idof", :dim => [Dim(3)], :allocate => allocate)
             decl jdof = Int("jdof", :dim => [Dim(3)], :allocate => allocate)
@@ -2550,41 +2550,41 @@
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 2 then
             block_fact0 = lambda{
-              pr fact[0] === $gpsp2[igaus] * $gpvol[igaus]
+              pr fact[1] === $gpsp2[igaus] * $gpvol[igaus]
             }
 
             block_fact6 = lambda{
-              pr fact[6] === $gpvis[igaus] * $gpvol[igaus]
+              pr fact[7] === $gpvis[igaus] * $gpvol[igaus]
             }
 
             block_fact7 = lambda{
-              pr fact[7] === gpsp1_v[igaus] * $gpvol[igaus]
+              pr fact[8] === gpsp1_v[igaus] * $gpvol[igaus]
             }
             
             block_fact8 = lambda{
-              # pr fact[8] ===  $gpden[igaus] * k_pabdf_nsi.procedure.call(1) * $dtinv_loc[1] + $gppor[igaus]
-              pr fact[8] ===  $gpden[igaus] * $dtinv_loc[1] + $gppor[igaus]
+              # pr fact[9] ===  $gpden[igaus] * k_pabdf_nsi.procedure.call(1) * $dtinv_loc[1] + $gppor[igaus]
+              pr fact[9] ===  $gpden[igaus] * $dtinv_loc[1] + $gppor[igaus]
             }
 
             block_fact5 = lambda{
-              pr fact[5] === fact[4] * ($agrau[jnode,igaus] + fact[8] * $gpsha[jnode,igaus] ) + fact[6] * $wgrgr[inode,jnode,igaus] + fact[7] * $agrau[jnode,igaus] * $agrau[inode,igaus]
+              pr fact[6] === fact[5] * ($agrau[jnode,igaus] + fact[9] * $gpsha[jnode,igaus] ) + fact[7] * $wgrgr[inode,jnode,igaus] + fact[8] * $agrau[jnode,igaus] * $agrau[inode,igaus]
             }
             
             block_factn = lambda{|dim|
               dim.times{|i|
-                pr fact[i+1] === fact[0] * $gpcar[i+1,inode,igaus]
+                pr fact[i+2] === fact[1] * $gpcar[i+1,inode,igaus]
               }
             }
 
             block_fact4 = lambda {
-              pr fact[4] === $gpsha[inode,igaus] * $gpvol[igaus]
+              pr fact[5] === $gpsha[inode,igaus] * $gpvol[igaus]
             }
 
             block_elauu = lambda{|dim|              
               for i in 0...dim do 
                 for j in 0...dim do
-                  exp = "pr $elauu[idof[#{j}],jdof[#{i}]] === $elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+1}] * $gpcar[#{i+1},jnode,igaus]"
-                  exp = exp + " + fact[#{5}]" if i == j
+                  exp = "pr $elauu[idof[#{j}],jdof[#{i}]] === $elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+2}] * $gpcar[#{i+1},jnode,igaus]"
+                  exp = exp + " + fact[6]" if i == j
                   eval exp
                 end
               end
@@ -2647,7 +2647,7 @@
             for_jdime = lambda{ |dim| return For(jdime,1,dim) }
 
             block1 = lambda{
-              pr fact[1] === $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,jnode,igaus]
+              pr fact[2] === $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,jnode,igaus]
             }
 
             block2 = lambda{
@@ -2656,16 +2656,16 @@
 
             block3 = lambda{
               pr jdofv === (jnode-1)*$ndime + jdime
-              pr $elauu[idofv,jdofv] === $elauu[idofv,jdofv] + fact[1] * $gpcar[jdime,inode,igaus]
+              pr $elauu[idofv,jdofv] === $elauu[idofv,jdofv] + fact[2] * $gpcar[jdime,inode,igaus]
             }
 
             block4 = lambda{
-              pr fact[1] === -2.0.to_var / 3.0.to_var * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
+              pr fact[2] === -2.0.to_var / 3.0.to_var * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
             }
 
             block5 = lambda{
               pr jdofv === (jnode-1)*$ndime + jdime
-              pr $elauu[idofv,jdofv] === $elauu[idofv,jdofv] + fact[1] * $gpcar[jdime,jnode,igaus]
+              pr $elauu[idofv,jdofv] === $elauu[idofv,jdofv] + fact[2] * $gpcar[jdime,jnode,igaus]
             }
 
 
@@ -2715,16 +2715,16 @@
 ******* Fourth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 4 then
-            exp_fact0 = fact[0] === $gpvol[igaus] * $gpden[igaus] * dtinv_mod[1]            
-            exp_fact1 = fact[1] === fact[0] *$gpsha[inode,igaus]
-            exp_elrbu = $elrbu[idime,inode] === $elrbu[idime,inode] + fact[1] * $elvel[idime,inode,2]
+            exp_fact0 = fact[1] === $gpvol[igaus] * $gpden[igaus] * dtinv_mod[1]            
+            exp_fact1 = fact[2] === fact[1] *$gpsha[inode,igaus]
+            exp_elrbu = $elrbu[idime,inode] === $elrbu[idime,inode] + fact[2] * $elvel[idime,inode,2]
           
             for_elauu1 = []           
             for_elbru2 = []
             dimensions.each{|dim|
               for_elauu1[for_elauu1.length] = For(idime,1,dim){
                 pr idof[idime] === (inode-1)*dim+idime
-                pr $elauu[idof[idime],idof[idime]] === $elauu[idof[idime],idof[idime]] + fact[1]
+                pr $elauu[idof[idime],idof[idime]] === $elauu[idof[idime],idof[idime]] + fact[2]
               }
               for_elbru2[for_elbru2.length] = For(idime,1,dim){
                 pr exp_elrbu
@@ -2733,11 +2733,11 @@
           
             for_elauu2 = For(jdime,1,3){
               pr jdof[jdime] === (jnode-1)*$ndime+jdime
-              pr $elauu[idof[jdime],jdof[jdime]] === $elauu[idof[jdime],jdof[jdime]] - fact[1] * $gpsha[jnode,igaus]
+              pr $elauu[idof[jdime],jdof[jdime]] === $elauu[idof[jdime],jdof[jdime]] - fact[2] * $gpsha[jnode,igaus]
             }
           
             for_elbru1 = For(idime,1,3){
-              pr $elrbu[idime,inode] ===  $elrbu[idime,inode] - fact[1] * gpveo[idime]
+              pr $elrbu[idime,inode] ===  $elrbu[idime,inode] - fact[2] * gpveo[idime]
               pr exp_elrbu
             }
           
@@ -2828,10 +2828,10 @@ EOF
                     pr for2
                   end
                   pr For(jnode,1,$pnode){
-                    pr fact[0] === $gpvol[igaus] * $gpsha[jnode,igaus]
+                    pr fact[1] === $gpvol[igaus] * $gpsha[jnode,igaus]
                     for2 = For(jdime,1,dim){
-                      pr fact[jdime] === fact[0] * $gpcar[jdime,inode,igaus]
-                      pr $elapu[jnode,idof[jdime]] === $elapu[jnode,idof[jdime]] + fact[jdime]
+                      pr fact[jdime+1] === fact[1] * $gpcar[jdime,inode,igaus]
+                      pr $elapu[jnode,idof[jdime]] === $elapu[jnode,idof[jdime]] + fact[jdime+1]
                     }
                     if opts[:unroll] then
                       pr for2.unroll
@@ -2839,7 +2839,7 @@ EOF
                       pr for2
                     end
                     for2 = For(jdime,1,dim){
-                      pr $elaup[idof[jdime],jnode] === $elaup[idof[jdime],jnode] - fact[jdime]
+                      pr $elaup[idof[jdime],jnode] === $elaup[idof[jdime],jnode] - fact[jdime+1]
                     }
                     if opts[:unroll] then
                       pr for2.unroll
@@ -2869,12 +2869,12 @@ EOF
               pr For(igaus,1,$pgaus){
                 pr For(inode,1,$pnode){
                   pr For(jnode,inode+1,$pnode){
-                    pr fact[1]             === gpsp1_p[igaus] * $wgrgr[jnode,inode,igaus] * $gpvol[igaus]
-                    pr $elapp[jnode,inode] === $elapp[jnode,inode] + fact[1]
-                    pr $elapp[inode,jnode] === $elapp[inode,jnode] + fact[1]
+                    pr fact[2]             === gpsp1_p[igaus] * $wgrgr[jnode,inode,igaus] * $gpvol[igaus]
+                    pr $elapp[jnode,inode] === $elapp[jnode,inode] + fact[2]
+                    pr $elapp[inode,jnode] === $elapp[inode,jnode] + fact[2]
                   }
-                  pr fact[1]             === gpsp1_p[igaus] * $wgrgr[inode,inode,igaus] * $gpvol[igaus]
-                  pr $elapp[inode,inode] === $elapp[inode,inode] + fact[1]
+                  pr fact[2]             === gpsp1_p[igaus] * $wgrgr[inode,inode,igaus] * $gpvol[igaus]
+                  pr $elapp[inode,inode] === $elapp[inode,inode] + fact[2]
                 }
               }
             }
@@ -2884,10 +2884,10 @@ EOF
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 7 then
             pr For(igaus,1,$pgaus){
-                pr fact[1] === $penal_nsi * $gpvol[igaus]
+                pr fact[2] === $penal_nsi * $gpvol[igaus]
               pr For(inode,1,$pnode){
-                pr $elapp[inode,inode] === $elapp[inode,inode] + fact[1] * $gpsha[inode,igaus]
-                pr $elrbp[inode]       === $elrbp[inode]       + fact[1] * $gpsha[inode,igaus] * $elpre[inode,1]
+                pr $elapp[inode,inode] === $elapp[inode,inode] + fact[2] * $gpsha[inode,igaus]
+                pr $elrbp[inode]       === $elrbp[inode]       + fact[2] * $gpsha[inode,igaus] * $elpre[inode,1]
               }
             }
           end
@@ -2998,10 +2998,10 @@ EOF
               }
                     
               for_igaus[1][for_igaus[1].length] = For(igaus,1,$pgaus){
-                pr fact[1]     === $gpden[igaus] * $dtsgs[1] * gpsp1_v[igaus]
+                pr fact[2]     === $gpden[igaus] * $dtsgs[1] * gpsp1_v[igaus]
                 pr fact1_p[1]  === $gpden[igaus] * $dtsgs[1] * gpsp1_p[igaus]
                 for1 = For(idime,1,dim){
-                  pr $gpvep[idime,igaus] === $gpvep[idime,igaus] + fact[1]    * $gpsgs[idime,igaus,2]
+                  pr $gpvep[idime,igaus] === $gpvep[idime,igaus] + fact[2]    * $gpsgs[idime,igaus,2]
                   pr $gpgrp[idime,igaus] === $gpgrp[idime,igaus] + fact1_p[1] * $gpsgs[idime,igaus,2]
                 }
                 if opts[:unroll] then
@@ -3050,10 +3050,10 @@ EOF
             for_igaus = []
             dimensions.each{|dim|
               for_igaus[for_igaus.length] = For(igaus,1,$pgaus){
-                pr fact[4] === $gpden[igaus] * dtinv_mod[1]
+                pr fact[5] === $gpden[igaus] * dtinv_mod[1]
                 pr For(itime,2,$nbdfp_nsi){
                   for_idime = For(idime,1,dim){
-                    pr $gprhs[idime,igaus] === $gprhs[idime,igaus] - k_pabdf_nsi.procedure.call(itime) * fact[4] * $gpvel[idime,igaus,itime]
+                    pr $gprhs[idime,igaus] === $gprhs[idime,igaus] - k_pabdf_nsi.procedure.call(itime) * fact[5] * $gpvel[idime,igaus,itime]
                   }
                   if opts[:unroll] then
                     pr for_idime.unroll
@@ -3062,10 +3062,10 @@ EOF
                   end
                 }
                 pr For(inode,1,$pnode){
-                  pr fact[1] === $gpvol[igaus] * $gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
-                  pr fact[3] === $gpvol[igaus] * $agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
+                  pr fact[2] === $gpvol[igaus] * $gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
+                  pr fact[4] === $gpvol[igaus] * $agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
                   for_idime = For(idime,1,dim){
-                    pr $elrbu[idime,inode] === $elrbu[idime,inode] + fact[1] * $gprhs[idime,igaus] + fact[3] * $gpvep[idime,igaus]
+                    pr $elrbu[idime,inode] === $elrbu[idime,inode] + fact[2] * $gprhs[idime,igaus] + fact[4] * $gpvep[idime,igaus]
                   }
                   if opts[:unroll] then
                     pr for_idime.unroll
@@ -3097,17 +3097,17 @@ EOF
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           if opts[:nests].include? 11 then
             exp_elauq = []
-            exp_elauq[0] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] - fact[1] * $gpcar[idime,inode,igaus]"
+            exp_elauq[0] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] - fact[2] * $gpcar[idime,inode,igaus]"
             exp_elauq[1] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] + $gpvol[igaus] * $gpsha[inode,igaus] * $gpcar_bub[idime,igaus]"
           
             block_igaus = lambda{|dim,exp|
               return For(igaus,1,$pgaus){
-                pr fact[1] === $gpvol[igaus] * $gpsha_bub[igaus]
+                pr fact[2] === $gpvol[igaus] * $gpsha_bub[igaus]
                 pr For(inode,1,$pnode){
                   for_idime = For(idime,1,dim){
                     pr idof[dim] === (inode-1)*dim + idime
                     pr eval exp
-                    pr $elaqu[1,idof[dim]] === $elaqu[1,idof[dim]] + fact[1] * $gpcar[idime,inode,igaus]
+                    pr $elaqu[1,idof[dim]] === $elaqu[1,idof[dim]] + fact[2] * $gpcar[idime,inode,igaus]
                   }
                   if opts[:unroll] then
                     pr for_idime.unroll
