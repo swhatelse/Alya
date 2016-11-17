@@ -3264,6 +3264,52 @@ EOF
         #+RESULTS:
         | 0.16196962300999998 | 0.034613893740000005 |
 
+***** Possible optimization
+****** 1st nest
+       - We could possibly block the second inner loop to reduce the
+         possible cache misses when wgrgr is accessed, because the data are not
+         accessed sequentially. But the provided example work with small
+         array and it should fit into the cache. 2-D blocking should be
+         enough.
+       - Unrolling should be beneficient on the the second inner loop
+         and maybe the first.
+****** 2nd nest
+       - Fact4 should moved out to the jnode loop to avoid useless
+         computation.
+       - Fact5 may be useless here as used only one time to compute
+         elauu, this would save few memory related operations.
+       - Blocking could be interesting for the access to wgrgr and
+         elauu. May be a 2-D blocking should be enough.
+****** 3rd nest
+       - Blocking the inner loops that compute elauu. 2-D blocking
+         should be enough.
+       - Unrolling the jnode loops.
+****** 4th nest
+       - Blocking the jnode loop because elauu not accessed
+         sequentially. 2-D blocking.
+       - Maybe loop reordering.
+       - Unroll jnode.
+****** 5th nest
+       - Blocking should be beneficial for access to elaup. 2-D
+         blocking.
+       - Unrolling jnode loop.
+****** 6th nest
+       - Regarding to the access pattern to elapp blocking should be
+         ok.
+       - Unroll jnode loop.
+****** 7th nest
+       - Unroll inode
+****** 8th nest
+       - Unroll the loop inode that compute C4.
+       - Maybe unroll the idime loop.
+****** 9th nest
+       - Unrolling the igaus loop.
+****** 10th nest
+       - Maybe blocking for gprhs. 3-D?
+       - Unroll itime loop.
+****** 11th nest
+       - Blocking for elaqu and elauq
+       - Unroll last igaus loop
 ** November
 *** 2016-11-09
 **** Report
