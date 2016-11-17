@@ -2944,7 +2944,7 @@ EOF
                         pr alpha[1] === Min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
                     }, $kfl_limit_nsi == 2 => lambda{
                       # Tanh works only with ICC
-                      pr alpha[1] === 0.5.to_var, * ( Tanh( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
+                      pr alpha[1] === 0.5.to_var * ( Tanh( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
                     })
               pr For(idime,1,$ndime){
                 pr $gpvep[idime,igaus] === alpha[1] * $gpvep[idime,igaus]
