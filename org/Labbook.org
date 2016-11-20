@@ -2411,7 +2411,7 @@
 ******* Fake pabdf_nsi
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           def generate_boast_implem(options) 
-            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false}
+            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false, :inline => :included}
             opts.update(options)
             register_funccall("maxval")
             register_funccall("epsilon")
@@ -2427,14 +2427,85 @@
             k_pabdf_nsi.build
             
         #+END_SRC
+******* First loop
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          def get_nest1(options)
+            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..11).to_a, :unroll => false, :inline => :included}
+            opts.update(options)
+            args = []
+            args.push ndime = Int("ndime",  :dir => :in)
+            args.push mnode = Int("mnode",  :dir => :in)
+            args.push pnode = Int("pnode",  :dir => :in)
+            args.push pgaus = Int("pgaus",  :dir => :in)
+            args.push gpden = Real("gpden", :dir => :in,    :vector_length => opts[:vector_length], :dim => [Dim(pgaus)])
+            args.push gpcar = Real("gpcar", :dir => :in,    :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(mnode),Dim(pgaus)])
+            args.push gpadv = Real("gpadv", :dir => :in,    :vector_length => opts[:vector_length], :dim => [Dim(ndime),Dim(pgaus)])
+            args.push wgrgr = Real("wgrgr", :dir => :inout, :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pnode),Dim(pgaus)])
+            args.push agrau = Real("agrau", :dir => :inout, :vector_length => opts[:vector_length], :dim => [Dim(pnode),Dim(pgaus)])
+
+            block = lambda{
+              decl inode = Int("inode")
+              decl jnode = Int("jnode")
+              decl igaus = Int("igaus")
+
+              for1 = []
+
+              2.times{|j|
+                dim = j+2
+                exp1 = ""
+                exp2 = ""
+                dim.times{|i|
+                  exp1 += "gpadv[#{i+1},igaus]*gpcar[#{i+1},inode,igaus]"
+                  exp2 += "gpcar[#{i+1},inode,igaus]*gpcar[#{i+1},jnode,igaus]"
+                  exp1 +=  " + " if i+1 < dim
+                  exp2 +=  " + " if i+1 < dim
+                }
+                
+                form_agrau = "pr agrau[inode,igaus] === gpden[igaus] * (#{exp1})"
+                form_wgrgr = "pr wgrgr[inode,jnode,igaus] === #{exp2}"
+
+                for1[j] = For(igaus,1,pgaus){
+                  pr For(inode,1,pnode){
+                    eval form_agrau
+                    pr For(jnode,1,pnode){                    
+                      eval form_wgrgr
+                    }
+                  }
+                }
+              }
+
+              pr If(ndime == 2 => lambda{
+                      pr for1[0]
+                    }, else: lambda{
+                      pr for1[1]
+                    })  
+              
+            }
+            if opts[:inline] == :included then
+              return block
+            else
+              inlined = opts[:inline] == :inline ? true : false 
+              return Procedure("nest1", args, :inline => inlined, &block)
+            end
+          end
+        #+END_SRC
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          p = generate_boast_decl(opts, [pabdf_nsi])
+          nests = []
+          nests.push get_nest1(opts)
+
+          if opts[:inline] == :call or opts[:inline] == :inlined then
+            p = generate_boast_decl(opts, [pabdf_nsi,nests].flatten)
+          else
+            p = generate_boast_decl(opts, [pabdf_nsi])
+          end
+
           includes = ["immintrin.h"]
           includes.push("string.h", "math.h", "float.h") if get_lang == C
           k = CKernel::new( :includes => includes )
           k.procedure = p
           pr k_pabdf_nsi.procedure
+          nests.each{|n| pr n } if opts[:inline] == :call or opts[:inline] == :inlined
           opn p
             allocate = false
             if get_lang == C then
@@ -2509,41 +2580,14 @@
           EOF
             get_output.print code
           end
-        #+END_SRC
-******* First loop
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+
           if opts[:nests].include? 1 then
-            for1 = []
-
-            2.times{|j|
-              dim = j+2
-              exp1 = ""
-              exp2 = ""
-              dim.times{|i|
-                exp1 += "$gpadv[#{i+1},igaus]*$gpcar[#{i+1},inode,igaus]"
-                exp2 += "$gpcar[#{i+1},inode,igaus]*$gpcar[#{i+1},jnode,igaus]"
-                exp1 +=  " + " if i+1 < dim
-                exp2 +=  " + " if i+1 < dim
-              }
-              
-              form_agrau = "pr $agrau[inode,igaus] === $gpden[igaus] * (#{exp1})"
-              form_wgrgr = "pr $wgrgr[inode,jnode,igaus] === #{exp2}"
-
-              for1[j] = For(igaus,1,$pgaus){
-                pr For(inode,1,$pnode){
-                  eval form_agrau
-                  pr For(jnode,1,$pnode){                    
-                    eval form_wgrgr
-                  }
-                }
-              }
-            }
-
-            pr If($ndime == 2 => lambda{
-                    pr for1[0]
-                  }, else: lambda{
-                    pr for1[1]
-                  })  
+            if nests[0].kind_of? Procedure then
+              pr nests[0].call($ndime,$mnode,$pnode,$pgaus,$gpden,
+                            $gpcar,$gpadv,$wgrgr,$agrau)
+            else
+              nests[0].call
+            end
           end
         #+END_SRC
 ******* Second loop
