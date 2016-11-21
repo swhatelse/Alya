@@ -16,8 +16,9 @@ class TestFor < Minitest::Test
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
       k_boast_params = {:vector_length => vector_size, :nests => nests}
 
-      k_orig = generate_ref_v2(k_orig_params)
-      k_orig.build(:FCFLAGS => "-cpp")
+      k_orig = KSplitRef::new(k_orig_params)
+      k_orig.generate_ref_v2
+      k_orig.kernel.build(:FCFLAGS => "-cpp")
 
       [false,true].each{|unroll|
         k_boast_params[:unroll] = unroll
@@ -35,30 +36,31 @@ class TestFor < Minitest::Test
                 @@kfl_limit_nsi = kfl_limit_nsi
                 [FORTRAN].each{|lang|
                   set_lang(lang)
-                  k_boast = generate_boast_implem(k_boast_params)
-                  k_boast.build
+                  k_boast = KSplitBoast::new(k_boast_params)
+                  k_boast.generate
+                  k_boast.kernel.build
 
-                  k_orig.run(@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,@@gpsha,@@gpcar,@@gpadv,
-                             @@gpvep_ref,@@gpgrp_ref,@@gprhs_ref,@@gprhc_ref,@@gpvel,@@gpsgs,@@elvel,@@elpre,@@elbub,@@elauu_ref,@@elaup_ref,
-                             @@elapp_ref,@@elapu_ref,@@elrbu_ref,@@elrbp_ref,@@dtinv_loc,@@dtsgs,@@pbubl,@@gpsha_bub,@@gpcar_bub,
-                             @@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,@@elaqq_ref,@@elrbq_ref,
-                             # Original global variables
-                             @@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,@@fvins_nsi,
-                             @@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,@@kfl_press_nsi,
-                             @@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
-                             @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
-                             @@kfl_bubbl_nsi,@@ndime,@@agrau_ref,@@wgrgr_ref)
+                  k_orig.kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+               @@gpsha,@@gpcar,@@gpadv,@@gpvep_ref,@@gpgrp_ref,@@gprhs_ref,@@gprhc_ref,@@gpvel,
+               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr_ref,@@agrau_ref,@@elauu_ref,@@elaup_ref,
+               @@elapp_ref,@@elapu_ref,@@elrbu_ref,@@elrbp_ref,@@dtinv_loc,@@dtsgs,@@pbubl,
+               @@gpsha_bub,@@gpcar_bub,@@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,
+               @@elaqq_ref,@@elrbq_ref)
 
-                  k_boast.run(@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,@@gpsha,@@gpcar,@@gpadv,
-                              @@gpvep_boast,@@gpgrp_boast,@@gprhs_boast,@@gprhc_boast,@@gpvel,@@gpsgs,@@elvel,@@elpre,@@elbub,@@elauu_boast,@@elaup_boast,
-                              @@elapp_boast,@@elapu_boast,@@elrbu_boast,@@elrbp_boast,@@dtinv_loc,@@dtsgs,@@pbubl,@@gpsha_bub,@@gpcar_bub,
-                              @@elauq_boast,@@elapq_boast,@@elaqu_boast,@@elaqp_boast,@@elaqq_boast,@@elrbq_boast,
-                              # Original global variables
-                              @@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,@@fvins_nsi,
-                              @@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,@@kfl_press_nsi,
-                              @@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
-                              @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
-                              @@kfl_bubbl_nsi,@@ndime,@@agrau_boast,@@wgrgr_boast)
+                  k_boast.kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+               @@gpsha,@@gpcar,@@gpadv,@@gpvep_boast,@@gpgrp_boast,@@gprhs_boast,@@gprhc_boast,@@gpvel,
+               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr_boast,@@agrau_boast,@@elauu_boast,@@elaup_boast,
+               @@elapp_boast,@@elapu_boast,@@elrbu_boast,@@elrbp_boast,@@dtinv_loc,@@dtsgs,@@pbubl,
+               @@gpsha_bub,@@gpcar_bub,@@elauq_boast,@@elapq_boast,@@elaqu_boast,@@elaqp_boast,
+               @@elaqq_boast,@@elrbq_boast)
 
                   diff_agrau = (@@agrau_ref - @@agrau_boast).abs
                   diff_wgrgr = (@@wgrgr_ref - @@wgrgr_boast).abs
@@ -117,8 +119,9 @@ class TestFor < Minitest::Test
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
       k_boast_params = {:vector_length => vector_size, :nests => nests}
 
-      k_orig = generate_ref_v2(k_orig_params)
-      k_orig.build(:FCFLAGS => "-cpp")
+      k_orig = KSplitRef::new(k_orig_params)
+      k_orig.generate_ref_v2
+      k_orig.kernel.build(:FCFLAGS => "-cpp")
 
       [false,true].each{|unroll|
         k_boast_params[:unroll] = unroll
@@ -136,30 +139,31 @@ class TestFor < Minitest::Test
                 @@kfl_limit_nsi = kfl_limit_nsi
                 [C].each{|lang|
                   set_lang(lang)
-                  k_boast = generate_boast_implem(k_boast_params)
-                  k_boast.build
+                  k_boast = KSplitBoast::new(k_boast_params)
+                  k_boast.generate
+                  k_boast.kernel.build
 
-                  k_orig.run(@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,@@gpsha,@@gpcar,@@gpadv,
-                             @@gpvep_ref,@@gpgrp_ref,@@gprhs_ref,@@gprhc_ref,@@gpvel,@@gpsgs,@@elvel,@@elpre,@@elbub,@@elauu_ref,@@elaup_ref,
-                             @@elapp_ref,@@elapu_ref,@@elrbu_ref,@@elrbp_ref,@@dtinv_loc,@@dtsgs,@@pbubl,@@gpsha_bub,@@gpcar_bub,
-                             @@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,@@elaqq_ref,@@elrbq_ref,
-                             # Original global variables
-                             @@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,@@fvins_nsi,
-                             @@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,@@kfl_press_nsi,
-                             @@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
-                             @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
-                             @@kfl_bubbl_nsi,@@ndime,@@agrau_ref,@@wgrgr_ref)
+                  k_orig.kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+               @@gpsha,@@gpcar,@@gpadv,@@gpvep_ref,@@gpgrp_ref,@@gprhs_ref,@@gprhc_ref,@@gpvel,
+               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr_ref,@@agrau_ref,@@elauu_ref,@@elaup_ref,
+               @@elapp_ref,@@elapu_ref,@@elrbu_ref,@@elrbp_ref,@@dtinv_loc,@@dtsgs,@@pbubl,
+               @@gpsha_bub,@@gpcar_bub,@@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,
+               @@elaqq_ref,@@elrbq_ref)
 
-                  k_boast.run(@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,@@gpsha,@@gpcar,@@gpadv,
-                              @@gpvep_boast,@@gpgrp_boast,@@gprhs_boast,@@gprhc_boast,@@gpvel,@@gpsgs,@@elvel,@@elpre,@@elbub,@@elauu_boast,@@elaup_boast,
-                              @@elapp_boast,@@elapu_boast,@@elrbu_boast,@@elrbp_boast,@@dtinv_loc,@@dtsgs,@@pbubl,@@gpsha_bub,@@gpcar_bub,
-                              @@elauq_boast,@@elapq_boast,@@elaqu_boast,@@elaqp_boast,@@elaqq_boast,@@elrbq_boast,
-                              # Original global variables
-                              @@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,@@fvins_nsi,
-                              @@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,@@kfl_press_nsi,
-                              @@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
-                              @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
-                              @@kfl_bubbl_nsi,@@ndime,@@agrau_boast,@@wgrgr_boast)
+                  k_boast.kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+               @@gpsha,@@gpcar,@@gpadv,@@gpvep_boast,@@gpgrp_boast,@@gprhs_boast,@@gprhc_boast,@@gpvel,
+               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr_boast,@@agrau_boast,@@elauu_boast,@@elaup_boast,
+               @@elapp_boast,@@elapu_boast,@@elrbu_boast,@@elrbp_boast,@@dtinv_loc,@@dtsgs,@@pbubl,
+               @@gpsha_bub,@@gpcar_bub,@@elauq_boast,@@elapq_boast,@@elaqu_boast,@@elaqp_boast,
+               @@elaqq_boast,@@elrbq_boast)
 
                   diff_agrau = (@@agrau_ref - @@agrau_boast).abs
                   diff_wgrgr = (@@wgrgr_ref - @@wgrgr_boast).abs

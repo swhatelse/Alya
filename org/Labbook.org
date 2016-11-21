@@ -1133,90 +1133,90 @@
         #+END_SRC
       - BOAST declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_boast_decl(opts, functions = nil)
-            $ndime         = Int("ndime", :dir => :in )
-            $kfl_lumped    = Int("kfl_lumped",    :dir => :in)
-            $mnode         = Int("mnode",         :dir => :in)
-            $ntens         = Int("ntens",         :dir => :in)
-            $kfl_duatss    = Int("kfl_duatss",    :dir => :in)
-            $fact_duatss   = Int("fact_duatss",   :dir => :in)
-            $kfl_stabi_nsi = Int("kfl_stabi_nsi", :dir => :in)
-            $fvins_nsi     = Real("fvins_nsi",    :dir => :in)
-            $fcons_nsi     = Real("fcons_nsi",    :dir => :in)
-            $bemol_nsi     = Real("bemol_nsi",    :dir => :in)
-            $kfl_regim_nsi = Int("kfl_regim_nsi", :dir => :in)
-            $fvela_nsi     = Real("fvela_nsi",    :dir => :in, :dim => [Dim(3)])
-            $kfl_rmom2_nsi = Int("kfl_rmom2_nsi", :dir => :in)
-            $kfl_press_nsi = Int("kfl_press_nsi", :dir => :in)
-            $kfl_p1ve2_nsi = Int("kfl_p1ve2_nsi", :dir => :in)
-            $kfl_linea_nsi = Int("kfl_linea_nsi", :dir => :in)
-            $kfl_confi_nsi = Int("kfl_confi_nsi", :dir => :in)
-            $nbdfp_nsi     = Int("nbdfp_nsi",     :dir => :in)
-            $kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
-            $kfl_nota1_nsi = Int("kfl_nota1_nsi", :dir => :in)
-            $kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in)
-            $kfl_penal_nsi = Int("kfl_penal_nsi", :dir => :in)
-            $penal_nsi     = Real("penal_nsi",    :dir => :in)
-            $kfl_bubbl_nsi = Int("kfl_bubbl_nsi", :dir => :in)
+          class KSplit
+            attr_reader :kernel
 
-            $pnode     = Int("pnode",             :dir => :in)
-            $pgaus     = Int("pgaus",             :dir => :in)
-            $gpden     = Real("gpden",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpvis     = Real("gpvis",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gppor     = Real("gppor",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpsp1     = Real("gpsp1",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpsp2     = Real("gpsp2",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpvol     = Real("gpvol",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpsha     = Real("gpsha",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pgaus)])
-            $gpcar     = Real("gpcar",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($mnode),Dim($pgaus)])
-            $gpadv     = Real("gpadv",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
-            $gpvep     = Real("gpvep",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
-            $gpgrp     = Real("gpgrp",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
-            $gprhs     = Real("gprhs",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
-            $gprhc     = Real("gprhc",            :dir => :inout , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpvel     = Real("gpvel",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus),Dim()])
-            $gpsgs     = Real("gpsgs",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus),Dim()])
-            $elvel     = Real("elvel",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pnode),Dim()])
-            $elpre     = Real("elpre",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim()])
-            $elbub     = Real("elbub",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
+            def initialize(options)
+              @opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false}
+              @opts.update(options)
 
-            $wgrgr     = Real("wgrgr",            :dir => :out   ,:vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pnode),Dim($pgaus)])
-            $agrau     = Real("agrau",            :dir => :out   ,:vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pgaus)])
+              @args = []
+              @args.push @ndime         = Int("ndime", :dir => :in )
+              @args.push @kfl_lumped    = Int("kfl_lumped",    :dir => :in)
+              @args.push @mnode         = Int("mnode",         :dir => :in)
+              @args.push @ntens         = Int("ntens",         :dir => :in)
+              @args.push @kfl_duatss    = Int("kfl_duatss",    :dir => :in)
+              @args.push @fact_duatss   = Int("fact_duatss",   :dir => :in)
+              @args.push @kfl_stabi_nsi = Int("kfl_stabi_nsi", :dir => :in)
+              @args.push @fvins_nsi     = Real("fvins_nsi",    :dir => :in)
+              @args.push @fcons_nsi     = Real("fcons_nsi",    :dir => :in)
+              @args.push @bemol_nsi     = Real("bemol_nsi",    :dir => :in)
+              @args.push @kfl_regim_nsi = Int("kfl_regim_nsi", :dir => :in)
+              @args.push @fvela_nsi     = Real("fvela_nsi",    :dir => :in, :dim => [Dim(3)])
+              @args.push @kfl_rmom2_nsi = Int("kfl_rmom2_nsi", :dir => :in)
+              @args.push @kfl_press_nsi = Int("kfl_press_nsi", :dir => :in)
+              @args.push @kfl_p1ve2_nsi = Int("kfl_p1ve2_nsi", :dir => :in)
+              @args.push @kfl_linea_nsi = Int("kfl_linea_nsi", :dir => :in)
+              @args.push @kfl_confi_nsi = Int("kfl_confi_nsi", :dir => :in)
+              @args.push @nbdfp_nsi     = Int("nbdfp_nsi",     :dir => :in)
+              @args.push @kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
+              @args.push @kfl_nota1_nsi = Int("kfl_nota1_nsi", :dir => :in)
+              @args.push @kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in)
+              @args.push @kfl_penal_nsi = Int("kfl_penal_nsi", :dir => :in)
+              @args.push @penal_nsi     = Real("penal_nsi",    :dir => :in)
+              @args.push @kfl_bubbl_nsi = Int("kfl_bubbl_nsi", :dir => :in)
 
-            # Matrices
-            $elauu     = Real("elauu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode*$ndime),Dim($pnode*$ndime)])
-            $elaup     = Real("elaup",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode*$ndime),Dim($pnode)])
-            $elapp     = Real("elapp",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pnode)])
-            $elapu     = Real("elapu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim($pnode*$ndime)])
-            $elrbu     = Real("elrbu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pnode)])
-            $elrbp     = Real("elrbp",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode)])
-            # Others
-            $dtinv_loc = Real("dtinv_loc",        :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            $dtsgs     = Real("dtsgs",            :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            $pbubl     = Int("pbubl",             :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim(1)])
-            $gpsha_bub = Real("gpsha_bub",        :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($pgaus)])
-            $gpcar_bub = Real("gpcar_bub",        :dir => :in    , :vector_length => opts[:vector_length], :dim => [Dim($ndime),Dim($pgaus)])
-            # Enrichement Element matrices
-            $elauq     = Real("elauq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode*$ndime),Dim(1)])
-            $elapq     = Real("elapq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim($pnode),Dim(1)])
-            $elaqu     = Real("elaqu",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1),Dim($pnode*$ndime)])
-            $elaqp     = Real("elaqp",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1),Dim($pnode)])
-            $elaqq     = Real("elaqq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1),Dim(1)])
-            $elrbq     = Real("elrbq",            :dir => :out   , :vector_length => opts[:vector_length], :dim => [Dim(1)])
+              @args.push @pnode     = Int("pnode",             :dir => :in)
+              @args.push @pgaus     = Int("pgaus",             :dir => :in)
+              @args.push @gpden     = Real("gpden",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpvis     = Real("gpvis",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])              
+              @args.push @gppor     = Real("gppor",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpsp1     = Real("gpsp1",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpsp2     = Real("gpsp2",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpvol     = Real("gpvol",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpsha     = Real("gpsha",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pgaus)])
+              @args.push @gpcar     = Real("gpcar",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@mnode),Dim(@pgaus)])
+              @args.push @gpadv     = Real("gpadv",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
+              @args.push @gpvep     = Real("gpvep",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
+              @args.push @gpgrp     = Real("gpgrp",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
+              @args.push @gprhs     = Real("gprhs",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
+              @args.push @gprhc     = Real("gprhc",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpvel     = Real("gpvel",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus),Dim()])
+              @args.push @gpsgs     = Real("gpsgs",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus),Dim()])
+              @args.push @elvel     = Real("elvel",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pnode),Dim()])
+              @args.push @elpre     = Real("elpre",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim()])
+              @args.push @elbub     = Real("elbub",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
 
-            p = Procedure("nsi_element_assembly_split_oss",
-                          [$pnode,$pgaus,$gpden,$gpvis,$gppor,$gpsp1,$gpsp2,$gpvol,$gpsha,$gpcar,$gpadv,
-                           $gpvep,$gpgrp,$gprhs,$gprhc,$gpvel,$gpsgs,$elvel,$elpre,$elbub,$elauu,$elaup,
-                           $elapp,$elapu,$elrbu,$elrbp,$dtinv_loc,$dtsgs,$pbubl,$gpsha_bub,$gpcar_bub,
-                           $elauq,$elapq,$elaqu,$elaqp,$elaqq,$elrbq,
-                           # Original global variables
-                           $kfl_lumped,$mnode,$ntens,$kfl_duatss,$fact_duatss,$kfl_stabi_nsi,$fvins_nsi,
-                           $fcons_nsi,$bemol_nsi,$kfl_regim_nsi,$fvela_nsi,$kfl_rmom2_nsi,$kfl_press_nsi,
-                           $kfl_p1ve2_nsi,$kfl_linea_nsi,$kfl_confi_nsi,$nbdfp_nsi,
-                           $kfl_sgsti_nsi,$kfl_nota1_nsi,$kfl_limit_nsi,$kfl_penal_nsi,$penal_nsi,
-                           $kfl_bubbl_nsi,$ndime,$agrau,$wgrgr], :functions => functions
-                          )
-            return p
+              @args.push @wgrgr     = Real("wgrgr",            :dir => :out   ,:vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pnode),Dim(@pgaus)])
+              @args.push @agrau     = Real("agrau",            :dir => :out   ,:vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pgaus)])
+
+              # Matrices
+              @args.push @elauu     = Real("elauu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode*@ndime),Dim(@pnode*@ndime)])
+              @args.push @elaup     = Real("elaup",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode*@ndime),Dim(@pnode)])
+              @args.push @elapp     = Real("elapp",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pnode)])
+              @args.push @elapu     = Real("elapu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pnode*@ndime)])
+              @args.push @elrbu     = Real("elrbu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pnode)])
+              @args.push @elrbp     = Real("elrbp",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode)])
+              # Others
+              @args.push @dtinv_loc = Real("dtinv_loc",        :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+              @args.push @dtsgs     = Real("dtsgs",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+              @args.push @pbubl     = Int("pbubl",             :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+              @args.push @gpsha_bub = Real("gpsha_bub",        :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
+              @args.push @gpcar_bub = Real("gpcar_bub",        :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
+              # Enrichement Element matrices
+              @args.push @elauq     = Real("elauq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode*@ndime),Dim(1)])
+              @args.push @elapq     = Real("elapq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(1)])
+              @args.push @elaqu     = Real("elaqu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1),Dim(@pnode*@ndime)])
+              @args.push @elaqp     = Real("elaqp",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1),Dim(@pnode)])
+              @args.push @elaqq     = Real("elaqq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1),Dim(1)])
+              @args.push @elrbq     = Real("elrbq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+
+            end
+
+            def declare_procedure(functions = nil)
+              p = Procedure("nsi_element_assembly_split_oss", @args, :functions => functions)
+              return p
+            end
           end
         #+END_SRC
 ****** Def parameters
@@ -1249,28 +1249,19 @@
 ****** Generate reference implementation 
       - Function declaration:
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_ref_declaration(opts)
+          def generate_ref_declaration
                decl_ref =<<EOF
-               subroutine nsi_element_assembly_split_oss(&
-               pnode,pgaus,gpden,gpvis,gppor,gpsp1,gpsp2,gpvol,   &
-               gpsha,gpcar,gpadv,gpvep,gpgrp,gprhs,gprhc,gpvel,   &
-               gpsgs,elvel,elpre,elbub,elauu,elaup,elapp,elapu,   &
-               elrbu,elrbp,dtinv_loc,dtsgs,pbubl,gpsha_bub,       &
-               gpcar_bub,elauq,elapq,elaqu,elaqp,elaqq,elrbq,&
-               ! Original global variables
-               kfl_lumped,&
-               mnode,ntens,&
-               kfl_duatss,&
-               fact_duatss,&
-               kfl_stabi_nsi,&
-               fvins_nsi,fcons_nsi,bemol_nsi,kfl_regim_nsi,&
-               fvela_nsi,kfl_rmom2_nsi,kfl_press_nsi,&
-               kfl_p1ve2_nsi,kfl_linea_nsi,&
-               kfl_confi_nsi,nbdfp_nsi,kfl_sgsti_nsi,&
-               kfl_nota1_nsi,kfl_limit_nsi,kfl_penal_nsi,&
-               penal_nsi,&
-               kfl_bubbl_nsi,&
-               ndime,agrau,wgrgr)
+               subroutine nsi_element_assembly_split_oss(ndime,&
+               kfl_lumped,mnode,ntens,kfl_duatss,fact_duatss,&
+               kfl_stabi_nsi,fvins_nsi,fcons_nsi,bemol_nsi,&
+               kfl_regim_nsi,fvela_nsi,kfl_rmom2_nsi,kfl_press_nsi,&
+               kfl_p1ve2_nsi,kfl_linea_nsi,kfl_confi_nsi,nbdfp_nsi,&
+               kfl_sgsti_nsi,kfl_nota1_nsi,kfl_limit_nsi,kfl_penal_nsi,&
+               penal_nsi,kfl_bubbl_nsi,pnode,pgaus,gpden,gpvis,gppor,&
+               gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpgrp,gprhs,&
+               gprhc,gpvel,gpsgs,elvel,elpre,elbub,wgrgr,agrau,elauu,&
+               elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,pbubl,&
+               gpsha_bub,gpcar_bub,elauq,elapq,elaqu,elaqp,elaqq,elrbq)
 
                #{gen_def_parameters}
 
@@ -1369,7 +1360,7 @@
                integer(ip)                :: idof1,idof3,idof2,igaus
                integer(ip)                :: idime,jdof1,jdofv,itime
           EOF
-            if opts[:preprocessor] then
+            if @opts[:preprocessor] then
               decl_ref = decl_ref + <<EOF
               #ifdef OPENACC
               #define DEF_VECT ivect
@@ -1403,22 +1394,24 @@
             return init
           end 
         #+END_SRC
+******* Frame to generate the kernel
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          class KSplitRef < KSplit
+        #+END_SRC
 ******* V1 
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_ref_v1(options)        
-            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
-            opts.update(options)
+          def generate_ref_v1
             macros = ""
 
-            if opts[:preprocessor] then
+            if @opts[:preprocessor] then
               $p_vector_length = "VECTOR_SIZE"
               $p_def_vect = "DEF_VECT"
               macros = <<EOF
-                #define VECTOR_SIZE #{opts[:vector_length]}
+                #define VECTOR_SIZE #{@opts[:vector_length]}
           EOF
             else
-              $p_vector_length = "#{opts[:vector_length]}"
-              $p_def_vect = "1:#{opts[:vector_length]}"
+              $p_vector_length = "#{@opts[:vector_length]}"
+              $p_def_vect = "1:#{@opts[:vector_length]}"
             end
        #+END_SRC
       - First nest
@@ -1833,46 +1826,44 @@
       - Assembling pieces
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           set_lang(FORTRAN)
-          k = CKernel::new(:includes => "immintrin.h")
-          p = generate_boast_decl(opts)
-          k.procedure = p
+          @kernel = CKernel::new(:includes => "immintrin.h")
+          @kernel.procedure = declare_procedure
           get_output.print macros
           get_output.print generate_mocks
-          get_output.print generate_ref_declaration(opts)
+          get_output.print generate_ref_declaration
           get_output.print generate_ref_initialization
-          get_output.print first_nest if opts[:nests].include? 1
-          get_output.print second_nest if opts[:nests].include? 2
-          get_output.print third_nest if opts[:nests].include? 3
-          get_output.print fourth_nest if opts[:nests].include? 4
-          get_output.print fifth_nest if opts[:nests].include? 5
-          get_output.print sixth_nest if opts[:nests].include? 6
-          get_output.print seventh_nest if opts[:nests].include? 7
-          get_output.print eighth_nest if opts[:nests].include? 8
-          get_output.print nineth_nest if opts[:nests].include? 9
-          get_output.print tenth_nest if opts[:nests].include? 10
+          get_output.print first_nest if @opts[:nests].include? 1
+          get_output.print second_nest if @opts[:nests].include? 2
+          get_output.print third_nest if @opts[:nests].include? 3
+          get_output.print fourth_nest if @opts[:nests].include? 4
+          get_output.print fifth_nest if @opts[:nests].include? 5
+          get_output.print sixth_nest if @opts[:nests].include? 6
+          get_output.print seventh_nest if @opts[:nests].include? 7
+          get_output.print eighth_nest if @opts[:nests].include? 8
+          get_output.print nineth_nest if @opts[:nests].include? 9
+          get_output.print tenth_nest if @opts[:nests].include? 10
           get_output.print "end subroutine nsi_element_assembly_split_oss"
-          return k
           end  
         #+END_SRC
 ******* V2
        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_ref_v2(options)        
-            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
-            opts.update(options)
-            macros = ""
-
-            if opts[:preprocessor] then
-              $p_vector_length = "VECTOR_SIZE"
-              $p_def_vect = "DEF_VECT"
-              macros = <<EOF
-                #define VECTOR_SIZE #{opts[:vector_length]}
-          EOF
-            else
-              $p_vector_length = "#{opts[:vector_length]}"
-              $p_def_vect = "1:#{opts[:vector_length]}"
-            end
-            
-            nests = []
+           def generate_ref_v2
+             # opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
+             # opts.update(options)
+             macros = ""
+             
+             if @opts[:preprocessor] then
+               $p_vector_length = "VECTOR_SIZE"
+               $p_def_vect = "DEF_VECT"
+               macros = <<EOF
+               #define VECTOR_SIZE #{@opts[:vector_length]}
+         EOF
+             else
+               $p_vector_length = "#{@opts[:vector_length]}"
+               $p_def_vect = "1:#{@opts[:vector_length]}"
+             end
+           
+             nests = []
        #+END_SRC
 ******** First nest 
          #+BEGIN_SRC ruby :tangle /tmp/alya.rb
@@ -2221,22 +2212,22 @@
          #+END_SRC
 ******** Assembling pieces
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          set_lang(FORTRAN)
-          k = CKernel::new(:includes => "immintrin.h")
-          p = generate_boast_decl(opts)
-          k.procedure = p
-          get_output.print macros
-          get_output.print generate_mocks
-          get_output.print generate_ref_declaration(opts)
-          get_output.print generate_ref_initialization
+            set_lang(FORTRAN)
+            @kernel = CKernel::new(:includes => "immintrin.h")
+            @kernel.procedure = declare_procedure
+            get_output.print macros
+            get_output.print generate_mocks
+            get_output.print generate_ref_declaration
+            get_output.print generate_ref_initialization
 
-          opts[:nests].each{|n|
-            get_output.print nests[n-1]
-          }
+            @opts[:nests].each{|n|
+              get_output.print nests[n-1]
+            }
 
-          get_output.print "end subroutine nsi_element_assembly_split_oss"
-          return k
-          end  
+            get_output.print "end subroutine nsi_element_assembly_split_oss"
+            return @kernel
+            end  
+          end
         #+END_SRC
 ****** BOAST implementation
 ******* Looking for general pattern :noexport:
@@ -2408,11 +2399,13 @@
                   gpcar(DEF_VECT,DIM,inode,igaus) * gpgrp(DEF_VECT,DIM,igaus)  
                   + ...
           #+END_SRC
+******* Getting kernel parameters
+        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+          class KSplitBoast < KSplit
+        #+END_SRC
 ******* Fake pabdf_nsi
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_boast_implem(options) 
-            opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false}
-            opts.update(options)
+          def generate
             register_funccall("maxval")
             register_funccall("epsilon")
             register_funccall("stop") if get_lang == FORTRAN
@@ -2429,31 +2422,31 @@
         #+END_SRC
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          p = generate_boast_decl(opts, [pabdf_nsi])
+          # p = generate_boast_decl(@opts, [pabdf_nsi])
           includes = ["immintrin.h"]
           includes.push("string.h", "math.h", "float.h") if get_lang == C
-          k = CKernel::new( :includes => includes )
-          k.procedure = p
+          @kernel = CKernel::new( :includes => includes )
+          @kernel.procedure = declare_procedure([pabdf_nsi])
           pr k_pabdf_nsi.procedure
-          opn p
+          opn @kernel.procedure
             allocate = false
             if get_lang == C then
               allocate = true
             end
             # Local arrays
-            decl gpsp1_p   = Real("gpsp1_p",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)], :allocate => allocate)
-            decl gpsp1_v   = Real("gpsp1_v",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)], :allocate => allocate)
-            decl gpsp2_v   = Real("gpsp2_v",   :vector_length => opts[:vector_length], :dim => [Dim($pgaus)], :allocate => allocate)
-            decl c1        = Real("c1",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-            decl c2        = Real("c2",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-            decl c3        = Real("c3",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-            decl c4        = Real("c4",        :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-            decl alpha     = Real("alpha",     :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-            decl beta      = Real("beta",      :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl gpsp1_p   = Real("gpsp1_p",   :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)], :allocate => allocate)
+            decl gpsp1_v   = Real("gpsp1_v",   :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)], :allocate => allocate)
+            decl gpsp2_v   = Real("gpsp2_v",   :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)], :allocate => allocate)
+            decl c1        = Real("c1",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl c2        = Real("c2",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl c3        = Real("c3",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl c4        = Real("c4",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl alpha     = Real("alpha",     :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl beta      = Real("beta",      :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
 
-            decl gpveo     = Real("gpveo",     :vector_length => opts[:vector_length], :dim => [Dim(3)], :allocate => allocate)
-            decl fact1_p   = Real("fact1_p",   :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-            decl dtinv_mod = Real("dtinv_mod", :vector_length => opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl gpveo     = Real("gpveo",     :vector_length => @opts[:vector_length], :dim => [Dim(3)], :allocate => allocate)
+            decl fact1_p   = Real("fact1_p",   :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+            decl dtinv_mod = Real("dtinv_mod", :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
             decl inode     = Int("inode")
             decl jnode     = Int("jnode")
             decl jdime     = Int("jdime")
@@ -2464,33 +2457,33 @@
             decl jdofv     = Int("jdofv")
             decl itime     = Int("itime")
 
-            decl fact = Real('fact',           :vector_length => opts[:vector_length], :dim => [Dim(9)], :allocate => allocate)
+            decl fact = Real('fact',           :vector_length => @opts[:vector_length], :dim => [Dim(9)], :allocate => allocate)
 
             decl idof = Int("idof", :dim => [Dim(3)], :allocate => allocate)
             decl jdof = Int("jdof", :dim => [Dim(3)], :allocate => allocate)
         #+END_SRC
 ******* Initialisation
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:unroll] then
+          if @opts[:unroll] then
             dimensions = [2,3]
           else
-            dimensions = [$ndime]
+            dimensions = [@ndime]
           end
           
           if get_lang == FORTRAN
-            pr dtinv_mod === $dtinv_loc
-            pr gpsp1_p === $gpsp1
-            pr gpsp1_v === $gpsp1
-            pr gpsp2_v === $gpsp2
+            pr dtinv_mod === @dtinv_loc
+            pr gpsp1_p === @gpsp1
+            pr gpsp1_v === @gpsp1
+            pr gpsp2_v === @gpsp2
           
-            pr If( $kfl_nota1_nsi == 1 => lambda{ pr gpsp1_v === 0.0 } )
+            pr If( @kfl_nota1_nsi == 1 => lambda{ pr gpsp1_v === 0.0 } )
           
-            pr $elrbp === 0.0
-            pr $elrbu === 0.0
-            pr $elapp === 0.0
-            pr $elauu === 0.0
-            pr $elaup === 0.0
-            pr $elapu === 0.0
+            pr @elrbp === 0.0
+            pr @elrbu === 0.0
+            pr @elapp === 0.0
+            pr @elauu === 0.0
+            pr @elaup === 0.0
+            pr @elapu === 0.0
           elsif get_lang == C
             code =<<EOF
             memcpy(dtinv_mod, dtinv_loc, sizeof(dtinv_mod));
@@ -2500,19 +2493,19 @@
 
             if (kfl_nota1_nsi == 1) memset(gpsp1_v, 0, sizeof(gpsp1_v));
 
-            memset(elrbp, 0, sizeof(#{$elrbp.type.decl}) * pnode);
-            memset(elrbu, 0, sizeof(#{$elrbu.type.decl}) * ndime * pnode);
-            memset(elapp, 0, sizeof(#{$elapp.type.decl}) * pnode * pnode);
-            memset(elauu, 0, sizeof(#{$elauu.type.decl}) * pnode * ndime * pnode * ndime);
-            memset(elaup, 0, sizeof(#{$elaup.type.decl}) * pnode * ndime * pnode);
-            memset(elapu, 0, sizeof(#{$elapu.type.decl}) * pnode * pnode * ndime);
+            memset(elrbp, 0, sizeof(#{@elrbp.type.decl}) * pnode);
+            memset(elrbu, 0, sizeof(#{@elrbu.type.decl}) * ndime * pnode);
+            memset(elapp, 0, sizeof(#{@elapp.type.decl}) * pnode * pnode);
+            memset(elauu, 0, sizeof(#{@elauu.type.decl}) * pnode * ndime * pnode * ndime);
+            memset(elaup, 0, sizeof(#{@elaup.type.decl}) * pnode * ndime * pnode);
+            memset(elapu, 0, sizeof(#{@elapu.type.decl}) * pnode * pnode * ndime);
           EOF
             get_output.print code
           end
         #+END_SRC
 ******* First loop
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 1 then
+          if @opts[:nests].include? 1 then
             for1 = []
 
             2.times{|j|
@@ -2520,26 +2513,26 @@
               exp1 = ""
               exp2 = ""
               dim.times{|i|
-                exp1 += "$gpadv[#{i+1},igaus]*$gpcar[#{i+1},inode,igaus]"
-                exp2 += "$gpcar[#{i+1},inode,igaus]*$gpcar[#{i+1},jnode,igaus]"
+                exp1 += "@gpadv[#{i+1},igaus]*@gpcar[#{i+1},inode,igaus]"
+                exp2 += "@gpcar[#{i+1},inode,igaus]*@gpcar[#{i+1},jnode,igaus]"
                 exp1 +=  " + " if i+1 < dim
                 exp2 +=  " + " if i+1 < dim
               }
               
-              form_agrau = "pr $agrau[inode,igaus] === $gpden[igaus] * (#{exp1})"
-              form_wgrgr = "pr $wgrgr[inode,jnode,igaus] === #{exp2}"
+              form_agrau = "pr @agrau[inode,igaus] === @gpden[igaus] * (#{exp1})"
+              form_wgrgr = "pr @wgrgr[inode,jnode,igaus] === #{exp2}"
 
-              for1[j] = For(igaus,1,$pgaus){
-                pr For(inode,1,$pnode){
+              for1[j] = For(igaus,1,@pgaus){
+                pr For(inode,1,@pnode){
                   eval form_agrau
-                  pr For(jnode,1,$pnode){                    
+                  pr For(jnode,1,@pnode){                    
                     eval form_wgrgr
                   }
                 }
               }
             }
 
-            pr If($ndime == 2 => lambda{
+            pr If(@ndime == 2 => lambda{
                     pr for1[0]
                   }, else: lambda{
                     pr for1[1]
@@ -2548,42 +2541,42 @@
         #+END_SRC
 ******* Second loop
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 2 then
+          if @opts[:nests].include? 2 then
             block_fact0 = lambda{
-              pr fact[1] === $gpsp2[igaus] * $gpvol[igaus]
+              pr fact[1] === @gpsp2[igaus] * @gpvol[igaus]
             }
 
             block_fact6 = lambda{
-              pr fact[7] === $gpvis[igaus] * $gpvol[igaus]
+              pr fact[7] === @gpvis[igaus] * @gpvol[igaus]
             }
 
             block_fact7 = lambda{
-              pr fact[8] === gpsp1_v[igaus] * $gpvol[igaus]
+              pr fact[8] === gpsp1_v[igaus] * @gpvol[igaus]
             }
             
             block_fact8 = lambda{
-              # pr fact[9] ===  $gpden[igaus] * k_pabdf_nsi.procedure.call(1) * $dtinv_loc[1] + $gppor[igaus]
-              pr fact[9] ===  $gpden[igaus] * $dtinv_loc[1] + $gppor[igaus]
+              # pr fact[9] ===  @gpden[igaus] * k_pabdf_nsi.procedure.call(1) * @dtinv_loc[1] + @gppor[igaus]
+              pr fact[9] ===  @gpden[igaus] * @dtinv_loc[1] + @gppor[igaus]
             }
 
             block_fact5 = lambda{
-              pr fact[6] === fact[5] * ($agrau[jnode,igaus] + fact[9] * $gpsha[jnode,igaus] ) + fact[7] * $wgrgr[inode,jnode,igaus] + fact[8] * $agrau[jnode,igaus] * $agrau[inode,igaus]
+              pr fact[6] === fact[5] * (@agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] * @agrau[jnode,igaus] * @agrau[inode,igaus]
             }
             
             block_factn = lambda{|dim|
               dim.times{|i|
-                pr fact[i+2] === fact[1] * $gpcar[i+1,inode,igaus]
+                pr fact[i+2] === fact[1] * @gpcar[i+1,inode,igaus]
               }
             }
 
             block_fact4 = lambda {
-              pr fact[5] === $gpsha[inode,igaus] * $gpvol[igaus]
+              pr fact[5] === @gpsha[inode,igaus] * @gpvol[igaus]
             }
 
             block_elauu = lambda{|dim|              
               for i in 0...dim do 
                 for j in 0...dim do
-                  exp = "pr $elauu[idof[#{j}],jdof[#{i}]] === $elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+2}] * $gpcar[#{i+1},jnode,igaus]"
+                  exp = "pr @elauu[idof[#{j}],jdof[#{i}]] === @elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+2}] * @gpcar[#{i+1},jnode,igaus]"
                   exp = exp + " + fact[6]" if i == j
                   eval exp
                 end
@@ -2594,20 +2587,20 @@
             for1 = []
             2.times{|j|
               dim = j+2
-              for1[j] = For(igaus,1,$pgaus){ 
+              for1[j] = For(igaus,1,@pgaus){ 
                 block_fact0.call               
                 block_fact6.call
                 block_fact7.call
                 block_fact8.call
 
-                pr For(inode,1,$pnode){
+                pr For(inode,1,@pnode){
                   dim.times{|i|
                     pr idof[i] === inode*dim - dim+i+1
                   }
                   block_factn.call(dim)
                   block_fact4.call
                   
-                  pr For(jnode,1,$pnode){
+                  pr For(jnode,1,@pnode){
                     dim.times{|i|
                       pr jdof[i] === jnode*dim - dim+i+1
                     }
@@ -2618,7 +2611,7 @@
                 }
               }
             }
-            pr If($ndime == 2 => lambda{
+            pr If(@ndime == 2 => lambda{
                     pr for1[0]
                   }, else: lambda{
                     pr for1[1]
@@ -2640,55 +2633,55 @@
         the more sequentially possible.
 
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 3 then
-            for_inode = For(inode,1,$pnode)
-            for_jnode = For(jnode,1,$pnode)
-            for_idime = For(idime,1,$ndime)
+          if @opts[:nests].include? 3 then
+            for_inode = For(inode,1,@pnode)
+            for_jnode = For(jnode,1,@pnode)
+            for_idime = For(idime,1,@ndime)
             for_jdime = lambda{ |dim| return For(jdime,1,dim) }
 
             block1 = lambda{
-              pr fact[2] === $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,jnode,igaus]
+              pr fact[2] === @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,jnode,igaus]
             }
 
             block2 = lambda{
-              pr idofv === (inode-1)*$ndime + idime
+              pr idofv === (inode-1)*@ndime + idime
             }
 
             block3 = lambda{
-              pr jdofv === (jnode-1)*$ndime + jdime
-              pr $elauu[idofv,jdofv] === $elauu[idofv,jdofv] + fact[2] * $gpcar[jdime,inode,igaus]
+              pr jdofv === (jnode-1)*@ndime + jdime
+              pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,inode,igaus]
             }
 
             block4 = lambda{
-              pr fact[2] === -2.0.to_var / 3.0.to_var * $gpvis[igaus] * $gpvol[igaus] * $gpcar[idime,inode,igaus]
+              pr fact[2] === -2.0.to_var / 3.0.to_var * @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,inode,igaus]
             }
 
             block5 = lambda{
-              pr jdofv === (jnode-1)*$ndime + jdime
-              pr $elauu[idofv,jdofv] === $elauu[idofv,jdofv] + fact[2] * $gpcar[jdime,jnode,igaus]
+              pr jdofv === (jnode-1)*@ndime + jdime
+              pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,jnode,igaus]
             }
 
 
-            pr If($fvins_nsi > 0.9){
+            pr If(@fvins_nsi > 0.9){
               for1 = []
               dimensions.each{|dim|
-                for1[for1.length] = For(igaus,1,$pgaus){ 
+                for1[for1.length] = For(igaus,1,@pgaus){ 
 
                   opn for_inode
                     opn for_idime
                       block2.call
                       opn for_jnode
                         block1.call
-                        if opts[:unroll] then
+                        if @opts[:unroll] then
                           pr for_jdime.call(dim).unroll, &block3
                         else
                           pr for_jdime.call(dim), &block3
                         end
                       close for_jnode
-                      pr If($fvins_nsi == 2.0){
+                      pr If(@fvins_nsi == 2.0){
                         block4.call
                         opn for_jnode
-                        if opts[:unroll] then
+                        if @opts[:unroll] then
                           pr for_jdime.call(dim).unroll, &block5
                         else
                           pr for_jdime.call(dim), &block5
@@ -2700,8 +2693,8 @@
                 }
               }
               
-              if opts[:unroll] then
-                pr If($ndime == 2 => lambda{
+              if @opts[:unroll] then
+                pr If(@ndime == 2 => lambda{
                         pr for1[0]
                       }, else: lambda{
                         pr for1[1]
@@ -2714,17 +2707,17 @@
         #+END_SRC
 ******* Fourth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 4 then
-            exp_fact0 = fact[1] === $gpvol[igaus] * $gpden[igaus] * dtinv_mod[1]            
-            exp_fact1 = fact[2] === fact[1] *$gpsha[inode,igaus]
-            exp_elrbu = $elrbu[idime,inode] === $elrbu[idime,inode] + fact[2] * $elvel[idime,inode,2]
+          if @opts[:nests].include? 4 then
+            exp_fact0 = fact[1] === @gpvol[igaus] * @gpden[igaus] * dtinv_mod[1]            
+            exp_fact1 = fact[2] === fact[1] *@gpsha[inode,igaus]
+            exp_elrbu = @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @elvel[idime,inode,2]
           
             for_elauu1 = []           
             for_elbru2 = []
             dimensions.each{|dim|
               for_elauu1[for_elauu1.length] = For(idime,1,dim){
                 pr idof[idime] === (inode-1)*dim+idime
-                pr $elauu[idof[idime],idof[idime]] === $elauu[idof[idime],idof[idime]] + fact[2]
+                pr @elauu[idof[idime],idof[idime]] === @elauu[idof[idime],idof[idime]] + fact[2]
               }
               for_elbru2[for_elbru2.length] = For(idime,1,dim){
                 pr exp_elrbu
@@ -2732,17 +2725,17 @@
             }
           
             for_elauu2 = For(jdime,1,3){
-              pr jdof[jdime] === (jnode-1)*$ndime+jdime
-              pr $elauu[idof[jdime],jdof[jdime]] === $elauu[idof[jdime],jdof[jdime]] - fact[2] * $gpsha[jnode,igaus]
+              pr jdof[jdime] === (jnode-1)*@ndime+jdime
+              pr @elauu[idof[jdime],jdof[jdime]] === @elauu[idof[jdime],jdof[jdime]] - fact[2] * @gpsha[jnode,igaus]
             }
           
             for_elbru1 = For(idime,1,3){
-              pr $elrbu[idime,inode] ===  $elrbu[idime,inode] - fact[2] * gpveo[idime]
+              pr @elrbu[idime,inode] ===  @elrbu[idime,inode] - fact[2] * gpveo[idime]
               pr exp_elrbu
             }
           
             block_kfl_lumped_1 = lambda{
-              pr For(igaus,1,$pgaus){
+              pr For(igaus,1,@pgaus){
                 if get_lang == FORTRAN then
                   pr gpveo === 0.0.to_var
                 elsif get_lang == C
@@ -2751,28 +2744,28 @@
 EOF
                   get_output.print code
                 end
-                pr For(inode,1,$pnode){
+                pr For(inode,1,@pnode){
                   for1 = For(idime,1,3){
-                    pr gpveo[idime] === gpveo[idime] + $elvel[idime,inode,2] * $gpsha[inode,igaus] 
+                    pr gpveo[idime] === gpveo[idime] + @elvel[idime,inode,2] * @gpsha[inode,igaus] 
                   }
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for1.unroll
                   else
                     pr for1
                   end
                 }
                 pr exp_fact0
-                pr For(inode,1,$pnode){
+                pr For(inode,1,@pnode){
                   pr exp_fact1
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for_elauu1[1].unroll
                     pr for_elbru1.unroll
                   else
                     pr for_elauu1[0]
                     pr for_elbru1
                   end
-                  pr For(jnode,1,$pnode){
-                    if opts[:unroll] then
+                  pr For(jnode,1,@pnode){
+                    if @opts[:unroll] then
                       pr for_elauu2.unroll
                     else
                       pr for_elauu2
@@ -2785,11 +2778,11 @@ EOF
             block_kfl_lumped_2 = []
             dimensions.length.times{|i|
               block_kfl_lumped_2[i] = lambda{
-                pr For(igaus,1,$pgaus){
+                pr For(igaus,1,@pgaus){
                   pr exp_fact0
-                  pr For(inode,1,$pnode){
+                  pr For(inode,1,@pnode){
                     pr exp_fact1
-                    if opts[:unroll] then
+                    if @opts[:unroll] then
                       pr for_elauu1[i].unroll
                       pr for_elbru2[i].unroll
                     else
@@ -2801,47 +2794,47 @@ EOF
               }
             }
           
-            if_kfl_lumped_1 = lambda{ pr If($ndime == 2 => lambda{}, :else => block_kfl_lumped_1) }      
-            if opts[:unroll] then
-              if_kfl_lumped_2 = lambda{ pr If($ndime == 2 => block_kfl_lumped_2[0] , :else => block_kfl_lumped_2[1])}
+            if_kfl_lumped_1 = lambda{ pr If(@ndime == 2 => lambda{}, :else => block_kfl_lumped_1) }      
+            if @opts[:unroll] then
+              if_kfl_lumped_2 = lambda{ pr If(@ndime == 2 => block_kfl_lumped_2[0] , :else => block_kfl_lumped_2[1])}
             else
               if_kfl_lumped_2 = block_kfl_lumped_2[0]
             end
           
-            pr If($kfl_lumped == 1 => if_kfl_lumped_1, $kfl_lumped == 2 => if_kfl_lumped_2)  
+            pr If(@kfl_lumped == 1 => if_kfl_lumped_1, @kfl_lumped == 2 => if_kfl_lumped_2)  
           end
         #+END_SRC
 
 ******* Fifth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 5 then
+          if @opts[:nests].include? 5 then
             for1 = []
             dimensions.each{|dim|
-              for1[for1.length] = For(igaus,1,$pgaus){
-                pr For(inode,1,$pnode){
+              for1[for1.length] = For(igaus,1,@pgaus){
+                pr For(inode,1,@pnode){
                   for2 = For(idime,1,dim){
                     pr idof[idime] === (inode-1)*dim + idime
                   }
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for2.unroll
                   else
                     pr for2
                   end
-                  pr For(jnode,1,$pnode){
-                    pr fact[1] === $gpvol[igaus] * $gpsha[jnode,igaus]
+                  pr For(jnode,1,@pnode){
+                    pr fact[1] === @gpvol[igaus] * @gpsha[jnode,igaus]
                     for2 = For(jdime,1,dim){
-                      pr fact[jdime+1] === fact[1] * $gpcar[jdime,inode,igaus]
-                      pr $elapu[jnode,idof[jdime]] === $elapu[jnode,idof[jdime]] + fact[jdime+1]
+                      pr fact[jdime+1] === fact[1] * @gpcar[jdime,inode,igaus]
+                      pr @elapu[jnode,idof[jdime]] === @elapu[jnode,idof[jdime]] + fact[jdime+1]
                     }
-                    if opts[:unroll] then
+                    if @opts[:unroll] then
                       pr for2.unroll
                     else
                       pr for2
                     end
                     for2 = For(jdime,1,dim){
-                      pr $elaup[idof[jdime],jnode] === $elaup[idof[jdime],jnode] - fact[jdime+1]
+                      pr @elaup[idof[jdime],jnode] === @elaup[idof[jdime],jnode] - fact[jdime+1]
                     }
-                    if opts[:unroll] then
+                    if @opts[:unroll] then
                       pr for2.unroll
                     else
                       pr for2
@@ -2851,8 +2844,8 @@ EOF
               }
             }
 
-            if opts[:unroll] then
-              pr If($ndime == 2 => lambda{
+            if @opts[:unroll] then
+              pr If(@ndime == 2 => lambda{
                       pr for1[0]
                     }, else: lambda{
                       pr for1[1]
@@ -2864,17 +2857,17 @@ EOF
         #+END_SRC
 ******* Sixth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 6 then
-            pr If($kfl_stabi_nsi != -1){
-              pr For(igaus,1,$pgaus){
-                pr For(inode,1,$pnode){
-                  pr For(jnode,inode+1,$pnode){
-                    pr fact[2]             === gpsp1_p[igaus] * $wgrgr[jnode,inode,igaus] * $gpvol[igaus]
-                    pr $elapp[jnode,inode] === $elapp[jnode,inode] + fact[2]
-                    pr $elapp[inode,jnode] === $elapp[inode,jnode] + fact[2]
+          if @opts[:nests].include? 6 then
+            pr If(@kfl_stabi_nsi != -1){
+              pr For(igaus,1,@pgaus){
+                pr For(inode,1,@pnode){
+                  pr For(jnode,inode+1,@pnode){
+                    pr fact[2]             === gpsp1_p[igaus] * @wgrgr[jnode,inode,igaus] * @gpvol[igaus]
+                    pr @elapp[jnode,inode] === @elapp[jnode,inode] + fact[2]
+                    pr @elapp[inode,jnode] === @elapp[inode,jnode] + fact[2]
                   }
-                  pr fact[2]             === gpsp1_p[igaus] * $wgrgr[inode,inode,igaus] * $gpvol[igaus]
-                  pr $elapp[inode,inode] === $elapp[inode,inode] + fact[2]
+                  pr fact[2]             === gpsp1_p[igaus] * @wgrgr[inode,inode,igaus] * @gpvol[igaus]
+                  pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2]
                 }
               }
             }
@@ -2882,12 +2875,12 @@ EOF
         #+END_SRC
 ******* Seventh nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 7 then
-            pr For(igaus,1,$pgaus){
-                pr fact[2] === $penal_nsi * $gpvol[igaus]
-              pr For(inode,1,$pnode){
-                pr $elapp[inode,inode] === $elapp[inode,inode] + fact[2] * $gpsha[inode,igaus]
-                pr $elrbp[inode]       === $elrbp[inode]       + fact[2] * $gpsha[inode,igaus] * $elpre[inode,1]
+          if @opts[:nests].include? 7 then
+            pr For(igaus,1,@pgaus){
+                pr fact[2] === @penal_nsi * @gpvol[igaus]
+              pr For(inode,1,@pnode){
+                pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2] * @gpsha[inode,igaus]
+                pr @elrbp[inode]       === @elrbp[inode]       + fact[2] * @gpsha[inode,igaus] * @elpre[inode,1]
               }
             }
           end
@@ -2895,8 +2888,8 @@ EOF
 ******* Eighth nest
         Maybe blocking can be interesting for the first nested loop.
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 8 then
-            for_igaus = For(igaus,1,$pgaus){
+          if @opts[:nests].include? 8 then
+            for_igaus = For(igaus,1,@pgaus){
               if get_lang == FORTRAN then
                 pr c1[1] === 0.0.to_var 
                 pr c2[1] === 0.0.to_var 
@@ -2909,7 +2902,7 @@ EOF
 EOF
                 get_output.print code
               end
-              pr For(idime,1,$ndime){
+              pr For(idime,1,@ndime){
                 if get_lang == FORTRAN then
                   pr c4[1] === 0.0.to_var
                 elsif get_lang == C
@@ -2918,14 +2911,14 @@ EOF
 EOF
                   get_output.print code
                 end
-                pr For(inode,1,$pnode){
-                  pr c4[1] === c4[1] + $agrau[inode,igaus] * $elvel[idime,inode,1]
+                pr For(inode,1,@pnode){
+                  pr c4[1] === c4[1] + @agrau[inode,igaus] * @elvel[idime,inode,1]
                 }
-                pr c4[1] === $gpsp1[igaus] * c4[1]
+                pr c4[1] === @gpsp1[igaus] * c4[1]
                 # Exponential intrinsics works only with ICC
-                # pr c1[1] === c1[1] + ( $gpvep[idime,igaus] - c4[1] )**2
-                pr c1[1] === c1[1] + ( $gpvep[idime,igaus] - c4[1] ) * ( $gpvep[idime,igaus] - c4[1] )
-                pr c3[1] === c3[1] + $gpvep[idime,igaus] * $gpvep[idime,igaus]
+                # pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] )**2
+                pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] ) * ( @gpvep[idime,igaus] - c4[1] )
+                pr c3[1] === c3[1] + @gpvep[idime,igaus] * @gpvep[idime,igaus]
                 pr c2[1] === c2[1] + c4[1] * c4[1]
               }
           
@@ -2940,71 +2933,71 @@ EOF
                 get_output.print code
               end
           
-              pr If($kfl_limit_nsi == 1 => lambda{
+              pr If(@kfl_limit_nsi == 1 => lambda{
                         pr alpha[1] === Min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
-                    }, $kfl_limit_nsi == 2 => lambda{
+                    }, @kfl_limit_nsi == 2 => lambda{
                       # Tanh works only with ICC
                       pr alpha[1] === 0.5.to_var * ( Tanh( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
                     })
-              pr For(idime,1,$ndime){
-                pr $gpvep[idime,igaus] === alpha[1] * $gpvep[idime,igaus]
+              pr For(idime,1,@ndime){
+                pr @gpvep[idime,igaus] === alpha[1] * @gpvep[idime,igaus]
               }
             }
           
             if get_lang == C then
               code =<<EOF
-              memset(gpvep,0,sizeof(#{$gpvep.type.decl}) * ndime * pgaus);
+              memset(gpvep,0,sizeof(#{@gpvep.type.decl}) * ndime * pgaus);
 EOF
             end
-            pr If( $kfl_stabi_nsi == -1 => lambda{
+            pr If( @kfl_stabi_nsi == -1 => lambda{
                      if get_lang == FORTRAN then
-                       pr $gpvep === 0.0
+                       pr @gpvep === 0.0
                      elsif get_lang == C
                        get_output.print code
                      end           
-                   }, $kfl_limit_nsi == -1 => lambda{
+                   }, @kfl_limit_nsi == -1 => lambda{
                      if get_lang == FORTRAN then
-                       pr $gpvep === 0.0
+                       pr @gpvep === 0.0
                      elsif get_lang == C
                        get_output.print code
                      end           
-                   }, $kfl_limit_nsi > 0 => lambda{ pr for_igaus } )
+                   }, @kfl_limit_nsi > 0 => lambda{ pr for_igaus } )
           end
         #+END_SRC        
 ******* Nineth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 9 then
+          if @opts[:nests].include? 9 then
             for_igaus = []
             for_igaus[0] = []
             for_igaus[1] = []
             
-            if opts[:unroll] then
+            if @opts[:unroll] then
               dimensions = [2,3]
             else
-              dimensions = [$ndime]
+              dimensions = [@ndime]
             end
           
             dimensions.each{|dim|
           
-              for_igaus[0][for_igaus[0].length] = For(igaus,1,$pgaus){
+              for_igaus[0][for_igaus[0].length] = For(igaus,1,@pgaus){
                 for1 = For(idime,1,dim){
-                  pr $gpgrp[idime,igaus] === $gpgrp[idime,igaus] + gpsp1_p[igaus] * $gprhs[idime,igaus]
+                  pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + gpsp1_p[igaus] * @gprhs[idime,igaus]
                 }
-                if opts[:unroll] then
+                if @opts[:unroll] then
                   pr for1.unroll
                 else
                   pr for1
                 end
               }
                     
-              for_igaus[1][for_igaus[1].length] = For(igaus,1,$pgaus){
-                pr fact[2]     === $gpden[igaus] * $dtsgs[1] * gpsp1_v[igaus]
-                pr fact1_p[1]  === $gpden[igaus] * $dtsgs[1] * gpsp1_p[igaus]
+              for_igaus[1][for_igaus[1].length] = For(igaus,1,@pgaus){
+                pr fact[2]     === @gpden[igaus] * @dtsgs[1] * gpsp1_v[igaus]
+                pr fact1_p[1]  === @gpden[igaus] * @dtsgs[1] * gpsp1_p[igaus]
                 for1 = For(idime,1,dim){
-                  pr $gpvep[idime,igaus] === $gpvep[idime,igaus] + fact[2]    * $gpsgs[idime,igaus,2]
-                  pr $gpgrp[idime,igaus] === $gpgrp[idime,igaus] + fact1_p[1] * $gpsgs[idime,igaus,2]
+                  pr @gpvep[idime,igaus] === @gpvep[idime,igaus] + fact[2]    * @gpsgs[idime,igaus,2]
+                  pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + fact1_p[1] * @gpsgs[idime,igaus,2]
                 }
-                if opts[:unroll] then
+                if @opts[:unroll] then
                   pr for1.unroll
                 else
                   pr for1
@@ -3014,8 +3007,8 @@ EOF
           
             if_ndime = []
             2.times{|i|
-              if opts[:unroll] then
-                if_ndime[i] = If($ndime == 2 => lambda{
+              if @opts[:unroll] then
+                if_ndime[i] = If(@ndime == 2 => lambda{
                                    pr for_igaus[i][0]
                                  }, :else => lambda{
                                    pr for_igaus[i][1]
@@ -3027,17 +3020,17 @@ EOF
             
             block = lambda{
               pr if_ndime[0]
-              pr If($kfl_sgsti_nsi == 1){
+              pr If(@kfl_sgsti_nsi == 1){
                 pr if_ndime[1]
               }
             }
           
-            pr If($kfl_stabi_nsi == -1 => lambda{ 
+            pr If(@kfl_stabi_nsi == -1 => lambda{ 
                     if get_lang == FORTRAN then
-                      pr $gpgrp === 0.0 
+                      pr @gpgrp === 0.0 
                     elsif get_lang == C
                       code =<<EOF
-                      memset(gpgrp,0,sizeof(#{$gpgrp.type.decl}) * ndime * pgaus);
+                      memset(gpgrp,0,sizeof(#{@gpgrp.type.decl}) * ndime * pgaus);
 EOF
                     end
                       get_output.print code
@@ -3046,37 +3039,37 @@ EOF
         #+END_SRC        
 ******* Tenth nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 10 then
+          if @opts[:nests].include? 10 then
             for_igaus = []
             dimensions.each{|dim|
-              for_igaus[for_igaus.length] = For(igaus,1,$pgaus){
-                pr fact[5] === $gpden[igaus] * dtinv_mod[1]
-                pr For(itime,2,$nbdfp_nsi){
+              for_igaus[for_igaus.length] = For(igaus,1,@pgaus){
+                pr fact[5] === @gpden[igaus] * dtinv_mod[1]
+                pr For(itime,2,@nbdfp_nsi){
                   for_idime = For(idime,1,dim){
-                    pr $gprhs[idime,igaus] === $gprhs[idime,igaus] - k_pabdf_nsi.procedure.call(itime) * fact[5] * $gpvel[idime,igaus,itime]
+                    pr @gprhs[idime,igaus] === @gprhs[idime,igaus] - k_pabdf_nsi.procedure.call(itime) * fact[5] * @gpvel[idime,igaus,itime]
                   }
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for_idime.unroll
                   else
                     pr for_idime
                   end
                 }
-                pr For(inode,1,$pnode){
-                  pr fact[2] === $gpvol[igaus] * $gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
-                  pr fact[4] === $gpvol[igaus] * $agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
+                pr For(inode,1,@pnode){
+                  pr fact[2] === @gpvol[igaus] * @gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
+                  pr fact[4] === @gpvol[igaus] * @agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
                   for_idime = For(idime,1,dim){
-                    pr $elrbu[idime,inode] === $elrbu[idime,inode] + fact[2] * $gprhs[idime,igaus] + fact[4] * $gpvep[idime,igaus]
+                    pr @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @gprhs[idime,igaus] + fact[4] * @gpvep[idime,igaus]
                   }
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for_idime.unroll
                   else
                     pr for_idime
                   end
-                  pr $elrbp[inode] === $elrbp[inode] + $gpvol[igaus] * $gpsha[inode,igaus] * $gprhc[igaus]  # ( rhs, q )
+                  pr @elrbp[inode] === @elrbp[inode] + @gpvol[igaus] * @gpsha[inode,igaus] * @gprhc[igaus]  # ( rhs, q )
                   for_idime = For(idime,1,dim){
-                    pr $elrbp[inode] === $elrbp[inode] + $gpvol[igaus] * $gpcar[idime,inode,igaus] * $gpgrp[idime,igaus] # ( P2' , grad(q) ) 
+                    pr @elrbp[inode] === @elrbp[inode] + @gpvol[igaus] * @gpcar[idime,inode,igaus] * @gpgrp[idime,igaus] # ( P2' , grad(q) ) 
                   }
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for_idime.unroll
                   else
                     pr for_idime
@@ -3085,8 +3078,8 @@ EOF
               }
             }
             
-            if opts[:unroll] then
-              pr If($ndime == 2 => lambda{ pr for_igaus[0] }, :else => lambda{ pr for_igaus[1] })
+            if @opts[:unroll] then
+              pr If(@ndime == 2 => lambda{ pr for_igaus[0] }, :else => lambda{ pr for_igaus[1] })
             else
               pr for_igaus[0]
             end
@@ -3095,21 +3088,21 @@ EOF
 
 ******* Eleventh nest
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          if opts[:nests].include? 11 then
+          if @opts[:nests].include? 11 then
             exp_elauq = []
-            exp_elauq[0] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] - fact[2] * $gpcar[idime,inode,igaus]"
-            exp_elauq[1] = "$elauq[idof[dim],1] === $elauq[idof[dim],1] + $gpvol[igaus] * $gpsha[inode,igaus] * $gpcar_bub[idime,igaus]"
+            exp_elauq[0] = "@elauq[idof[dim],1] === @elauq[idof[dim],1] - fact[2] * @gpcar[idime,inode,igaus]"
+            exp_elauq[1] = "@elauq[idof[dim],1] === @elauq[idof[dim],1] + @gpvol[igaus] * @gpsha[inode,igaus] * @gpcar_bub[idime,igaus]"
           
             block_igaus = lambda{|dim,exp|
-              return For(igaus,1,$pgaus){
-                pr fact[2] === $gpvol[igaus] * $gpsha_bub[igaus]
-                pr For(inode,1,$pnode){
+              return For(igaus,1,@pgaus){
+                pr fact[2] === @gpvol[igaus] * @gpsha_bub[igaus]
+                pr For(inode,1,@pnode){
                   for_idime = For(idime,1,dim){
                     pr idof[dim] === (inode-1)*dim + idime
                     pr eval exp
-                    pr $elaqu[1,idof[dim]] === $elaqu[1,idof[dim]] + fact[2] * $gpcar[idime,inode,igaus]
+                    pr @elaqu[1,idof[dim]] === @elaqu[1,idof[dim]] + fact[2] * @gpcar[idime,inode,igaus]
                   }
-                  if opts[:unroll] then
+                  if @opts[:unroll] then
                     pr for_idime.unroll
                   else
                     pr for_idime
@@ -3118,55 +3111,54 @@ EOF
               }
             }
           
-            if opts[:unroll] then
-              if_kfl_press_nsi_1 = If($ndime == 2 => lambda{ pr block_igaus.call(dimensions[0],exp_elauq[0]) }, :else => lambda{ pr block_igaus.call(dimensions[1],exp_elauq[0]) })
-              if_kfl_press_nsi_else = If($ndime == 2 => lambda{ pr block_igaus.call(dimensions[0],exp_elauq[1]) }, :else => lambda{ pr block_igaus.call(dimensions[1],exp_elauq[1]) })
+            if @opts[:unroll] then
+              if_kfl_press_nsi_1 = If(@ndime == 2 => lambda{ pr block_igaus.call(dimensions[0],exp_elauq[0]) }, :else => lambda{ pr block_igaus.call(dimensions[1],exp_elauq[0]) })
+              if_kfl_press_nsi_else = If(@ndime == 2 => lambda{ pr block_igaus.call(dimensions[0],exp_elauq[1]) }, :else => lambda{ pr block_igaus.call(dimensions[1],exp_elauq[1]) })
             else
               if_kfl_press_nsi_1 = block_igaus.call(dimensions[0],exp_elauq[0])
               if_kfl_press_nsi_else = block_igaus.call(dimensions[0],exp_elauq[1])
             end
           
-            pr If(maxval($pbubl) == 1){
-              pr If($kfl_stabi_nsi != -1){
+            pr If(maxval(@pbubl) == 1){
+              pr If(@kfl_stabi_nsi != -1){
                 if get_lang == FORTRAN then
                   stop
                 end
               }
               
               if get_lang == FORTRAN then
-                pr $elauq === 0.0
-                pr $elapq === 0.0
-                pr $elaqu === 0.0
-                pr $elaqp === 0.0
-                pr $elaqq === 0.0
-                pr $elrbq === 0.0
+                pr @elauq === 0.0
+                pr @elapq === 0.0
+                pr @elaqu === 0.0
+                pr @elaqp === 0.0
+                pr @elaqq === 0.0
+                pr @elrbq === 0.0
               elsif get_lang == C
                 code =<<EOF
-                memset(elauq, 0, sizeof(#{$elauq.type.decl}) * pnode * ndime);
-                memset(elapq, 0, sizeof(#{$elapq.type.decl}) * pnode);
-                memset(elaqu, 0, sizeof(#{$elaqu.type.decl}) * pnode * ndime);
-                memset(elaqp, 0, sizeof(#{$elaqp.type.decl}) * pnode);
-                memset(elaqq, 0, sizeof(#{$elaqq.type.decl}));
-                memset(elbrq, 0, sizeof(#{$elbrq.type.decl}));
+                memset(elauq, 0, sizeof(#{@elauq.type.decl}) * pnode * ndime);
+                memset(elapq, 0, sizeof(#{@elapq.type.decl}) * pnode);
+                memset(elaqu, 0, sizeof(#{@elaqu.type.decl}) * pnode * ndime);
+                memset(elaqp, 0, sizeof(#{@elaqp.type.decl}) * pnode);
+                memset(elaqq, 0, sizeof(#{@elaqq.type.decl}));
+                memset(elbrq, 0, sizeof(#{@elbrq.type.decl}));
 EOF
                 get_output.print code
               end
-              pr If($kfl_press_nsi == 1 => lambda{ pr if_kfl_press_nsi_1}, :else => lambda{ pr if_kfl_press_nsi_else })
+              pr If(@kfl_press_nsi == 1 => lambda{ pr if_kfl_press_nsi_1}, :else => lambda{ pr if_kfl_press_nsi_else })
           
-              pr For(igaus,1,$pgaus){
-                pr $elaqq[1,1] === $elaqq[1,1] + $gpvol[igaus] * $gpsha_bub[igaus] * $penal_nsi
-                pr $elrbq[1]   === $elrbq[1]   + $gpvol[igaus] * $gpsha_bub[igaus] * $penal_nsi * $elbub[1]
-                pr $elrbq[1]   === $elrbq[1]   + $gpvol[igaus] * $gpsha_bub[igaus] * $gprhc[igaus]
+              pr For(igaus,1,@pgaus){
+                pr @elaqq[1,1] === @elaqq[1,1] + @gpvol[igaus] * @gpsha_bub[igaus] * @penal_nsi
+                pr @elrbq[1]   === @elrbq[1]   + @gpvol[igaus] * @gpsha_bub[igaus] * @penal_nsi * @elbub[1]
+                pr @elrbq[1]   === @elrbq[1]   + @gpvol[igaus] * @gpsha_bub[igaus] * @gprhc[igaus]
               }
             }
           end
         #+END_SRC        
 ******* Closing procedure
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-            close p
-            return k
-          end        
-        
+              close @kernel.procedure
+            end        
+          end
         #+END_SRC
 ****** Comparing with ref
       - Runing kernel
