@@ -13,6 +13,9 @@
   - [ ] Unrolling step
   - [ ] Loop reordering
   - [ ] Moving parts into functions
+  - [ ] look AMD implementation of intrinsics
+  - [ ] Check intrinsics precision
+  - [ ] Check similarities of the 2 kernels 
 * 2016
 ** October
 *** 2016-10-04
