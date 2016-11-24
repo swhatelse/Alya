@@ -1,0 +1,263 @@
+# -*- coding: utf-8 -*-
+# -*- mode: org -*-
+#+startup: beamer
+#+STARTUP: overview
+#+STARTUP: indent
+#+TAGS: noexport(n)
+#+LANGUAGE: en
+
+#+Title: Porting and optimizing Alya kernels with BOAST
+#+AUTHOR:      Steven QUINITO MASNADA
+
+#+EPRESENT_FRAME_LEVEL: 2
+
+#+LaTeX_CLASS: beamer
+#+LaTeX_CLASS_OPTIONS: [11pt,xcolor=dvipsnames,presentation]
+#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+
+#+LATEX_HEADER: \usedescriptionitemofwidthas{bl}
+#+LATEX_HEADER: \usepackage[T1]{fontenc}
+#+LATEX_HEADER: \usepackage[utf8]{inputenc}
+#+LATEX_HEADER: \usepackage[american]{babel}
+#+LATEX_HEADER: \usepackage{ifthen,figlatex,amsmath,amstext,gensymb,amssymb}
+#+LATEX_HEADER: \usepackage{boxedminipage,xspace,multicol}
+#+LATEX_HEADER: %%%%%%%%% Begin of Beamer Layout %%%%%%%%%%%%%
+#+LATEX_HEADER: \ProcessOptionsBeamer
+#+latex_header: \mode<beamer>{\usetheme{Madrid}}
+#+LATEX_HEADER: \usecolortheme{whale}
+#+LATEX_HEADER: \usecolortheme[named=BrickRed]{structure}
+# #+LATEX_HEADER: \useinnertheme{rounded}
+#+LATEX_HEADER: \useoutertheme{infolines}
+#+LATEX_HEADER: \setbeamertemplate{footline}[frame number]
+#+LATEX_HEADER: \setbeamertemplate{headline}[default]
+#+LATEX_HEADER: \setbeamertemplate{navigation symbols}{}
+#+LATEX_HEADER: \defbeamertemplate*{headline}{info theme}{}
+#+LATEX_HEADER: \defbeamertemplate*{footline}{info theme}{\leavevmode%
+#+LATEX_HEADER:   \hbox{%
+#+LATEX_HEADER:     \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+#+LATEX_HEADER:       \usebeamerfont{author in head/foot}\insertshortauthor
+#+LATEX_HEADER:     \end{beamercolorbox}%
+#+LATEX_HEADER:   \begin{beamercolorbox}[wd=.41\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+#+LATEX_HEADER:     \usebeamerfont{title in head/foot}\insertsectionhead
+#+LATEX_HEADER:   \end{beamercolorbox}%
+#+LATEX_HEADER:   \begin{beamercolorbox}[wd=.09\paperwidth,ht=2.25ex,dp=1ex,right]{section in head/foot}%
+#+LATEX_HEADER:     \usebeamerfont{section in head/foot}\insertframenumber{}~/~\inserttotalframenumber\hspace*{2ex} 
+#+LATEX_HEADER:   \end{beamercolorbox}
+#+LATEX_HEADER:   }\vskip0pt}
+#+LATEX_HEADER: \setbeamertemplate{footline}[info theme]
+#+LATEX_HEADER: %%%%%%%%% End of Beamer Layout %%%%%%%%%%%%%
+#+LATEX_HEADER: \usepackage{verbments}
+#+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \usepackage{url} \urlstyle{sf}
+#+LATEX_HEADER: \usepackage{appendixnumberbeamer}
+#+LATEX_HEADER: \usepackage{multicol}
+#+LATEX_HEADER:\usepackage{minted}
+
+#+LATEX_HEADER: \let\alert=\structure % to make sure the org * * works of tools
+#+BEAMER_FRAME_LEVEL: 2
+
+#+LATEX_HEADER: \AtBeginSection[]{\begin{frame}<beamer>\frametitle{Talk Outline}\tableofcontents[currentsection]\end{frame}}
+
+#+LATEX_HEADER: %\usepackage{biblatex}
+# #+LATEX_HEADER: \bibliography{../../biblio.bib}
+# #+LATEX_HEADER: \usepackage{cite}
+
+#+LATEX_HEADER:   \institute{POLARIS and CORSE teams/LIG\\Under the supervision of A. LEGRAND, B. VIDEAU, and JF. MÉHAUT}
+#+LATEX_HEADER: \AtBeginSection[]{\begin{frame}<beamer>\frametitle{Talk Outline}\tableofcontents[currentsection]\end{frame}}
+
+#+BEGIN_LaTeX
+\newcommand{\backupbegin}{
+   \newcounter{finalframe}
+   \setcounter{finalframe}{\value{framenumber}}
+}
+\newcommand{\backupend}{
+   \setcounter{framenumber}{\value{finalframe}}
+}
+#+END_LaTeX
+
+#+BEGIN_LaTeX
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+#+END_LaTeX
+
+*** Code                                                           :noexport:
+         #+begin_src R :results output :session :exports both
+           library(ggplot2)
+           library(plyr)
+           
+           df = read.csv('../../../experiments/2016_11_14/titan/15_18_23/Data.csv',strip.white=T,header=T)
+           boast <- data.frame( nest = df[df$kernel == "boast",]$nest, acc = df[df$kernel == "ref",]$time / df[df$kernel == "boast",]$time )
+           df2 <- ddply(boast, c("nest"), summarise, speedup = mean(acc), err = 2*sd(acc)/sqrt(length(acc)))
+           summary(df2)
+         #+end_src
+
+         #+RESULTS:
+         :       nest          speedup           err          
+         :  Min.   :1.000   Min.   :1.502   Min.   :0.009819  
+         :  1st Qu.:2.750   1st Qu.:1.859   1st Qu.:0.015442  
+         :  Median :4.500   Median :2.133   Median :0.023402  
+         :  Mean   :4.625   Mean   :2.121   Mean   :0.029015  
+         :  3rd Qu.:6.250   3rd Qu.:2.317   3rd Qu.:0.031896  
+         :  Max.   :9.000   Max.   :2.817   Max.   :0.074835
+
+         #+begin_src R :results output graphics :file ./img/plots/speedup.pdf :exports both :width 8 :height 6 :session
+           ggplot(df2, aes(x = factor(nest), y = speedup)) + 
+               geom_bar(fill="dodgerblue3",stat = "identity", position="dodge") +
+               geom_errorbar(aes(ymax = speedup + err, ymin = speedup - err), position = position_dodge(0.9), width = 0.5) +
+               labs(title = "Speedup compared to the reference implementation on different loop nests", y="Speedup", x="Loop Nest") +
+               theme(axis.text=element_text(size=14,color="black"), axis.title=element_text(size=14,face="bold"), plot.title = element_text(size=14,face="bold"))
+         #+end_src
+
+         #+RESULTS:
+         [[file:./img/plots/speedup.pdf]]
+
+*** Alya
+    - Multi-physics problems
+      - solves discretized partial differential equations using mostly
+        Finite Elements
+    - 2 Kernel matrices assembly in written in Fortran \to Assembly of
+      Navier Stokes equations
+**** Objectives
+     - *Factorize* \to generate specialized versions(vector size,
+       unrolling step, etc...)
+     - *Vectorization* using Intrinsics
+     - Test different *optimization strategy*
+     - Performance *tuning*
+
+*** Original Fortran
+   #+BEGIN_LaTeX
+   \begin{figure}[p]
+     \scriptsize
+   #+END_LaTeX
+
+      #+BEGIN_SRC fortran
+    do igaus = 1,pgaus
+      do inode = 1,pnode
+        idof1 = 3*inode-2
+        idof2 = 3*inode-1
+        idof3 = 3*inode
+        do jnode = 1,pnode
+          fact0(1:8)             = gpvol(1:8,igaus)       * gpsha(1:8,jnode,igaus) 
+          fact1(1:8)             = fact0(1:8)             * gpcar(1:8,1,inode,igaus)
+          fact2(1:8)             = fact0(1:8)             * gpcar(1:8,2,inode,igaus)
+          fact3(1:8)             = fact0(1:8)             * gpcar(1:8,3,inode,igaus)
+          elapu(1:8,jnode,idof1) = elapu(1:8,jnode,idof1) + fact1(1:8)
+          elapu(1:8,jnode,idof2) = elapu(1:8,jnode,idof2) + fact2(1:8)
+          elapu(1:8,jnode,idof3) = elapu(1:8,jnode,idof3) + fact3(1:8) 
+          elaup(1:8,idof1,jnode) = elaup(1:8,idof1,jnode) - fact1(1:8)
+          elaup(1:8,idof2,jnode) = elaup(1:8,idof2,jnode) - fact2(1:8)
+          elaup(1:8,idof3,jnode) = elaup(1:8,idof3,jnode) - fact3(1:8)
+         end do
+      end do
+    end do
+      #+END_SRC
+   #+BEGIN_LaTeX
+   \end{figure}
+   #+END_LaTeX
+*** Using C intrinsics
+    Target different architecture CPUs and accelerators including KNL
+       #+BEGIN_LaTeX
+       \begin{figure}[p]
+       \tiny
+       #+END_LaTeX
+    
+      #+BEGIN_SRC C
+        for (igaus = 0; igaus < pgaus; igaus += 1) {
+          for (inode = 0; inode < pnode; inode += 1) {
+            for (idime = 0; idime < ndime; idime += 1) {
+              idof[idime] = inode*ndime + idime;
+            }
+            for (jnode = 0; jnode < pnode; jnode += 1) {
+              fact[0] = _mm512_mul_pd( gpvol[igaus], gpsha[jnode + pnode*igaus] );
+              for (jdime = 0; jdime < ndime; jdime += 1) {
+                fact[jdime] = _mm512_mul_pd( fact[0], gpcar[jdime + ndime*(inode + mnode*igaus)] );
+                elapu[jnode + pnode*idof[jdime]] = _mm512_add_pd( elapu[jnode + pnode*idof[jdime]], 
+                                                                  fact[jdime] );
+              }
+              for (jdime = 1; jdime <= ndime; jdime += 1) {
+                elaup[idof[jdime] + pnode*ndime*jnode] = _mm512_sub_pd( elaup[idof[jdime] + pnode*ndime*jnode], 
+                                                                        fact[jdime] );
+              }
+            }
+          }
+        }
+
+      #+END_SRC
+   #+BEGIN_LaTeX
+   \end{figure}
+   #+END_LaTeX
+
+*** C Intrinsics + Unrolled
+       #+BEGIN_LaTeX
+       \begin{figure}[p]
+       \tiny
+       #+END_LaTeX
+    
+      #+BEGIN_SRC C
+        for (igaus = 0; igaus < pgaus; igaus += 1) {
+          for (inode = 0; inode < pnode; inode += 1) {
+            idof[0] = inode*3 + 1;
+            idof[1] = inode*3 + 2;
+            idof[2] = inode*3 + 3;
+            for (jnode = 0; jnode < pnode; jnode += 1) {
+              fact[0] = _mm512_mul_pd( gpvol[igaus], gpsha[jnode + pnode*igaus] );
+              fact[1] = _mm512_mul_pd( fact[0], gpcar[0 + ndime*(inode + mnode*igaus)] );
+              elapu[jnode + pnode*(idof[0])] = _mm512_add_pd( elapu[jnode + pnode*idof[0]], fact[1] );
+              fact[2] = _mm512_mul_pd( fact[0], gpcar[1 + ndime*(inode + mnode*igaus)] );
+              elapu[jnode + pnode*(idof[1])] = _mm512_add_pd( elapu[jnode + pnode*idof[1]], fact[2] );
+              fact[3] = _mm512_mul_pd( fact[0], gpcar[2 + ndime*(inode + mnode*igaus)] );
+              elapu[jnode + pnode*(idof[2])] = _mm512_add_pd( elapu[jnode + pnode*idof[2]], fact[3] );
+              elaup[idof[0] + pnode*ndime*jnode] = _mm512_sub_pd( elaup[idof[0] + pnode*ndime*jnode], fact[1] );
+              elaup[idof[1] + pnode*ndime*jnode] = _mm512_sub_pd( elaup[idof[1] + pnode*ndime*jnode], fact[2] );
+              elaup[idof[2] + pnode*ndime*jnode] = _mm512_sub_pd( elaup[idof[2] + pnode*ndime*jnode], fact[3] );
+            }
+          }
+        }
+      #+END_SRC
+   #+BEGIN_LaTeX
+   \end{figure}
+   #+END_LaTeX
+
+*** Performance gain
+    - Vectorization speedup between x1.5 and x2.8 (vector size = 2,
+      unrolled, flags = -O3)
+      with C intrinsics
+    #+BEGIN_LaTeX
+    \begin{figure}[t]
+    \centering
+    \includegraphics[width=.7\linewidth]{./img/plots/speedup.pdf}
+    \end{figure}
+    #+END_LaTeX
+
+*** Remaining work
+    - Testing optimization strategy
+      - blocking not usefull here \to array size too small,
+      - unrolling step,
+      - loop reordering
+    - Porting the second kernel
+    - Tuning \to small search space \to bruteforce
+* 
+# #+BEGIN_LaTeX
+# \appendix
+# #+END_LaTeX
+
+* Emacs Setup 							   :noexport:
+  This document has local variables in its postembule, which should
+  allow Org-mode to work seamlessly without any setup. If you're
+  uncomfortable using such variables, you can safely ignore them at
+  startup. Exporting may require that you copy them in your .emacs.
+
+# Local Variables:
+# eval:    (require 'org-install)
+# eval:    (org-babel-do-load-languages 'org-babel-load-languages '( (sh . t) (R . t) (perl . t) (ditaa . t) ))
+# eval:    (setq org-confirm-babel-evaluate nil)
+# eval:    (unless (boundp 'org-latex-classes) (setq org-latex-classes nil))
+# eval:    (setq org-alphabetical-lists t)
+# eval:    (setq org-src-fontify-natively t)
+# eval:   (setq org-export-babel-evaluate nil)
+# eval:   (setq ispell-local-dictionary "english")
+# eval:   (eval (flyspell-mode t))
+# eval:    (setq org-latex-listings 'minted)
+# eval:    (setq org-latex-minted-options '(("bgcolor" "white") ("style" "tango") ("numbers" "left") ("numbersep" "5pt")))
+# eval:   (add-to-list 'org-beamer-environments-extra '("onlyenv" "O" "\\begin{onlyenv}%a" "\\end{onlyenv}"))
+# End:
