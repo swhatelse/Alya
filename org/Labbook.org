@@ -1268,75 +1268,75 @@
               Arguments.initialize(@opts[:vector_length])
 
               @args = []
-              @args.push @ndime         = Int("ndime", :dir => :in )
-              @args.push @kfl_lumped    = Int("kfl_lumped",    :dir => :in)
-              @args.push @mnode         = Int("mnode",         :dir => :in)
-              @args.push @ntens         = Int("ntens",         :dir => :in)
-              @args.push @kfl_duatss    = Int("kfl_duatss",    :dir => :in)
-              @args.push @fact_duatss   = Int("fact_duatss",   :dir => :in)
-              @args.push @kfl_stabi_nsi = Int("kfl_stabi_nsi", :dir => :in)
-              @args.push @fvins_nsi     = Real("fvins_nsi",    :dir => :in)
-              @args.push @fcons_nsi     = Real("fcons_nsi",    :dir => :in)
-              @args.push @bemol_nsi     = Real("bemol_nsi",    :dir => :in)
-              @args.push @kfl_regim_nsi = Int("kfl_regim_nsi", :dir => :in)
-              @args.push @fvela_nsi     = Real("fvela_nsi",    :dir => :in, :dim => [Dim(3)])
-              @args.push @kfl_rmom2_nsi = Int("kfl_rmom2_nsi", :dir => :in)
-              @args.push @kfl_press_nsi = Int("kfl_press_nsi", :dir => :in)
-              @args.push @kfl_p1ve2_nsi = Int("kfl_p1ve2_nsi", :dir => :in)
-              @args.push @kfl_linea_nsi = Int("kfl_linea_nsi", :dir => :in)
-              @args.push @kfl_confi_nsi = Int("kfl_confi_nsi", :dir => :in)
-              @args.push @nbdfp_nsi     = Int("nbdfp_nsi",     :dir => :in)
-              @args.push @kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
-              @args.push @kfl_nota1_nsi = Int("kfl_nota1_nsi", :dir => :in)
-              @args.push @kfl_limit_nsi = Int("kfl_limit_nsi", :dir => :in)
-              @args.push @kfl_penal_nsi = Int("kfl_penal_nsi", :dir => :in)
-              @args.push @penal_nsi     = Real("penal_nsi",    :dir => :in)
-              @args.push @kfl_bubbl_nsi = Int("kfl_bubbl_nsi", :dir => :in)
+              @args.push @ndime         = $ndime
+              @args.push @kfl_lumped    = $kfl_lumped
+              @args.push @mnode         = $mnode
+              @args.push @ntens         = $ntens
+              @args.push @kfl_duatss    = $kfl_duatss
+              @args.push @fact_duatss   = $fact_duatss
+              @args.push @kfl_stabi_nsi = $kfl_stabi_nsi
+              @args.push @fvins_nsi     = $fvins_nsi
+              @args.push @fcons_nsi     = $fcons_nsi
+              @args.push @bemol_nsi     = $bemol_nsi
+              @args.push @kfl_regim_nsi = $kfl_regim_nsi
+              @args.push @fvela_nsi     = $fvela_nsi
+              @args.push @kfl_rmom2_nsi = $kfl_rmom2_nsi
+              @args.push @kfl_press_nsi = $kfl_press_nsi
+              @args.push @kfl_p1ve2_nsi = $kfl_p1ve2_nsi
+              @args.push @kfl_linea_nsi = $kfl_linea_nsi
+              @args.push @kfl_confi_nsi = $kfl_confi_nsi
+              @args.push @nbdfp_nsi     = $nbdfp_nsi
+              @args.push @kfl_sgsti_nsi = $kfl_sgsti_nsi
+              @args.push @kfl_nota1_nsi = $kfl_nota1_nsi
+              @args.push @kfl_limit_nsi = $kfl_limit_nsi
+              @args.push @kfl_penal_nsi = $kfl_penal_nsi
+              @args.push @penal_nsi     = $penal_nsi
+              @args.push @kfl_bubbl_nsi = $kfl_bubbl_nsi
 
-              @args.push @pnode     = Int("pnode",             :dir => :in)
-              @args.push @pgaus     = Int("pgaus",             :dir => :in)
-              @args.push @gpden     = Real("gpden",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpvis     = Real("gpvis",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])              
-              @args.push @gppor     = Real("gppor",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpsp1     = Real("gpsp1",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpsp2     = Real("gpsp2",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpvol     = Real("gpvol",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpsha     = Real("gpsha",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pgaus)])
-              @args.push @gpcar     = Real("gpcar",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@mnode),Dim(@pgaus)])
-              @args.push @gpadv     = Real("gpadv",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
-              @args.push @gpvep     = Real("gpvep",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
-              @args.push @gpgrp     = Real("gpgrp",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
-              @args.push @gprhs     = Real("gprhs",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
-              @args.push @gprhc     = Real("gprhc",            :dir => :inout , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpvel     = Real("gpvel",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus),Dim()])
-              @args.push @gpsgs     = Real("gpsgs",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus),Dim()])
-              @args.push @elvel     = Real("elvel",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pnode),Dim()])
-              @args.push @elpre     = Real("elpre",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim()])
-              @args.push @elbub     = Real("elbub",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+              @args.push @pnode     = $pnode
+              @args.push @pgaus     = $pgaus
+              @args.push @gpden     = $gpden
+              @args.push @gpvis     = $gpvis
+              @args.push @gppor     = $gppor
+              @args.push @gpsp1     = $gpsp1
+              @args.push @gpsp2     = $gpsp2
+              @args.push @gpvol     = $gpvol
+              @args.push @gpsha     = $gpsha
+              @args.push @gpcar     = $gpcar
+              @args.push @gpadv     = $gpadv
+              @args.push @gpvep     = $gpvep
+              @args.push @gpgrp     = $gpgrp
+              @args.push @gprhs     = $gprhs
+              @args.push @gprhc     = $gprhc
+              @args.push @gpvel     = $gpvel
+              @args.push @gpsgs     = $gpsgs
+              @args.push @elvel     = $elvel
+              @args.push @elpre     = $elpre
+              @args.push @elbub     = $elbub
 
-              @args.push @wgrgr     = Real("wgrgr",            :dir => :out   ,:vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pnode),Dim(@pgaus)])
-              @args.push @agrau     = Real("agrau",            :dir => :out   ,:vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pgaus)])
+              @args.push @wgrgr     = $wgrgr
+              @args.push @agrau     = $agrau
 
               # Matrices
-              @args.push @elauu     = Real("elauu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode*@ndime),Dim(@pnode*@ndime)])
-              @args.push @elaup     = Real("elaup",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode*@ndime),Dim(@pnode)])
-              @args.push @elapp     = Real("elapp",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pnode)])
-              @args.push @elapu     = Real("elapu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(@pnode*@ndime)])
-              @args.push @elrbu     = Real("elrbu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pnode)])
-              @args.push @elrbp     = Real("elrbp",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode)])
+              @args.push @elauu     = $elauu
+              @args.push @elaup     = $elaup
+              @args.push @elapp     = $elapp
+              @args.push @elapu     = $elapu
+              @args.push @elrbu     = $elrbu
+              @args.push @elrbp     = $elrbp
               # Others
-              @args.push @dtinv_loc = Real("dtinv_loc",        :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
-              @args.push @dtsgs     = Real("dtsgs",            :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
-              @args.push @pbubl     = Int("pbubl",             :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
-              @args.push @gpsha_bub = Real("gpsha_bub",        :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)])
-              @args.push @gpcar_bub = Real("gpcar_bub",        :dir => :in    , :vector_length => @opts[:vector_length], :dim => [Dim(@ndime),Dim(@pgaus)])
+              @args.push @dtinv_loc = $dtinv_loc
+              @args.push @dtsgs     = $dtsgs
+              @args.push @pbubl     = $pbubl
+              @args.push @gpsha_bub = $gpsha_bub
+              @args.push @gpcar_bub = $gpcar_bub
               # Enrichement Element matrices
-              @args.push @elauq     = Real("elauq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode*@ndime),Dim(1)])
-              @args.push @elapq     = Real("elapq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(@pnode),Dim(1)])
-              @args.push @elaqu     = Real("elaqu",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1),Dim(@pnode*@ndime)])
-              @args.push @elaqp     = Real("elaqp",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1),Dim(@pnode)])
-              @args.push @elaqq     = Real("elaqq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1),Dim(1)])
-              @args.push @elrbq     = Real("elrbq",            :dir => :out   , :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+              @args.push @elauq     = $elauq
+              @args.push @elapq     = $elapq
+              @args.push @elaqu     = $elaqu
+              @args.push @elaqp     = $elaqp
+              @args.push @elaqq     = $elaqq
+              @args.push @elrbq     = $elrbq
 
             end
 
@@ -3693,33 +3693,33 @@ EOF
           allocate = get_lang == C ? true : false
 
           # Local arrays
-          @gpsp1_p   = Real("gpsp1_p",   :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)], :allocate => allocate)
-          @gpsp1_v   = Real("gpsp1_v",   :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)], :allocate => allocate)
-          @gpsp2_v   = Real("gpsp2_v",   :vector_length => @opts[:vector_length], :dim => [Dim(@pgaus)], :allocate => allocate)
-          @c1        = Real("c1",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @c2        = Real("c2",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @c3        = Real("c3",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @c4        = Real("c4",        :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @alpha     = Real("alpha",     :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @beta      = Real("beta",      :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
+          @gpsp1_p   = $gpsp1_p
+          @gpsp1_v   = $gpsp1_v
+          @gpsp2_v   = $gpsp2_v
+          @c1        = $c1
+          @c2        = $c2
+          @c3        = $c3
+          @c4        = $c4
+          @alpha     = $alpha
+          @beta      = $beta
 
-          @gpveo     = Real("gpveo",     :vector_length => @opts[:vector_length], :dim => [Dim(3)], :allocate => allocate)
-          @fact1_p   = Real("fact1_p",   :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @dtinv_mod = Real("dtinv_mod", :vector_length => @opts[:vector_length], :dim => [Dim(1)], :allocate => allocate)
-          @inode     = Int("inode")
-          @jnode     = Int("jnode")
-          @jdime     = Int("jdime")
-          @idofv     = Int("idofv")
-          @ivect     = Int("ivect")
-          @igaus     = Int("igaus")
-          @idime     = Int("idime")
-          @jdofv     = Int("jdofv")
-          @itime     = Int("itime")
+          @gpveo     = $gpveo
+          @fact1_p   = $fact1_p
+          @dtinv_mod = $dtinv_mod
+          @inode     = $inode
+          @jnode     = $jnode
+          @jdime     = $jdime
+          @idofv     = $idofv
+          @ivect     = $ivect
+          @igaus     = $igaus
+          @idime     = $idime
+          @jdofv     = $jdofv
+          @itime     = $itime
 
-          @fact = Real('fact',           :vector_length => @opts[:vector_length], :dim => [Dim(9)], :allocate => allocate)
+          @fact = $fact
 
-          @idof = Int("idof", :dim => [Dim(3)], :allocate => allocate)
-          @jdof = Int("jdof", :dim => [Dim(3)], :allocate => allocate)
+          @idof = $idof
+          @jdof = $jdof
 
           nests = {}
 
