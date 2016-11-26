@@ -3654,13 +3654,9 @@ EOF
 
             x = Int("x", :dir => :in)
             y = Real("y")
-            pabdf_nsi = Procedure("pabdf_nsi",[x], :return => y){
+            @pabdf_nsi = Procedure("pabdf_nsi",[x], :return => y){
               pr y === 1.0
             }          
-            @k_pabdf_nsi = CKernel::new
-            @k_pabdf_nsi.procedure = pabdf_nsi
-            @k_pabdf_nsi.build
-            
         #+END_SRC
 ******* C equivalents functions
 ******** Maxval
@@ -3726,7 +3722,7 @@ EOF
           @opts[:nests].each{|i|
             case i
               when 2,10
-                functions = {:pabdf_nsi => @k_pabdf_nsi.procedure}
+                functions = {:pabdf_nsi => @pabdf_nsi}
               when 11
                 functions = get_lang == FORTRAN ? nil : {:maxval => @p_maxval}
               else
@@ -3739,10 +3735,10 @@ EOF
           includes = ["immintrin.h"]
           includes.push("string.h", "math.h", "float.h") if get_lang == C
           @kernel = CKernel::new( :includes => includes )
-          functions = [pabdf_nsi]
+          functions = [@pabdf_nsi]
           functions.push @p_maxval unless get_lang == FORTRAN
           @kernel.procedure = declare_procedure(functions.flatten)
-          pr @k_pabdf_nsi.procedure
+          pr @pabdf_nsi
           pr @p_maxval unless get_lang == FORTRAN
 
           nests.values.each{|n| pr n.code } unless @opts[:inline] == :included
