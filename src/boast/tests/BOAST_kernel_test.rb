@@ -2,7 +2,9 @@ gem "minitest"
 require 'minitest/autorun'
 require 'BOAST'
 include BOAST
-require '/tmp/alya.rb'
+require '/tmp/KSplitOssRef_v1.rb'
+require '/tmp/KSplitOssRef_v2.rb'
+require '/tmp/KSplitOssBoast.rb'
 require '../mod_set_params.rb'
 
 class TestFor < Minitest::Test
@@ -16,8 +18,8 @@ class TestFor < Minitest::Test
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
       k_boast_params = {:vector_length => vector_size, :nests => nests}
 
-      k_orig = KSplitRef::new(k_orig_params)
-      k_orig.generate_ref_v2
+      k_orig = KSplitOssRef_v2::new(k_orig_params)
+      k_orig.generate
       k_orig.kernel.build(:FCFLAGS => "-cpp")
       
       [:included,:call,:inlined].each{|inlining|
@@ -122,8 +124,8 @@ class TestFor < Minitest::Test
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
       k_boast_params = {:vector_length => vector_size, :nests => nests}
 
-      k_orig = KSplitRef::new(k_orig_params)
-      k_orig.generate_ref_v2
+      k_orig = KSplitOssRef_v2::new(k_orig_params)
+      k_orig.generate
       k_orig.kernel.build(:FCFLAGS => "-cpp")
 
       [:included,:call,:inlined].each{|inlining|

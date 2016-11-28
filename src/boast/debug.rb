@@ -1,4 +1,6 @@
-require '/tmp/alya.rb'
+require '/tmp/KSplitOssRef_v1.rb'
+require '/tmp/KSplitOssRef_v2.rb'
+require '/tmp/KSplitOssBoast.rb'
 require 'narray_ffi'
 require './mod_set_params.rb'
 
@@ -6,16 +8,16 @@ class Debug
   include  Params
   def self.run
     nests = [1,2,3,4,5,6,7,8,9,10,11]
-    vector_size=1
+    vector_size=2
     dimension=2
     seed = 10
 
     k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}
-    k_boast_params = {:vector_length => vector_size, :nests => nests, :unroll => false}
+    k_boast_params = {:vector_length => vector_size, :nests => nests, :unroll => false, :inline => :inlined}
 
     set_fortran_line_length(100)
-    k_orig = KSplitRef::new(k_orig_params)
-    k_orig.generate_ref_v2
+    k_orig = KSplitOssRef_v2::new(k_orig_params)
+    k_orig.generate
 
     # file_orig = File::new("orig.f90","w")    
     # if file_orig then
@@ -25,6 +27,7 @@ class Debug
     # end
     k_orig.kernel.build(:FCFLAGS => "-cpp")
 
+    set_lang(C)
     k_boast = KSplitBoast::new(k_boast_params)
     k_boast.generate
     # file_boast = File::new("boast.f90","w")
@@ -33,7 +36,7 @@ class Debug
     # else
     #   puts "Failed to open boast.f90"
     # end
-    # puts k_boast
+    puts k_boast.kernel
     
     stats_boast = []
     stats_ref = []

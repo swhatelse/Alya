@@ -1,6 +1,6 @@
 #+TITLE: Tutorial: Porting Alya kernels with BOAST
 #+AUTHOR: Steven QUINITO MASNADA
-#+BABEL: :tangle yes
+#+BABEL: :tangle yes :noweb yes
 #+TAGS: Technical(t) deprecated(d) noexport(n)
 
 * Original Fortran source code
@@ -1100,17 +1100,18 @@
           require '/tmp/subroutine.rb'
         #+END_SRC
 *** Mocks
-        Some variables/functions are not available so we need to fake them:
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        Some variables/functions are not available so we need to fake
+        them:
+        #+NAME: ref-mocks
+        #+BEGIN_SRC ruby
           def generate_mocks
-          mocks = <<EOF
-          function pabdf_nsi(x) result(y)
-            integer,intent(in) :: x 
-            real :: y
-            y = 1.0
-          end function pabdf_nsi
+            mocks = <<EOF
+            function pabdf_nsi(x) result(y)
+              integer,intent(in) :: x 
+              real :: y
+              y = 1.0
+            end function pabdf_nsi
           EOF
-
           return mocks  
           end
         #+END_SRC
@@ -1235,8 +1236,9 @@
           end  
         #+END_SRC
 *** BOAST Kernel declaration
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          class KSplit
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOss.rb
+          require '/tmp/arguments'
+          class KSplitOss
             include Arguments
             attr_reader :kernel
 
@@ -1329,7 +1331,8 @@
 *** Def parameters
        We can get rid of ndime and vector_size because we can easily
        modif these parameters in boast
-       #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+       #+NAME: def-parameters
+       #+BEGIN_SRC ruby
          def gen_def_parameters
            parameters =<<EOF
            integer,     parameter  :: ip    = 4               ! 4-byte integer
@@ -1354,7 +1357,8 @@
          end
        #+END_SRC
 *** Function declaration:
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+NAME: generate-ref-declaration
+        #+BEGIN_SRC ruby
           def generate_ref_declaration
                decl_ref =<<EOF
                subroutine nsi_element_assembly_split_oss(ndime,&
@@ -1479,7 +1483,8 @@
           end
         #+END_SRC
 *** Initialization
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+NAME: ref-init
+        #+BEGIN_SRC ruby
           def generate_ref_initialization
           init = <<EOF
              dtinv_mod = dtinv_loc
@@ -1500,13 +1505,18 @@
             return init
           end 
         #+END_SRC
-*** Frame to generate the kernel
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          class KSplitRef < KSplit
-        #+END_SRC
 *** V1                                                           :deprecated:
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def generate_ref_v1
+**** Frame to generate the kernel                                 :Technical:
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb :noweb tangle
+          require '/tmp/KSplitOss.rb'
+
+          <<ref-mocks>>
+          <<generate-ref-declaration>>
+          <<def-parameters>>
+          <<ref-init>>
+
+          class KSplitOssRef_v1 < KSplitOss
+          def generate
             macros = ""
 
             if @opts[:preprocessor] then
@@ -1521,7 +1531,7 @@
             end
        #+END_SRC
 **** First nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           first_nest = <<EOF
            if( ndime == 2 ) then
 
@@ -1559,7 +1569,7 @@
           EOF
         #+END_SRC
 **** Second nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           second_nest = <<EOF
              if( ndime == 2 ) then
 
@@ -1650,7 +1660,7 @@
           EOF
         #+END_SRC
 **** Third nest
-        #+BEGIN_SRC ruby :tangle  /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle  /tmp/KSplitOssRef_v1.rb
           third_nest = <<EOF
              if( fvins_nsi > 0.9_rp ) then
                 if( ndime == 2 ) then
@@ -1710,7 +1720,7 @@
           EOF
         #+END_SRC
 **** Fourth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           fourth_nest = <<EOF
              if( kfl_lumped == 1 ) then 
                 if( ndime == 2 ) then
@@ -1764,7 +1774,7 @@
           EOF
         #+END_SRC
 **** Fifth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           fifth_nest = <<EOF
              if( ndime == 2 ) then
                 do igaus = 1,pgaus
@@ -1806,7 +1816,7 @@
           EOF
         #+END_SRC
 **** Sixth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           sixth_nest = <<EOF
              do igaus = 1,pgaus
                 do inode = 1,pnode
@@ -1822,7 +1832,7 @@
           EOF
         #+END_SRC
 **** Seventh nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           seventh_nest = <<EOF
              if( kfl_limit_nsi == -1 ) then
 
@@ -1861,7 +1871,7 @@
           EOF
         #+END_SRC
 **** Eighth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           eighth_nest = <<EOF
              do igaus = 1,pgaus
                 do idime = 1,ndime
@@ -1871,7 +1881,7 @@
           EOF
         #+END_SRC
 **** Nineth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           nineth_nest = <<EOF
              if( kfl_sgsti_nsi == 1 ) then
                 do igaus = 1,pgaus 
@@ -1886,7 +1896,7 @@
           EOF
         #+END_SRC
 **** Tenth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           tenth_nest = <<EOF
              if( ndime == 2 ) then
                 do igaus = 1,pgaus
@@ -1930,7 +1940,7 @@
           EOF
         #+END_SRC
 **** Assembling pieces
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb
           set_lang(FORTRAN)
           @kernel = CKernel::new(:includes => "immintrin.h")
           @kernel.procedure = declare_procedure
@@ -1950,10 +1960,20 @@
           get_output.print tenth_nest if @opts[:nests].include? 10
           get_output.print "end subroutine nsi_element_assembly_split_oss"
           end  
+          end
         #+END_SRC
 *** V2
-       #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-           def generate_ref_v2
+**** Frame to generate the kernel                                 :Technical:
+       #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb :noweb tangle
+          require '/tmp/KSplitOss.rb'
+ 
+          <<ref-mocks>>
+          <<generate-ref-declaration>>
+          <<def-parameters>>
+          <<ref-init>>
+
+          class KSplitOssRef_v2 < KSplitOss
+           def generate
              # opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
              # opts.update(options)
              macros = ""
@@ -1963,7 +1983,7 @@
                $p_def_vect = "DEF_VECT"
                macros = <<EOF
                #define VECTOR_SIZE #{@opts[:vector_length]}
-         EOF
+          EOF
              else
                $p_vector_length = "#{@opts[:vector_length]}"
                $p_def_vect = "1:#{@opts[:vector_length]}"
@@ -1972,7 +1992,7 @@
              nests = []
        #+END_SRC
 **** First nest 
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
             nests[0] = <<EOF
              agrau(#{$p_def_vect},:,:)   = 0.0_rp
                  wgrgr(#{$p_def_vect},:,:,:) = 0.0_rp 
@@ -1994,7 +2014,7 @@
           EOF
          #+END_SRC
 **** Second nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[1] = <<EOF
              do igaus = 1,pgaus
 
@@ -2027,7 +2047,7 @@
           EOF          
          #+END_SRC
 **** Thrid nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
              nests[2] =<<EOF
              if( fvins_nsi > 0.9_rp ) then
                 do igaus = 1,pgaus
@@ -2057,7 +2077,7 @@
            EOF
          #+END_SRC
 **** Fourth nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[3] =<<EOF
            if( kfl_lumped == 1 ) then 
               if( ndime == 2 ) then
@@ -2110,7 +2130,7 @@
            EOF
          #+END_SRC
 **** Fifth nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
             nests[4] =<<EOF
             if( ndime == 2 ) then
                do igaus = 1,pgaus
@@ -2152,7 +2172,7 @@
            EOF
          #+END_SRC
 **** Sixth nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[5] =<<EOF
             if( kfl_stabi_nsi /= -1 ) then
                do igaus = 1,pgaus
@@ -2170,7 +2190,7 @@
            EOF
          #+END_SRC
 **** Seventh nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[6] = <<EOF
             do igaus = 1,pgaus
               fact1(#{$p_def_vect}) = penal_nsi * gpvol(#{$p_def_vect},igaus)
@@ -2182,7 +2202,7 @@
            EOF
          #+END_SRC
 **** Eighth nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[7] =<<EOF
            if( kfl_stabi_nsi == -1 ) then
               gpvep(#{$p_def_vect},:,:) = 0.0_rp 
@@ -2219,7 +2239,7 @@
            EOF
          #+END_SRC
 **** Nineth nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[8] =<<EOF
            if( kfl_stabi_nsi == -1 ) then
               gpgrp(#{$p_def_vect},:,:) = 0.0_rp
@@ -2243,7 +2263,7 @@
            EOF
          #+END_SRC
 **** Tenth nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[9] =<<EOF
            do igaus = 1,pgaus
               fact4(#{$p_def_vect}) = gpden(#{$p_def_vect},igaus) * dtinv_mod(#{$p_def_vect})
@@ -2268,7 +2288,7 @@
            EOF                 
          #+END_SRC
 **** Eleventh nest
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
            nests[10] =<<EOF
            if( maxval(pbubl) == 1 ) then
               if( kfl_stabi_nsi /= -1 ) then
@@ -2317,7 +2337,7 @@
            EOF
          #+END_SRC
 **** Assembling pieces
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
             set_lang(FORTRAN)
             @kernel = CKernel::new(:includes => "immintrin.h")
             @kernel.procedure = declare_procedure
@@ -2544,7 +2564,10 @@
            end
          #+END_SRC
 **** First loop
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+          require '/tmp/subroutine.rb'
+          require '/tmp/KSplitOss'
+
           class Nest1 < Subroutine
             def initialize(options,functions = nil)
               super("nest1",options,functions)
@@ -2610,7 +2633,7 @@
           end
         #+END_SRC
 **** Second loop
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest2 < Subroutine
             def initialize(options, functions = nil)
               super("nest2",options,functions)
@@ -2743,7 +2766,7 @@
         often. So made be it worth to reorganize loops to access elauu
         the more sequentially possible.
 
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
             class Nest3 < Subroutine
               def initialize(options, functions = nil)
                 super("nest3",options,functions)
@@ -2853,7 +2876,7 @@
           end
         #+END_SRC
 **** Fourth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest4 < Subroutine
             def initialize(options, functions = nil)
               super("nest4",options,functions)
@@ -2990,7 +3013,7 @@ EOF
           end
         #+END_SRC
 **** Fifth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest5 < Subroutine
             def initialize(options, functions = nil)
               super("nest5",options,functions)
@@ -3075,7 +3098,7 @@ EOF
           end
         #+END_SRC
 **** Sixth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest6 < Subroutine
             def initialize(options, functions = nil)
               super("nest6",options,functions)
@@ -3122,7 +3145,7 @@ EOF
           end
         #+END_SRC
 **** Seventh nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest7 < Subroutine
             def initialize(options, functions = nil)
               super("nest7",options,functions)
@@ -3164,7 +3187,7 @@ EOF
         #+END_SRC        
 **** Eighth nest
         Maybe blocking can be interesting for the first nested loop.
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest8 < Subroutine
             def initialize(options, functions = nil)
               super("nest8",options,functions)
@@ -3302,7 +3325,7 @@ EOF
           end
         #+END_SRC        
 **** Nineth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest9 < Subroutine
             def initialize(options, functions = nil)
               super("nest9",options,functions)
@@ -3403,7 +3426,7 @@ EOF
           end
         #+END_SRC        
 **** Tenth nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest10 < Subroutine
             def initialize(options, functions = nil)
               super("nest10",options,functions)
@@ -3493,7 +3516,7 @@ EOF
           end
         #+END_SRC        
 **** Eleventh nest
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           class Nest11 < Subroutine
             def initialize(options, functions = nil)
               super("nest11",options,functions)
@@ -3617,10 +3640,10 @@ EOF
           end
         #+END_SRC        
 *** Getting kernel parameters
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          class KSplitBoast < KSplit
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+          class KSplitBoast < KSplitOss
         #+END_SRC
-*** Getting subroutine parameters
+*** Getting subroutine parameters                                :deprecated:
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           def get_subroutine_args(args = {})
             ret_args = []
@@ -3638,7 +3661,7 @@ EOF
           end
         #+END_SRC
 *** Fake pabdf_nsi
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           def generate
           if @opts[:unroll] then
             @dimensions = [2,3]
@@ -3658,7 +3681,7 @@ EOF
         #+END_SRC
 *** C equivalents functions
 **** Maxval
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           unless get_lang == FORTRAN then
             x2 = Int("x", :dir => :in, :vector_length => @opts[:vector_length], :dim => [Dim(1)])
             y2 = Int("y")
@@ -3682,7 +3705,7 @@ EOF
           end          
         #+END_SRC
 **** Tanh
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
            unless get_lang == FORTRAN then
              x3 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
              y3 = Real("y", :vector_length => @opts[:vector_length])
@@ -3712,7 +3735,7 @@ EOF
 
          #+END_SRC
 **** Sqrt
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
            unless get_lang == FORTRAN then
              x4 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
              y4 = Real("y", :vector_length => @opts[:vector_length])
@@ -3743,7 +3766,7 @@ EOF
          #+END_SRC
 
 **** Min
-         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
            unless get_lang == FORTRAN then
              x5 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
              y5 = Real("y", :dir => :in, :vector_length => @opts[:vector_length])
@@ -3766,7 +3789,7 @@ EOF
            end
          #+END_SRC
 *** Declaration
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           allocate = get_lang == C ? true : false
 
           # Local arrays
@@ -3836,7 +3859,7 @@ EOF
                  @ivect,@igaus,@idime,@jdofv,@itime,@fact,@idof,@jdof 
         #+END_SRC
 *** Initialisation
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
           if get_lang == FORTRAN
             pr @dtinv_mod === @dtinv_loc
             pr @gpsp1_p === @gpsp1
@@ -3871,11 +3894,11 @@ EOF
           end
         #+END_SRC
 *** Calling subroutines
-        #+BEGIN_SRC ruby  :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby  :tangle /tmp/KSplitOssBoast.rb
           nests.values.each{|n| n.call} 
         #+END_SRC
 *** Closing procedure
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
               close @kernel.procedure
             end        
           end
