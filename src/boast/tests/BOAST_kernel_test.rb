@@ -116,7 +116,7 @@ class TestFor < Minitest::Test
   def test_nests_orig_vs_boast_c
     epsilon = 10e-15
     set_fortran_line_length(100)
-    nests = [1,2,3,4,5,6,7,9,10]
+    nests = [1,2,3,4,5,6,7,8,9,10,11]
 
     (1..2).each{|vector_size|
       k_orig_params = {:vector_length => vector_size, :preprocessor => false, :nests => nests}

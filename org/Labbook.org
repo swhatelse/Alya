@@ -2540,6 +2540,7 @@
                @functions = functions
                @args = []
                @code = nil
+               @vector_length = options[:vector_length]
                @usage = opts[:inline]
                @unroll = opts[:unroll]
                @dimensions = @unroll ? [2,3] : [$ndime]
@@ -3218,6 +3219,26 @@ EOF
 
               register_funccall("epsilon")
 
+              tanh = lambda{|x|
+                if get_lang == FORTRAN
+                  return Tanh(x)
+                else
+                  return @functions[:tanh].call(x)
+                end
+              }
+
+              min = lambda{|x,y|
+                if get_lang == FORTRAN then
+                  return Min( x, y )
+                else
+                  if @vector_length > 1 then
+                    return @functions[:min].call(x,y)
+                  else
+                   return Ternary(x < y, x, y)
+                  end
+                end
+              }
+
               for_igaus = For(igaus,1,@pgaus){
                 if get_lang == FORTRAN then
                   pr c1[1] === 0.0.to_var 
@@ -3263,12 +3284,10 @@ EOF
                 end
                 
                 pr If(@kfl_limit_nsi == 1 => lambda{
-                        # Todo: Need to define a min function for C
-                        # pr alpha[1] === Min( 1.0.to_var, 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
-                        pr alpha[1] === Ternary(1.0.to_var < 2.0.to_var * ( 1.0.to_var  - beta[1] ), 1.0.to_var, 2.0.to_var * ( 1.0.to_var  - beta[1] ))
+                        pr alpha[1] === min.call( Set(1.0.to_var, alpha), 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
                       }, @kfl_limit_nsi == 2 => lambda{
                         # Tanh works only with ICC
-                        pr alpha[1] === 0.5.to_var * ( Tanh( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
+                        pr alpha[1] === 0.5.to_var * ( tanh.call( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
                       })
                 pr For(idime,1,@ndime){
                   pr @gpvep[idime,igaus] === alpha[1] * @gpvep[idime,igaus]
@@ -3652,38 +3671,121 @@ EOF
             register_funccall("epsilon")
             register_funccall("stop") if get_lang == FORTRAN
 
-            x = Int("x", :dir => :in)
-            y = Real("y")
-            @pabdf_nsi = Procedure("pabdf_nsi",[x], :return => y){
-              pr y === 1.0
+            x1 = Int("x", :dir => :in)
+            y1 = Real("y")
+            @pabdf_nsi = Procedure("pabdf_nsi",[x1], :return => y1){
+              pr y1 === 1.0
             }          
         #+END_SRC
 ******* C equivalents functions
 ******** Maxval
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           unless get_lang == FORTRAN then
-            x = Int("x", :dir => :in, :vector_length => @opts[:vector_length], :dim => [Dim(1)])
-            y = Int("y")
-            @p_maxval = Procedure("maxval",[x], :return => y){
+            x2 = Int("x", :dir => :in, :vector_length => @opts[:vector_length], :dim => [Dim(1)])
+            y2 = Int("y")
+            @p_maxval = Procedure("maxval",[x2], :return => y2){
               if @opts[:vector_length] > 1 then
                 decl i = Int("i")
                 decl a = Int("a", :dim => [Dim(@opts[:vector_length])], :allocate => true)
 
-                pr a === x[1]
-                pr y === a[1]
+                pr a[1] === x2.dereference
+                pr y2 === a[1]
 
                 pr For(i,2,@opts[:vector_length]){
-                  pr If(a[i] > y){
-                    pr y === a[i]
+                  pr If(a[i] > y2){
+                    pr y2 === a[i]
                   }
                 }
               else
-                pr y === x[1]
+                pr y2 === x2[1]
               end
-            }
-            
-          end
+            }            
+          end          
         #+END_SRC
+******** Tanh
+         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+           unless get_lang == FORTRAN then
+             x3 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
+             y3 = Real("y", :vector_length => @opts[:vector_length])
+
+             @p_tanh = Procedure("Tanh", [x3], :return => y3){
+               register_funccall("tanh")
+               decl i = Int("i")
+               decl tmp1 = Real("tmp1", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               decl tmp2 = Real("tmp2", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               
+               pr tmp1[1] === x3
+
+               pr For(i,1,@opts[:vector_length]){
+                 pr tmp2[i] === tanh(tmp1[i])
+               }
+               pr y3 === tmp2[1] 
+             }
+           end
+
+           def tanh_call(x)
+             if get_lang == FORTRAN then
+               return Tanh(x)
+             else
+               return @p_tanh.call(x)
+             end
+           end
+
+         #+END_SRC
+******** Sqrt
+         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+           unless get_lang == FORTRAN then
+             x4 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
+             y4 = Real("y", :vector_length => @opts[:vector_length])
+
+             @p_sqrt = Procedure("Sqrt", [x4], :return => y4){
+               register_funccall("sqrt")
+               decl i = Int("i")
+               decl tmp1 = Real("tmp1", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               decl tmp2 = Real("tmp2", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               
+               pr tmp1[1] === x4
+
+               pr For(i,1,@opts[:vector_length]){
+                 pr tmp2[i] === sqrt(tmp1[i])
+               }
+               pr y4 === tmp2[1] 
+             }
+           end
+
+           def sqrt_call(x)
+             if get_lang == FORTRAN then
+               return Sqrt(x)
+             else
+               return @p_sqrt.call(x)
+             end
+           end
+
+         #+END_SRC
+
+******** Min
+         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
+           unless get_lang == FORTRAN then
+             x5 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
+             y5 = Real("y", :dir => :in, :vector_length => @opts[:vector_length])
+             z5 = Real("z", :vector_length => @opts[:vector_length])
+
+             @p_min = Procedure("Min", [x5,y5], :return => z5){
+               decl i = Int("i")
+               decl tmp1 = Real("tmp1", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               decl tmp2 = Real("tmp2", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               decl tmp3 = Real("tmp3", :dim => [Dim(@opts[:vector_length])], :allocate => true)
+               
+               pr tmp1[1] === x5
+               pr tmp2[1] === y5
+
+               pr For(i,1,@opts[:vector_length]){
+                 pr tmp3[i] === Ternary(tmp1[i] < tmp2[i], tmp1[i], tmp2[i])
+               }
+               pr z5 === tmp3[1] 
+             }
+           end
+         #+END_SRC
 ******* Declaration
         #+BEGIN_SRC ruby :tangle /tmp/alya.rb
           allocate = get_lang == C ? true : false
@@ -3718,11 +3820,12 @@ EOF
           @jdof = $jdof
 
           nests = {}
-
           @opts[:nests].each{|i|
             case i
               when 2,10
                 functions = {:pabdf_nsi => @pabdf_nsi}
+              when 8
+                functions = get_lang == FORTRAN ? nil :{:tanh => @p_tanh, :min => @p_min}
               when 11
                 functions = get_lang == FORTRAN ? nil : {:maxval => @p_maxval}
               else
@@ -3738,9 +3841,13 @@ EOF
           functions = [@pabdf_nsi]
           functions.push @p_maxval unless get_lang == FORTRAN
           @kernel.procedure = declare_procedure(functions.flatten)
+ 
           pr @pabdf_nsi
-          pr @p_maxval unless get_lang == FORTRAN
-
+          unless get_lang == FORTRAN then
+           pr @p_maxval
+           pr @p_min
+           pr @p_tanh
+          end
           nests.values.each{|n| pr n.code } unless @opts[:inline] == :included
 
           opn @kernel.procedure
