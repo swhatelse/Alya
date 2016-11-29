@@ -2564,6 +2564,78 @@
                   gpcar(DEF_VECT,DIM,inode,igaus) * gpgrp(DEF_VECT,DIM,igaus)  
                   + ...
           #+END_SRC
+*** Local variable declaration
+        #+NAME: boast-local-vars
+        #+BEGIN_SRC ruby
+          # Local arrays
+          @gpsp1_p   = $gpsp1_p
+          @gpsp1_v   = $gpsp1_v
+          @gpsp2_v   = $gpsp2_v
+          @c1        = $c1
+          @c2        = $c2
+          @c3        = $c3
+          @c4        = $c4
+          @alpha     = $alpha
+          @beta      = $beta
+
+          @gpveo     = $gpveo
+          @fact1_p   = $fact1_p
+          @dtinv_mod = $dtinv_mod
+          @inode     = $inode
+          @jnode     = $jnode
+          @jdime     = $jdime
+          @idofv     = $idofv
+          @ivect     = $ivect
+          @igaus     = $igaus
+          @idime     = $idime
+          @jdofv     = $jdofv
+          @itime     = $itime
+
+          @fact = $fact
+
+          @idof = $idof
+          @jdof = $jdof
+
+          decl @gpsp1_p,@gpsp1_v,@gpsp2_v,@c1,@c2,@c3,@c4,@alpha,@beta,
+               @gpveo,@fact1_p,@dtinv_mod,@inode,@jnode,@jdime,@idofv,
+               @ivect,@igaus,@idime,@jdofv,@itime,@fact,@idof,@jdof 
+        #+END_SRC
+*** Initialisation
+        #+NAME: boast-initialization
+        #+BEGIN_SRC ruby
+          if get_lang == FORTRAN
+            pr @dtinv_mod === @dtinv_loc
+            pr @gpsp1_p === @gpsp1
+            pr @gpsp1_v === @gpsp1
+            pr @gpsp2_v === @gpsp2
+          
+            pr If( @kfl_nota1_nsi == 1 => lambda{ pr @gpsp1_v === 0.0 } )
+          
+            pr @elrbp === 0.0
+            pr @elrbu === 0.0
+            pr @elapp === 0.0
+            pr @elauu === 0.0
+            pr @elaup === 0.0
+            pr @elapu === 0.0
+          elsif get_lang == C
+            code =<<EOF
+            memcpy(dtinv_mod, dtinv_loc, sizeof(dtinv_mod));
+            memcpy(gpsp1_p, gpsp1, sizeof(gpsp1_p));
+            memcpy(gpsp1_v, gpsp1, sizeof(gpsp1_v));
+            memcpy(gpsp2_v, gpsp2, sizeof(gpsp2_v));
+
+            if (kfl_nota1_nsi == 1) memset(gpsp1_v, 0, sizeof(gpsp1_v));
+
+            memset(elrbp, 0, sizeof(#{@elrbp.type.decl}) * pnode);
+            memset(elrbu, 0, sizeof(#{@elrbu.type.decl}) * ndime * pnode);
+            memset(elapp, 0, sizeof(#{@elapp.type.decl}) * pnode * pnode);
+            memset(elauu, 0, sizeof(#{@elauu.type.decl}) * pnode * ndime * pnode * ndime);
+            memset(elaup, 0, sizeof(#{@elaup.type.decl}) * pnode * ndime * pnode);
+            memset(elapu, 0, sizeof(#{@elapu.type.decl}) * pnode * pnode * ndime);
+          EOF
+            get_output.print code
+          end
+        #+END_SRC
 *** Subroutines
 **** Class wrapper                                            :Technical:
          #+BEGIN_SRC ruby :tangle /tmp/subroutine.rb
@@ -3678,49 +3750,19 @@ EOF
             end
           end
         #+END_SRC        
-*** Getting kernel parameters
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
-          class KSplitBoast < KSplitOss
-        #+END_SRC
-*** Getting subroutine parameters                                :deprecated:
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          def get_subroutine_args(args = {})
-            ret_args = []
-            args.each{|k,vars|
-              vars.each{|var|
-                if k == var.direction then
-                  eval "ret_args.push #{var} = @#{var}"
-                else
-                  eval "(#{var} = @#{var}.clone).direction = k.to_sym
-                        ret_args.push #{var}"
-                end
-              }
-            }
-            return *ret_args
-          end
-        #+END_SRC
-*** Fake pabdf_nsi
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
-          def generate
-          if @opts[:unroll] then
-            @dimensions = [2,3]
-          else
-            @dimensions = [@ndime]
-          end
-
-            register_funccall("maxval")
-            register_funccall("epsilon")
-            register_funccall("stop") if get_lang == FORTRAN
-
-            x1 = Int("x", :dir => :in)
-            y1 = Real("y")
-            @pabdf_nsi = Procedure("pabdf_nsi",[x1], :return => y1){
-              pr y1 === 1.0
-            }          
-        #+END_SRC
-*** C equivalents functions
+*** Mocks                                                         :Technical:
+    #+NAME: boast-mocks
+    #+BEGIN_SRC ruby
+      x1 = Int("x", :dir => :in)
+      y1 = Real("y")
+      @pabdf_nsi = Procedure("pabdf_nsi",[x1], :return => y1){
+        pr y1 === 1.0
+      }          
+    #+END_SRC
+*** C equivalents functions                                       :Technical:
 **** Maxval
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        #+NAME: boast-generate-maxval
+        #+BEGIN_SRC ruby
           unless get_lang == FORTRAN then
             x2 = Int("x", :dir => :in, :vector_length => @opts[:vector_length], :dim => [Dim(1)])
             y2 = Int("y")
@@ -3744,7 +3786,8 @@ EOF
           end          
         #+END_SRC
 **** Tanh
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        #+NAME: boast-generate-tanh
+         #+BEGIN_SRC ruby
            unless get_lang == FORTRAN then
              x3 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
              y3 = Real("y", :vector_length => @opts[:vector_length])
@@ -3774,7 +3817,8 @@ EOF
 
          #+END_SRC
 **** Sqrt
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        #+NAME: boast-generate-sqrt
+         #+BEGIN_SRC ruby
            unless get_lang == FORTRAN then
              x4 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
              y4 = Real("y", :vector_length => @opts[:vector_length])
@@ -3805,7 +3849,8 @@ EOF
          #+END_SRC
 
 **** Min
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        #+NAME: boast-generate-min
+         #+BEGIN_SRC ruby
            unless get_lang == FORTRAN then
              x5 = Real("x", :dir => :in, :vector_length => @opts[:vector_length])
              y5 = Real("y", :dir => :in, :vector_length => @opts[:vector_length])
@@ -3827,119 +3872,75 @@ EOF
              }
            end
          #+END_SRC
-*** Declaration
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
-          allocate = get_lang == C ? true : false
-
-          # Local arrays
-          @gpsp1_p   = $gpsp1_p
-          @gpsp1_v   = $gpsp1_v
-          @gpsp2_v   = $gpsp2_v
-          @c1        = $c1
-          @c2        = $c2
-          @c3        = $c3
-          @c4        = $c4
-          @alpha     = $alpha
-          @beta      = $beta
-
-          @gpveo     = $gpveo
-          @fact1_p   = $fact1_p
-          @dtinv_mod = $dtinv_mod
-          @inode     = $inode
-          @jnode     = $jnode
-          @jdime     = $jdime
-          @idofv     = $idofv
-          @ivect     = $ivect
-          @igaus     = $igaus
-          @idime     = $idime
-          @jdofv     = $jdofv
-          @itime     = $itime
-
-          @fact = $fact
-
-          @idof = $idof
-          @jdof = $jdof
-
-          nests = {}
-          @opts[:nests].each{|i|
-            case i
-              when 2,10
-                functions = {:pabdf_nsi => @pabdf_nsi}
-              when 8
-                functions = get_lang == FORTRAN ? nil :{:tanh => @p_tanh, :min => @p_min}
-              when 11
-                functions = get_lang == FORTRAN ? nil : {:maxval => @p_maxval}
+*** Subroutine instanciation                                      :Technical:
+    #+NAME: boast-subroutines-instanciate
+    #+BEGIN_SRC ruby
+      nests = {}
+      @opts[:nests].each{|i|
+        case i
+        when 2,10
+          functions = {:pabdf_nsi => @pabdf_nsi}
+        when 8
+          functions = get_lang == FORTRAN ? nil :{:tanh => @p_tanh, :min => @p_min}
+        when 11
+          functions = get_lang == FORTRAN ? nil : {:maxval => @p_maxval}
+        else
+          functions = nil
+        end
+        eval "nests[:nest#{i}] = Nest#{i}::new(@opts,functions)"
+        eval "nests[:nest#{i}].generate"
+      }
+    #+END_SRC
+*** Frame to generate the kernel                                  :Technical:
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+          class KSplitBoast < KSplitOss
+            def generate
+              if @opts[:unroll] then
+                @dimensions = [2,3]
               else
-                functions = nil
-            end
-            eval "nests[:nest#{i}] = Nest#{i}::new(@opts,functions)"
-            eval "nests[:nest#{i}].generate"
-          }
+                @dimensions = [@ndime]
+              end
 
-          includes = ["immintrin.h"]
-          includes.push("string.h", "math.h", "float.h") if get_lang == C
-          @kernel = CKernel::new( :includes => includes )
-          functions = [@pabdf_nsi]
-          functions.push @p_maxval unless get_lang == FORTRAN
-          @kernel.procedure = declare_procedure(functions.flatten)
- 
-          pr @pabdf_nsi
-          unless get_lang == FORTRAN then
-           pr @p_maxval
-           pr @p_min
-           pr @p_tanh
-          end
-          nests.values.each{|n| pr n.code } unless @opts[:inline] == :included
+              register_funccall("maxval") if get_lang == FORTRAN
+              register_funccall("epsilon") if get_lang == FORTRAN
+              register_funccall("stop") if get_lang == FORTRAN
 
-          opn @kernel.procedure
-            # Local arrays
-            decl @gpsp1_p,@gpsp1_v,@gpsp2_v,@c1,@c2,@c3,@c4,@alpha,@beta,
-                 @gpveo,@fact1_p,@dtinv_mod,@inode,@jnode,@jdime,@idofv,
-                 @ivect,@igaus,@idime,@jdofv,@itime,@fact,@idof,@jdof 
-        #+END_SRC
-*** Initialisation
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
-          if get_lang == FORTRAN
-            pr @dtinv_mod === @dtinv_loc
-            pr @gpsp1_p === @gpsp1
-            pr @gpsp1_v === @gpsp1
-            pr @gpsp2_v === @gpsp2
-          
-            pr If( @kfl_nota1_nsi == 1 => lambda{ pr @gpsp1_v === 0.0 } )
-          
-            pr @elrbp === 0.0
-            pr @elrbu === 0.0
-            pr @elapp === 0.0
-            pr @elauu === 0.0
-            pr @elaup === 0.0
-            pr @elapu === 0.0
-          elsif get_lang == C
-            code =<<EOF
-            memcpy(dtinv_mod, dtinv_loc, sizeof(dtinv_mod));
-            memcpy(gpsp1_p, gpsp1, sizeof(gpsp1_p));
-            memcpy(gpsp1_v, gpsp1, sizeof(gpsp1_v));
-            memcpy(gpsp2_v, gpsp2, sizeof(gpsp2_v));
+              <<boast-mocks>>
 
-            if (kfl_nota1_nsi == 1) memset(gpsp1_v, 0, sizeof(gpsp1_v));
+              <<boast-generate-maxval>>
+              <<boast-generate-tanh>>
+              <<boast-generate-sqrt>>
+              <<boast-generate-min>>              
 
-            memset(elrbp, 0, sizeof(#{@elrbp.type.decl}) * pnode);
-            memset(elrbu, 0, sizeof(#{@elrbu.type.decl}) * ndime * pnode);
-            memset(elapp, 0, sizeof(#{@elapp.type.decl}) * pnode * pnode);
-            memset(elauu, 0, sizeof(#{@elauu.type.decl}) * pnode * ndime * pnode * ndime);
-            memset(elaup, 0, sizeof(#{@elaup.type.decl}) * pnode * ndime * pnode);
-            memset(elapu, 0, sizeof(#{@elapu.type.decl}) * pnode * pnode * ndime);
-          EOF
-            get_output.print code
-          end
-        #+END_SRC
-*** Calling subroutines
-        #+BEGIN_SRC ruby  :tangle /tmp/KSplitOssBoast.rb
-          nests.values.each{|n| n.call} 
-        #+END_SRC
-*** Closing procedure
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+              <<boast-subroutines-instanciate>>
+
+              includes = ["immintrin.h"]
+              includes.push("string.h", "math.h", "float.h") if get_lang == C
+              @kernel = CKernel::new( :includes => includes )
+              functions = [@pabdf_nsi]
+              functions.push @p_maxval unless get_lang == FORTRAN
+              @kernel.procedure = declare_procedure(functions.flatten)
+
+              # Printing subroutines           
+              pr @pabdf_nsi
+              unless get_lang == FORTRAN then
+                pr @p_maxval
+                pr @p_min
+                pr @p_tanh
+              end
+              nests.values.each{|n| pr n.code } unless @opts[:inline] == :included
+
+              # Main procedure body
+              opn @kernel.procedure
+                # Local arrays
+                <<boast-local-vars>>
+
+          <<boast-initialization>>
+
+                # Either call subroutine or paste their code
+                nests.values.each{|n| n.call} 
+
               close @kernel.procedure
             end        
           end
         #+END_SRC
-
