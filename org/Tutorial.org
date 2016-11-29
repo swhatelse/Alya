@@ -2,10 +2,31 @@
 #+AUTHOR: Steven QUINITO MASNADA
 #+BABEL: :tangle yes :noweb yes
 #+TAGS: Technical(t) deprecated(d) noexport(n)
+#+INFOJS_OPT: view:info path:http://orgmode.org/org-info.js
 
+* Introduction
+  This tutorial explains how we used BOAST to port one of Alya
+  Kernels. Here, we focus on the kernel 
+  =nsi_element_assembly_split_oss= which is a kernel assembly of Navier
+  Stokes equations using the split OSS Variational Multiscale Model.
+  This tutorial is written using the org-mode of emacs and following
+  the litterate programming style. Each part of the code used to
+  generate the kernel is explained step by step and the .org version
+  of this tutorial (available here:
+  https://github.com/swhatelse/Alya/blob/master/org/Tutorial.org) can
+  be used to generate the necessary ruby files to generate the
+  kernel. 
+  Two different kinds of sections compose this tutorial, the first kind
+  explains how the core of the kernel is ported with BOAST. The second
+  kind addresses more technical aspects such as assembling all the
+  different pieces of the kernel together and can be recognized by the
+  *technical* tag.
 * Original Fortran source code
-** nsi_element_assembly_split_oss
-*** V1                                                           :deprecated:
+  This section contains 2 versions FORTRAN source code of the kernel
+  =nsi_element_assembly_split_oss=. The version 1 has only been kept for
+  information purpose and only the second version is used as reference
+  implementation to check the BOAST generated version. 
+** V1                                                           :deprecated:
      #+BEGIN_SRC fortran
              subroutine nsi_element_assembly_split_oss(&
              pnode,pgaus,pevat,gpden,gpvis,gppor,gpsp1,gpsp2,&
@@ -533,7 +554,7 @@
 
      #+END_SRC
 
-*** V2
+** V2
        #+BEGIN_SRC fortran
                subroutine nsi_element_assembly_split_oss(&
                pnode,pgaus,gpden,gpvis,gppor,gpsp1,gpsp2,gpvol,   &
@@ -1092,30 +1113,41 @@
 
        #+END_SRC
 * Using BOAST
+  Here our objective is twofold, we do not only want to generate a
+  kernel with BOAST that can be easily optimized and specialized but
+  we also want generate to the exact same kernel than the reference
+  version and to run it using BOAST, in order to compare the results
+  in term of correctness and performances. For the reference
+  implementation we simply need to keep the FORTRAN code and wrap it
+  with BOAST. For the BOAST implementation we use the BOAST dedicated
+  language and the meta-programming style.
+  The kernel =nsi_element_assembly_split_oss= contains 11 loop nests
+  that we isolated to eases the porting. This gave us the possibility
+  to test them separately, extracted them in different subroutine that
+  can be either pasted in the main kernel procedure, either inlined or
+  simply called as normal function. And this also gave the possibility
+  to bench them independently.
 ** BOAST preparation
-*** Macros
-        #+BEGIN_SRC ruby :tangle /tmp/alya.rb
-          require 'BOAST'
-          include BOAST
-          require '/tmp/subroutine.rb'
-        #+END_SRC
-*** Mocks
-        Some variables/functions are not available so we need to fake
-        them:
-        #+NAME: ref-mocks
-        #+BEGIN_SRC ruby
-          def generate_mocks
-            mocks = <<EOF
-            function pabdf_nsi(x) result(y)
-              integer,intent(in) :: x 
-              real :: y
-              y = 1.0
-            end function pabdf_nsi
-          EOF
-          return mocks  
-          end
-        #+END_SRC
-*** Parameters
+  For the both implementations we need to tell BOAST what are the
+  parameters of the kernel.
+*** Parameters definition
+    For more convenience all the variables used by
+    =nsi_element_assembly_split_oss= (including local variables) are
+    referenced in the following module. They are used for the kernel
+    declaration of the reference implementation, the BOAST
+    implementation and the different subroutines. When a variable is
+    needed by the kernel it can be used as it is. However when needed
+    by a subroutine, it must be asked by the =copy= function. Indeed a 
+    subroutine may need a variable but with a different direction than
+    originally defined. For instance the =agrau= variable is defined
+    as =:out= by the kernel but a subroutine may need to read only this
+    variable and only the =:in= direction is necessary. Thus =copy=
+    returns either directly the variable if there is no need to change
+    the original direction or a copy in a different direction than the
+    original one direction is asked. The reason why a copy is needed
+    when changing the original direction of a variable is that it
+    would impact the declaration of all the procedures using this
+    variable. 
         #+BEGIN_SRC ruby :tangle /tmp/arguments.rb
           require 'BOAST'
           include BOAST
@@ -1236,101 +1268,143 @@
           end  
         #+END_SRC
 *** BOAST Kernel declaration
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOss.rb
-          require '/tmp/arguments'
-          class KSplitOss
-            include Arguments
-            attr_reader :kernel
+    For each implementation we need to declare the prototype of the
+    function =nsi_element_assembly_split_oss= with BOAST. 
+**** Declaring the parameters
+     First we declare the parameters of the kernel with BOAST using
+     the module =Argument.=
+     #+NAME: common-declare-parameters
+     #+BEGIN_SRC ruby 
+       Arguments.initialize(@opts[:vector_length])
+       @args = []
+       @args.push @ndime         = $ndime
+       @args.push @kfl_lumped    = $kfl_lumped
+       @args.push @mnode         = $mnode
+       @args.push @ntens         = $ntens
+       @args.push @kfl_duatss    = $kfl_duatss
+       @args.push @fact_duatss   = $fact_duatss
+       @args.push @kfl_stabi_nsi = $kfl_stabi_nsi
+       @args.push @fvins_nsi     = $fvins_nsi
+       @args.push @fcons_nsi     = $fcons_nsi
+       @args.push @bemol_nsi     = $bemol_nsi
+       @args.push @kfl_regim_nsi = $kfl_regim_nsi
+       @args.push @fvela_nsi     = $fvela_nsi
+       @args.push @kfl_rmom2_nsi = $kfl_rmom2_nsi
+       @args.push @kfl_press_nsi = $kfl_press_nsi
+       @args.push @kfl_p1ve2_nsi = $kfl_p1ve2_nsi
+       @args.push @kfl_linea_nsi = $kfl_linea_nsi
+       @args.push @kfl_confi_nsi = $kfl_confi_nsi
+       @args.push @nbdfp_nsi     = $nbdfp_nsi
+       @args.push @kfl_sgsti_nsi = $kfl_sgsti_nsi
+       @args.push @kfl_nota1_nsi = $kfl_nota1_nsi
+       @args.push @kfl_limit_nsi = $kfl_limit_nsi
+       @args.push @kfl_penal_nsi = $kfl_penal_nsi
+       @args.push @penal_nsi     = $penal_nsi
+       @args.push @kfl_bubbl_nsi = $kfl_bubbl_nsi
 
-            def initialize(options)
-              @opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false, :inline => :included}
-              @opts.update(options)
-      
-              Arguments.initialize(@opts[:vector_length])
+       @args.push @pnode     = $pnode
+       @args.push @pgaus     = $pgaus
+       @args.push @gpden     = $gpden
+       @args.push @gpvis     = $gpvis
+       @args.push @gppor     = $gppor
+       @args.push @gpsp1     = $gpsp1
+       @args.push @gpsp2     = $gpsp2
+       @args.push @gpvol     = $gpvol
+       @args.push @gpsha     = $gpsha
+       @args.push @gpcar     = $gpcar
+       @args.push @gpadv     = $gpadv
+       @args.push @gpvep     = $gpvep
+       @args.push @gpgrp     = $gpgrp
+       @args.push @gprhs     = $gprhs
+       @args.push @gprhc     = $gprhc
+       @args.push @gpvel     = $gpvel
+       @args.push @gpsgs     = $gpsgs
+       @args.push @elvel     = $elvel
+       @args.push @elpre     = $elpre
+       @args.push @elbub     = $elbub
 
-              @args = []
-              @args.push @ndime         = $ndime
-              @args.push @kfl_lumped    = $kfl_lumped
-              @args.push @mnode         = $mnode
-              @args.push @ntens         = $ntens
-              @args.push @kfl_duatss    = $kfl_duatss
-              @args.push @fact_duatss   = $fact_duatss
-              @args.push @kfl_stabi_nsi = $kfl_stabi_nsi
-              @args.push @fvins_nsi     = $fvins_nsi
-              @args.push @fcons_nsi     = $fcons_nsi
-              @args.push @bemol_nsi     = $bemol_nsi
-              @args.push @kfl_regim_nsi = $kfl_regim_nsi
-              @args.push @fvela_nsi     = $fvela_nsi
-              @args.push @kfl_rmom2_nsi = $kfl_rmom2_nsi
-              @args.push @kfl_press_nsi = $kfl_press_nsi
-              @args.push @kfl_p1ve2_nsi = $kfl_p1ve2_nsi
-              @args.push @kfl_linea_nsi = $kfl_linea_nsi
-              @args.push @kfl_confi_nsi = $kfl_confi_nsi
-              @args.push @nbdfp_nsi     = $nbdfp_nsi
-              @args.push @kfl_sgsti_nsi = $kfl_sgsti_nsi
-              @args.push @kfl_nota1_nsi = $kfl_nota1_nsi
-              @args.push @kfl_limit_nsi = $kfl_limit_nsi
-              @args.push @kfl_penal_nsi = $kfl_penal_nsi
-              @args.push @penal_nsi     = $penal_nsi
-              @args.push @kfl_bubbl_nsi = $kfl_bubbl_nsi
+       @args.push @wgrgr     = $wgrgr
+       @args.push @agrau     = $agrau
 
-              @args.push @pnode     = $pnode
-              @args.push @pgaus     = $pgaus
-              @args.push @gpden     = $gpden
-              @args.push @gpvis     = $gpvis
-              @args.push @gppor     = $gppor
-              @args.push @gpsp1     = $gpsp1
-              @args.push @gpsp2     = $gpsp2
-              @args.push @gpvol     = $gpvol
-              @args.push @gpsha     = $gpsha
-              @args.push @gpcar     = $gpcar
-              @args.push @gpadv     = $gpadv
-              @args.push @gpvep     = $gpvep
-              @args.push @gpgrp     = $gpgrp
-              @args.push @gprhs     = $gprhs
-              @args.push @gprhc     = $gprhc
-              @args.push @gpvel     = $gpvel
-              @args.push @gpsgs     = $gpsgs
-              @args.push @elvel     = $elvel
-              @args.push @elpre     = $elpre
-              @args.push @elbub     = $elbub
+       # Matrices
+       @args.push @elauu     = $elauu
+       @args.push @elaup     = $elaup
+       @args.push @elapp     = $elapp
+       @args.push @elapu     = $elapu
+       @args.push @elrbu     = $elrbu
+       @args.push @elrbp     = $elrbp
+       # Others
+       @args.push @dtinv_loc = $dtinv_loc
+       @args.push @dtsgs     = $dtsgs
+       @args.push @pbubl     = $pbubl
+       @args.push @gpsha_bub = $gpsha_bub
+       @args.push @gpcar_bub = $gpcar_bub
+       # Enrichement Element matrices
+       @args.push @elauq     = $elauq
+       @args.push @elapq     = $elapq
+       @args.push @elaqu     = $elaqu
+       @args.push @elaqp     = $elaqp
+       @args.push @elaqq     = $elaqq
+       @args.push @elrbq     = $elrbq
+     #+END_SRC
+**** Generate procedure header
+     Then we create the =Procedure= =nsi_element_assembly_split_oss= using
+     the parameters defined previously and specifying the functions
+     that will be used by the kernel.
+     #+NAME: common-declare-procedure
+     #+BEGIN_SRC ruby
+       def declare_procedure(functions = nil)
+         p = Procedure("nsi_element_assembly_split_oss", @args, :functions => functions)
+         return p
+       end
+     #+END_SRC
+**** Kernel wrapper                                               :Technical:
+     The previous operations are common for the reference and BOAST
+     implementation, thus, the following class is used to encapsulate
+     the different implementation of the kernel by gathering the
+     parameters declaration and the generation of the procedure header.
+     #+BEGIN_SRC ruby :tangle /tmp/KSplitOss.rb :noweb tangle
+       require '/tmp/arguments'
+       class KSplitOss
+         include Arguments
+         attr_reader :kernel
 
-              @args.push @wgrgr     = $wgrgr
-              @args.push @agrau     = $agrau
+         def initialize(options)
+           @opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a, :unroll => false, :inline => :included}
+           @opts.update(options)
+           
+           <<common-declare-parameters>>
+         end
 
-              # Matrices
-              @args.push @elauu     = $elauu
-              @args.push @elaup     = $elaup
-              @args.push @elapp     = $elapp
-              @args.push @elapu     = $elapu
-              @args.push @elrbu     = $elrbu
-              @args.push @elrbp     = $elrbp
-              # Others
-              @args.push @dtinv_loc = $dtinv_loc
-              @args.push @dtsgs     = $dtsgs
-              @args.push @pbubl     = $pbubl
-              @args.push @gpsha_bub = $gpsha_bub
-              @args.push @gpcar_bub = $gpcar_bub
-              # Enrichement Element matrices
-              @args.push @elauq     = $elauq
-              @args.push @elapq     = $elapq
-              @args.push @elaqu     = $elaqu
-              @args.push @elaqp     = $elaqp
-              @args.push @elaqq     = $elaqq
-              @args.push @elrbq     = $elrbq
-
-            end
-
-            def declare_procedure(functions = nil)
-              p = Procedure("nsi_element_assembly_split_oss", @args, :functions => functions)
-              return p
-            end
+           <<common-declare-procedure>>
+       end
+     #+END_SRC
+** Generate reference implementation 
+  Here we simply reuse the FORTRAN code that manipulate as string.
+  For convenience purpose we replaced the macro =VECTOR_LENGTH= and
+  =DEF_VECT= by ruby variable =$p_vector_length= and =$p_def_vect= that will
+  either use =DEF_VECT= and =VECTOR_LENGTH= or either paste directly the
+  corresponding values depending to the options passed to the kernel.
+*** Mocks                                                         :Technical:
+        Some variables/functions are not available so we need to fake
+        them like it is the case with =pabdf_nsi= :
+        #+NAME: ref-mocks
+        #+BEGIN_SRC ruby
+          def generate_mocks
+            mocks = <<EOF
+            function pabdf_nsi(x) result(y)
+              integer,intent(in) :: x 
+              real :: y
+              y = 1.0
+            end function pabdf_nsi
+          EOF
+          return mocks  
           end
         #+END_SRC
-** Generate reference implementation 
 *** Def parameters
-       We can get rid of ndime and vector_size because we can easily
-       modif these parameters in boast
+       Here is the code extracted from =def_parameters.f90=.
+       We can get rid of =ndime= and =vector_size= because we can easily
+       modify these parameters with BOAST.
        #+NAME: def-parameters
        #+BEGIN_SRC ruby
          def gen_def_parameters
@@ -1357,8 +1431,10 @@
          end
        #+END_SRC
 *** Function declaration:
+        Here by calling =gen_def_parameters= we just paste the code of
+        =def_parameters= 
         #+NAME: generate-ref-declaration
-        #+BEGIN_SRC ruby
+        #+BEGIN_SRC ruby           
           def generate_ref_declaration
                decl_ref =<<EOF
                subroutine nsi_element_assembly_split_oss(ndime,&
@@ -1505,7 +1581,7 @@
             return init
           end 
         #+END_SRC
-*** V1                                                           :deprecated:
+*** V1                                                  :deprecated:noexport:
 **** First nest
         #+NAME: ref-nest1-v1
         #+BEGIN_SRC ruby
@@ -2318,6 +2394,16 @@
            end if
          #+END_SRC
 **** Frame to generate the kernel                                 :Technical:
+     Finally this class assembles everything to generate the
+     reference implementation: 
+     - the mocks, 
+     - the variables declaration, 
+     - the initialization, 
+     - the different loop nests
+
+     The FORTRAN code is then simply printed in the body of the main
+     procedure using =get_output.print=.
+
        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb :noweb tangle
           require '/tmp/KSplitOss.rb'
  
@@ -3926,3 +4012,25 @@ EOF
             end        
           end
         #+END_SRC
+
+* Emacs Setup 							   :noexport:
+  This document has local variables in its postembule, which should
+  allow Org-mode to work seamlessly without any setup. If you're
+  uncomfortable using such variables, you can safely ignore them at
+  startup. Exporting may require that you copy them in your .emacs.
+
+# Local Variables:
+# eval:    (require 'org-install)
+# eval:    (org-babel-do-load-languages 'org-babel-load-languages '( (sh . t) (R . t) (perl . t) (ditaa . t) ))
+# eval:    (setq org-confirm-babel-evaluate nil)
+# eval:    (unless (boundp 'org-latex-classes) (setq org-latex-classes nil))
+# eval:    (add-to-list 'org-latex-classes '("memoir" "\\documentclass[smallextended]{memoir} \n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n  \\usepackage{graphicx}\n  \\usepackage{hyperref}" ("\\chapter{%s}" . "\\chapter*{%s}") ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+# eval:    (add-to-list 'org-latex-classes '("acm-proc-article-sp" "\\documentclass{acm_proc_article-sp}\n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n"  ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+# eval:    (setq org-alphabetical-lists t)
+# eval:    (setq org-src-fontify-natively t)
+# eval:   (setq org-export-babel-evaluate nil)
+# eval:   (setq ispell-local-dictionary "english")
+# eval:   (eval (flyspell-mode t))
+# eval:    (setq org-latex-listings 'minted)
+# eval:    (setq org-latex-minted-options '(("bgcolor" "white") ("style" "tango") ("numbers" "left") ("numbersep" "5pt")))
+# End:
