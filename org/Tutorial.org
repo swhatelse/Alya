@@ -3806,15 +3806,6 @@ EOF
                pr y3 === tmp2[1] 
              }
            end
-
-           def tanh_call(x)
-             if get_lang == FORTRAN then
-               return Tanh(x)
-             else
-               return @p_tanh.call(x)
-             end
-           end
-
          #+END_SRC
 **** Sqrt
         #+NAME: boast-generate-sqrt
@@ -3837,15 +3828,6 @@ EOF
                pr y4 === tmp2[1] 
              }
            end
-
-           def sqrt_call(x)
-             if get_lang == FORTRAN then
-               return Sqrt(x)
-             else
-               return @p_sqrt.call(x)
-             end
-           end
-
          #+END_SRC
 
 **** Min
