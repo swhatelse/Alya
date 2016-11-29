@@ -21,7 +21,7 @@
   kind addresses more technical aspects such as assembling all the
   different pieces of the kernel together and can be recognized by the
   *technical* tag.
-* Original Fortran source code
+* Original FORTRAN source code
   This section contains 2 versions FORTRAN source code of the kernel
   =nsi_element_assembly_split_oss=. The version 1 has only been kept for
   information purpose and only the second version is used as reference
@@ -2481,6 +2481,11 @@
           end
        #+END_SRC
 ** BOAST implementation
+   For the BOAST implementation we followed the same logic as
+   previous. We need to declare the kernel header (which is done by
+   the class =KSPlitOss=) and the local variables, initialize the
+   variables, create mocks and split the kernel according to the
+   different nests.
 *** Looking for general pattern :noexport:
         - First:
           Possible to reuse gpcar(:,dim,inode,igaus)
@@ -2651,6 +2656,8 @@
                   + ...
           #+END_SRC
 *** Local variable declaration
+    The local variable declaration is simply done using the parameters
+    defined in the module Arguments:
         #+NAME: boast-local-vars
         #+BEGIN_SRC ruby
           # Local arrays
@@ -2686,7 +2693,10 @@
                @gpveo,@fact1_p,@dtinv_mod,@inode,@jnode,@jdime,@idofv,
                @ivect,@igaus,@idime,@jdofv,@itime,@fact,@idof,@jdof 
         #+END_SRC
-*** Initialisation
+*** Initialization
+    Writing the initialization of the arrays for FORTRAN is straight
+    forward but in C we need to use C code to the set the arrays
+    efficiently. 
         #+NAME: boast-initialization
         #+BEGIN_SRC ruby
           if get_lang == FORTRAN
@@ -2723,7 +2733,21 @@
           end
         #+END_SRC
 *** Subroutines
+    Like in the reference implementation we split the kernel according
+    to the different loops nests. This gave us the possibility to
+    either create subroutine that can be inlined or simply paste the
+    code of the subroutine into the kernel.
 **** Class wrapper                                            :Technical:
+     The goal of the class =Subroutine= is to instanciate loop nests
+     as subroutine or not. The properties of the subroutines such as
+     the vector length are register but also the parameters and the
+     variables used by the subroutine are created dynamically.
+     The usage of a subroutine can either be =:included=, =:call=,
+     =:inline=. And depending this the function =construct= will either
+     only return the code of the subroutine to paste it in the kernel
+     or generate a =Procedure= that can be inlined or not.
+     The function =call= is here only just avoid to have to specify the
+     arguments when calling the subroutine effectively.
          #+BEGIN_SRC ruby :tangle /tmp/subroutine.rb
            require '/tmp/arguments.rb'
            class Subroutine
@@ -3846,6 +3870,8 @@ EOF
       }          
     #+END_SRC
 *** C equivalents functions                                       :Technical:
+    Because in C there are no equivalent of the following functions we
+    need to write them.
 **** Maxval
         #+NAME: boast-generate-maxval
         #+BEGIN_SRC ruby
@@ -3941,6 +3967,8 @@ EOF
            end
          #+END_SRC
 *** Subroutine instanciation                                      :Technical:
+    The subroutines are created by simply creating instances and
+    generating the procedure.
     #+NAME: boast-subroutines-instanciate
     #+BEGIN_SRC ruby
       nests = {}
@@ -3960,6 +3988,8 @@ EOF
       }
     #+END_SRC
 *** Frame to generate the kernel                                  :Technical:
+    However the subroutine has been previously generated the code has
+    not been printed yet it is done why the method =call= of the subroutine.
         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class KSplitBoast < KSplitOss
             def generate
