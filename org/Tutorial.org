@@ -1963,37 +1963,9 @@
           end
         #+END_SRC
 *** V2
-**** Frame to generate the kernel                                 :Technical:
-       #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb :noweb tangle
-          require '/tmp/KSplitOss.rb'
- 
-          <<ref-mocks>>
-          <<generate-ref-declaration>>
-          <<def-parameters>>
-          <<ref-init>>
-
-          class KSplitOssRef_v2 < KSplitOss
-           def generate
-             # opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
-             # opts.update(options)
-             macros = ""
-             
-             if @opts[:preprocessor] then
-               $p_vector_length = "VECTOR_SIZE"
-               $p_def_vect = "DEF_VECT"
-               macros = <<EOF
-               #define VECTOR_SIZE #{@opts[:vector_length]}
-          EOF
-             else
-               $p_vector_length = "#{@opts[:vector_length]}"
-               $p_def_vect = "1:#{@opts[:vector_length]}"
-             end
-           
-             nests = []
-       #+END_SRC
 **** First nest 
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-            nests[0] = <<EOF
+         #+NAME: ref-nest1-v2
+         #+BEGIN_SRC ruby
              agrau(#{$p_def_vect},:,:)   = 0.0_rp
                  wgrgr(#{$p_def_vect},:,:,:) = 0.0_rp 
                  do igaus = 1,pgaus
@@ -2011,11 +1983,10 @@
                        end do
                     end do
                  end do
-          EOF
          #+END_SRC
 **** Second nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[1] = <<EOF
+         #+NAME: ref-nest2-v2
+         #+BEGIN_SRC ruby
              do igaus = 1,pgaus
 
                 fact0(#{$p_def_vect}) = gpsp2_v(#{$p_def_vect},igaus) * gpvol(#{$p_def_vect},igaus)
@@ -2044,11 +2015,10 @@
                    end do
                 end do
              end do
-          EOF          
          #+END_SRC
 **** Thrid nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-             nests[2] =<<EOF
+         #+NAME: ref-nest3-v2
+         #+BEGIN_SRC ruby
              if( fvins_nsi > 0.9_rp ) then
                 do igaus = 1,pgaus
                    do inode = 1,pnode
@@ -2074,11 +2044,10 @@
                    end do
                 end do
              end if
-           EOF
          #+END_SRC
 **** Fourth nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[3] =<<EOF
+         #+NAME: ref-nest4-v2
+         #+BEGIN_SRC ruby
            if( kfl_lumped == 1 ) then 
               if( ndime == 2 ) then
                  stop
@@ -2127,11 +2096,10 @@
                  end do
               end do
            end if
-           EOF
          #+END_SRC
 **** Fifth nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-            nests[4] =<<EOF
+         #+NAME: ref-nest5-v2
+         #+BEGIN_SRC ruby
             if( ndime == 2 ) then
                do igaus = 1,pgaus
                   do inode = 1,pnode
@@ -2169,11 +2137,10 @@
                   end do
                end do
             end if
-           EOF
          #+END_SRC
 **** Sixth nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[5] =<<EOF
+         #+NAME: ref-nest6-v2
+         #+BEGIN_SRC ruby
             if( kfl_stabi_nsi /= -1 ) then
                do igaus = 1,pgaus
                   do inode = 1,pnode
@@ -2187,11 +2154,10 @@
                   end do
                end do
              end if
-           EOF
          #+END_SRC
 **** Seventh nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[6] = <<EOF
+         #+NAME: ref-nest7-v2
+         #+BEGIN_SRC ruby
             do igaus = 1,pgaus
               fact1(#{$p_def_vect}) = penal_nsi * gpvol(#{$p_def_vect},igaus)
               do inode = 1,pnode
@@ -2199,11 +2165,10 @@
                 elrbp(#{$p_def_vect},inode)       = elrbp(#{$p_def_vect},inode)       + fact1(#{$p_def_vect}) * gpsha(#{$p_def_vect},inode,igaus) * elpre(#{$p_def_vect},inode,1) 
               end do
             end do
-           EOF
          #+END_SRC
 **** Eighth nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[7] =<<EOF
+         #+NAME: ref-nest8-v2
+         #+BEGIN_SRC ruby
            if( kfl_stabi_nsi == -1 ) then
               gpvep(#{$p_def_vect},:,:) = 0.0_rp 
            else if( kfl_limit_nsi == -1 ) then
@@ -2236,11 +2201,10 @@
                  end do
               end do
            end if
-           EOF
          #+END_SRC
 **** Nineth nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[8] =<<EOF
+         #+NAME: ref-nest9-v2
+         #+BEGIN_SRC ruby
            if( kfl_stabi_nsi == -1 ) then
               gpgrp(#{$p_def_vect},:,:) = 0.0_rp
            else
@@ -2260,11 +2224,10 @@
                  end do
               end if
            end if
-           EOF
          #+END_SRC
 **** Tenth nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[9] =<<EOF
+         #+NAME: ref-nest10-v2
+         #+BEGIN_SRC ruby
            do igaus = 1,pgaus
               fact4(#{$p_def_vect}) = gpden(#{$p_def_vect},igaus) * dtinv_mod(#{$p_def_vect})
               do itime = 2,nbdfp_nsi
@@ -2285,11 +2248,10 @@
                  end do
               end do
            end do
-           EOF                 
          #+END_SRC
 **** Eleventh nest
-         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-           nests[10] =<<EOF
+         #+NAME: ref-nest11-v2
+         #+BEGIN_SRC ruby
            if( maxval(pbubl) == 1 ) then
               if( kfl_stabi_nsi /= -1 ) then
                  write(6,*) 'BUBBLE NOT CODED FOR SPLIT OSS'
@@ -2334,27 +2296,84 @@
               end do
 
            end if
-           EOF
          #+END_SRC
-**** Assembling pieces
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb
-            set_lang(FORTRAN)
-            @kernel = CKernel::new(:includes => "immintrin.h")
-            @kernel.procedure = declare_procedure
-            get_output.print macros
-            get_output.print generate_mocks
-            get_output.print generate_ref_declaration
-            get_output.print generate_ref_initialization
+**** Frame to generate the kernel                                 :Technical:
+       #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb :noweb tangle
+          require '/tmp/KSplitOss.rb'
+ 
+          <<ref-mocks>>
+          <<generate-ref-declaration>>
+          <<def-parameters>>
+          <<ref-init>>
 
-            @opts[:nests].each{|n|
-              get_output.print nests[n-1]
-            }
+          class KSplitOssRef_v2 < KSplitOss
+           def generate
+             # opts = {:vector_length => 1, :preprocessor => false, :nests => (1..10).to_a}
+             # opts.update(options)
+             macros = ""
+             
+             if @opts[:preprocessor] then
+               $p_vector_length = "VECTOR_SIZE"
+               $p_def_vect = "DEF_VECT"
+               macros = <<EOF
+               #define VECTOR_SIZE #{@opts[:vector_length]}
+          EOF
+             else
+               $p_vector_length = "#{@opts[:vector_length]}"
+               $p_def_vect = "1:#{@opts[:vector_length]}"
+             end
+           
+             nests = []
+             nests.push <<EOF
+             <<ref-nest1-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest2-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest3-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest4-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest5-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest6-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest7-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest8-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest9-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest10-v2>>
+          EOF
+             nests.push <<EOF
+             <<ref-nest11-v2>>
+          EOF
+             set_lang(FORTRAN)
+             @kernel = CKernel::new(:includes => "immintrin.h")
+             @kernel.procedure = declare_procedure
+             get_output.print macros
+             get_output.print generate_mocks
+             get_output.print generate_ref_declaration
+             get_output.print generate_ref_initialization
 
-            get_output.print "end subroutine nsi_element_assembly_split_oss"
-            return @kernel
-            end  
+             @opts[:nests].each{|n|
+               get_output.print nests[n-1]
+             }
+
+             get_output.print "end subroutine nsi_element_assembly_split_oss"
+             return @kernel
+           end  
           end
-        #+END_SRC
+       #+END_SRC
 ** BOAST implementation
 *** Looking for general pattern :noexport:
         - First:
