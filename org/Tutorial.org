@@ -2616,7 +2616,45 @@
            end
          #+END_SRC
 **** First loop
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      <<boast-nest1-body>>
+      #+NAME: boast-nest1-body
+      #+BEGIN_SRC ruby
+        for1 = []
+
+        [2,3].each{|dim|
+          exp1 = ""
+          exp2 = ""
+          dim.times{|i|
+            exp1 += "@gpadv[#{i+1},igaus]*@gpcar[#{i+1},inode,igaus]"
+            exp2 += "@gpcar[#{i+1},inode,igaus]*@gpcar[#{i+1},jnode,igaus]"
+            exp1 +=  " + " if i+1 < dim
+            exp2 +=  " + " if i+1 < dim
+          }
+          
+          form_agrau = "pr @agrau[inode,igaus] === @gpden[igaus] * (#{exp1})"
+          form_wgrgr = "pr @wgrgr[inode,jnode,igaus] === #{exp2}"
+
+          for1.push For(igaus,1,@pgaus){
+            pr For(inode,1,@pnode){
+              eval form_agrau
+              pr For(jnode,1,@pnode){                    
+                eval form_wgrgr
+              }
+            }
+          }
+        }
+
+        pr If(@ndime == 2 => lambda{
+                pr for1[0]
+              }, else: lambda{
+                pr for1[1]
+              })  
+
+      #+END_SRC
+***** Class
+
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           require '/tmp/subroutine.rb'
           require '/tmp/KSplitOss'
 
@@ -2646,38 +2684,7 @@
               block = lambda{
                 decl inode,jnode,igaus unless @usage == :included
 
-                for1 = []
-
-                2.times{|j|
-                  dim = j+2
-                  exp1 = ""
-                  exp2 = ""
-                  dim.times{|i|
-                    exp1 += "@gpadv[#{i+1},igaus]*@gpcar[#{i+1},inode,igaus]"
-                    exp2 += "@gpcar[#{i+1},inode,igaus]*@gpcar[#{i+1},jnode,igaus]"
-                    exp1 +=  " + " if i+1 < dim
-                    exp2 +=  " + " if i+1 < dim
-                  }
-                  
-                  form_agrau = "pr @agrau[inode,igaus] === @gpden[igaus] * (#{exp1})"
-                  form_wgrgr = "pr @wgrgr[inode,jnode,igaus] === #{exp2}"
-
-                  for1[j] = For(igaus,1,@pgaus){
-                    pr For(inode,1,@pnode){
-                      eval form_agrau
-                      pr For(jnode,1,@pnode){                    
-                        eval form_wgrgr
-                      }
-                    }
-                  }
-                }
-
-                pr If(@ndime == 2 => lambda{
-                        pr for1[0]
-                      }, else: lambda{
-                        pr for1[1]
-                      })  
-                
+                <<boast-nest1-body>>
               }
               
               construct(block)
