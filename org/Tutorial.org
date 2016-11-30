@@ -2814,20 +2814,87 @@
           end
         #+END_SRC
 **** Third nest
-        Different loop reorganisation can be made here. Fact1 coudl be
-        computed more efficiently. The memory access to gpcar are made
-        in a contiguous way but by column. It access different memory
-        location pnode^2 x ndime times for gpcar. Same thing for elauu,
-        there are 2.(2.ndime^2 . pnode^2 + ndime/x . pnode ). The 1/x
-        come from contiguous memory access that allow to take
-        advantages of L1 cache with a size of cache x. Because gpcar
-        is accessed sequentially to compute elauu. Here to compute elauu
-        we can either use the cache for elauu or gpcar.
-        Access to elauu are most costly than gpcar because it is accessed more
-        often. So made be it worth to reorganize loops to access elauu
-        the more sequentially possible.
+***** Body
+      #+NAME: boast-nest3-body
+      #+BEGIN_SRC ruby
+        for_inode = For(inode,1,@pnode)
+        for_jnode = For(jnode,1,@pnode)
+        for_idime = For(idime,1,@ndime)
+        for_jdime = lambda{ |dim| return For(jdime,1,dim) }
 
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        block1 = lambda{
+          pr fact[2] === @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,jnode,igaus]
+        }
+
+        block2 = lambda{
+          pr idofv === (inode-1)*@ndime + idime
+        }
+
+        block3 = lambda{
+          pr jdofv === (jnode-1)*@ndime + jdime
+          pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,inode,igaus]
+        }
+
+        block4 = lambda{
+          pr fact[2] === -2.0.to_var / 3.0.to_var * @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,inode,igaus]
+        }
+
+        block5 = lambda{
+          pr jdofv === (jnode-1)*@ndime + jdime
+          pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,jnode,igaus]
+        }
+
+
+        main_block = lambda{ 
+          decl igaus,idime,jdime,inode,jnode,fact,idofv,jdofv unless @usage == :included
+
+          pr If(@fvins_nsi > 0.9){
+            for1 = []
+            @dimensions.each{|dim|
+              for1[for1.length] = For(igaus,1,@pgaus){ 
+
+                opn for_inode
+                opn for_idime
+                block2.call
+                opn for_jnode
+                block1.call
+                if @unroll then
+                  pr for_jdime.call(dim).unroll, &block3
+                else
+                  pr for_jdime.call(dim), &block3
+                end
+                close for_jnode
+                pr If(@fvins_nsi == 2.0){
+                  block4.call
+                  opn for_jnode
+                  if @unroll then
+                    pr for_jdime.call(dim).unroll, &block5
+                  else
+                    pr for_jdime.call(dim), &block5
+                  end
+                  close for_jnode
+                }
+                close for_idime
+                close for_inode
+              }
+            }
+            
+            if @unroll then
+              pr If(@ndime == 2 => lambda{
+                      pr for1[0]
+                    }, else: lambda{
+                      pr for1[1]
+                    })  
+            else
+              pr for1[0]
+            end
+          }
+        }
+              
+      #+END_SRC
+***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
             class Nest3 < Subroutine
               def initialize(options, functions = nil)
                 super("nest3",options,functions)
@@ -2857,81 +2924,9 @@
               fact = $fact
               idofv = $idofv
               jdofv = $jdofv
-
-              for_inode = For(inode,1,@pnode)
-              for_jnode = For(jnode,1,@pnode)
-              for_idime = For(idime,1,@ndime)
-              for_jdime = lambda{ |dim| return For(jdime,1,dim) }
-
-              block1 = lambda{
-                pr fact[2] === @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,jnode,igaus]
-              }
-
-              block2 = lambda{
-                pr idofv === (inode-1)*@ndime + idime
-              }
-
-              block3 = lambda{
-                pr jdofv === (jnode-1)*@ndime + jdime
-                pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,inode,igaus]
-              }
-
-              block4 = lambda{
-                pr fact[2] === -2.0.to_var / 3.0.to_var * @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,inode,igaus]
-              }
-
-              block5 = lambda{
-                pr jdofv === (jnode-1)*@ndime + jdime
-                pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,jnode,igaus]
-              }
-
-
-              main_block = lambda{ 
-                decl igaus,idime,jdime,inode,jnode,fact,idofv,jdofv unless @usage == :included
-
-                pr If(@fvins_nsi > 0.9){
-                  for1 = []
-                  @dimensions.each{|dim|
-                    for1[for1.length] = For(igaus,1,@pgaus){ 
-
-                      opn for_inode
-                      opn for_idime
-                      block2.call
-                      opn for_jnode
-                      block1.call
-                      if @unroll then
-                        pr for_jdime.call(dim).unroll, &block3
-                      else
-                        pr for_jdime.call(dim), &block3
-                      end
-                      close for_jnode
-                      pr If(@fvins_nsi == 2.0){
-                        block4.call
-                        opn for_jnode
-                        if @unroll then
-                          pr for_jdime.call(dim).unroll, &block5
-                        else
-                          pr for_jdime.call(dim), &block5
-                        end
-                        close for_jnode
-                      }
-                      close for_idime
-                      close for_inode
-                    }
-                  }
-                
-                  if @unroll then
-                    pr If(@ndime == 2 => lambda{
-                            pr for1[0]
-                          }, else: lambda{
-                            pr for1[1]
-                          })  
-                  else
-                    pr for1[0]
-                  end
-                }
-              }
               
+              <<boast-nest3-body>>
+
               construct(main_block)
             end
           end
