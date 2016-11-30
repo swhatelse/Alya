@@ -3889,7 +3889,7 @@ EOF
 
 # Local Variables:
 # eval:    (require 'org-install)
-# eval:    (org-babel-do-load-languages 'org-babel-load-languages '( (sh . t) (R . t) (perl . t) (ditaa . t) ))
+# eval:    (org-babel-do-load-languages 'org-babel-load-languages '( (sh . t) (ruby . t) (perl . t) (ditaa . t) ))
 # eval:    (setq org-confirm-babel-evaluate nil)
 # eval:    (unless (boundp 'org-latex-classes) (setq org-latex-classes nil))
 # eval:    (add-to-list 'org-latex-classes '("memoir" "\\documentclass[smallextended]{memoir} \n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n  \\usepackage{graphicx}\n  \\usepackage{hyperref}" ("\\chapter{%s}" . "\\chapter*{%s}") ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
@@ -3899,6 +3899,7 @@ EOF
 # eval:   (setq org-export-babel-evaluate nil)
 # eval:   (setq ispell-local-dictionary "english")
 # eval:   (eval (flyspell-mode t))
+# eval:    (setq org-babel-use-quick-and-dirty-noweb-expansion t)
 # eval:    (setq org-latex-listings 'minted)
 # eval:    (setq org-latex-minted-options '(("bgcolor" "white") ("style" "tango") ("numbers" "left") ("numbersep" "5pt")))
 # End:
