@@ -2566,9 +2566,13 @@
         #+END_SRC
 *** Subroutines
     Like in the reference implementation we split the kernel according
-    to the different loops nests. This gave us the possibility to
+    to the different loop nests. This gave us the possibility to
     either create subroutine that can be inlined or simply paste the
     code of the subroutine into the kernel.
+    Subroutines are wrapped into classes for more convenience.
+    For each subroutine, the parameters (with their direction =:in=,
+    =:out=, =:inout=) and variables used have to be defined.
+
 **** Class wrapper                                            :Technical:
      The goal of the class =Subroutine= is to instanciate loop nests
      as subroutine or not. The properties of the subroutines such as
@@ -2618,6 +2622,14 @@
          #+END_SRC
 **** First loop
 ***** Body
+      The values of =ndime= can be either 2 or 3 and here we unroll the
+      computation of =agrau= and =wgrgr= according to this. For this, we
+      build 2 expressions =exp1= and =exp2= which are unrolled 2 and 3 times.
+      Then these expressions are pasted into the formulas that compute
+      =agrau= and =wgrgr=. Next with these formulas, we build 2 loop nests
+      (for each possibility to unroll the computation of =agrau= and
+      =wgrgr=, here 2 and 3) that we stack into =for1=, and finally we wrap
+      these loops in a if statement.
       <<boast-nest1-body>>
       #+NAME: boast-nest1-body
       #+BEGIN_SRC ruby
@@ -2653,8 +2665,14 @@
               })  
 
       #+END_SRC
-***** Class
-
+***** Class                                                       :Technical:
+      The nest 1 is encapsulated into the class =Nest1=. First,
+      parameters and local variables are defined. The code block
+      contains the BOAST description of the nest 1
+      [[boast-nest1-body][<<boast-nest1-body>>]] and is used to generate . If the nest 
+      is intended to be pasted directly into the main kernel body
+      there is no need to declare the local variables otherwise they
+      will conflict with the kernel's ones. 
         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           require '/tmp/subroutine.rb'
           require '/tmp/KSplitOss'
@@ -2678,6 +2696,7 @@
               @args.push @ndime,@mnode,@pnode,@pgaus,@gpden,@gpcar,@gpadv,@wgrgr,@agrau
             end 
             def generate
+              # locals
               inode = $inode
               jnode = $jnode
               igaus = $igaus
