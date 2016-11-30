@@ -2527,7 +2527,8 @@
 *** Initialization
     Writing the initialization of the arrays for FORTRAN is straight
     forward but in C we need to use C code to the set the arrays
-    efficiently. 
+    efficiently. These instruction are stored as =strings= and included
+    into the kernel with =get_output.print=
         #+NAME: boast-initialization
         #+BEGIN_SRC ruby
           if get_lang == FORTRAN
