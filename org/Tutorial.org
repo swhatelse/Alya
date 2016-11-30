@@ -2712,7 +2712,64 @@
           end
         #+END_SRC
 **** Second loop
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      #+NAME: boast-nest2-body
+      #+BEGIN_SRC ruby 
+        block_factn = lambda{|dim|
+          dim.times{|i|
+            pr fact[i+2] === fact[1] * @gpcar[i+1,inode,igaus]
+          }
+        }
+
+        block_elauu = lambda{|dim|              
+          for i in 0...dim do 
+            for j in 0...dim do
+              exp = "pr @elauu[idof[#{j}],jdof[#{i}]] === @elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+2}] * @gpcar[#{i+1},jnode,igaus]"
+              exp = exp + " + fact[6]" if i == j
+              eval exp
+            end
+          end
+        }
+
+        for1 = []
+        [2,3].each{|dim|
+          for1.push For(igaus,1,@pgaus){ 
+            pr fact[1] === @gpsp2[igaus] * @gpvol[igaus]
+            pr fact[7] === @gpvis[igaus] * @gpvol[igaus]
+            pr fact[8] === @gpsp1_v[igaus] * @gpvol[igaus]
+            pr fact[9] ===  @gpden[igaus] * @functions[:pabdf_nsi].call(1) * @dtinv_loc[1] + @gppor[igaus]
+
+            pr For(inode,1,@pnode){
+              dim.times{|i|
+                pr idof[i] === inode*dim - dim+i+1
+              }
+              block_factn.call(dim)
+              pr fact[5] === @gpsha[inode,igaus] * @gpvol[igaus]
+     
+              pr For(jnode,1,@pnode){
+                dim.times{|i|
+                  pr jdof[i] === jnode*dim - dim+i+1
+                }
+
+                pr fact[6] === fact[5] * (@agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] * @agrau[jnode,igaus] * @agrau[inode,igaus]
+                block_elauu.call(dim)
+              }
+            }
+          }
+        }
+
+        main_block = lambda{
+          decl fact,igaus,inode,jnode,idof,jdof unless @usage == :included
+          pr If(@ndime == 2 => lambda{
+                  pr for1[0]
+                }, else: lambda{
+                  pr for1[1]
+                })
+        }
+              
+      #+END_SRC
+***** Class                                                       :Technical:
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest2 < Subroutine
             def initialize(options, functions = nil)
               super("nest2",options,functions)
@@ -2748,85 +2805,9 @@
               jnode = Arguments.copy($jnode)
               idof = Arguments.copy($idof)
               jdof = Arguments.copy($jdof)
-              
-              block_fact0 = lambda{
-                pr fact[1] === @gpsp2[igaus] * @gpvol[igaus]
-              }
 
-              block_fact6 = lambda{
-                pr fact[7] === @gpvis[igaus] * @gpvol[igaus]
-              }
+              <<boast-nest2-body>>
 
-              block_fact7 = lambda{
-                pr fact[8] === @gpsp1_v[igaus] * @gpvol[igaus]
-              }
-              
-              block_fact8 = lambda{
-                pr fact[9] ===  @gpden[igaus] * @functions[:pabdf_nsi].call(1) * @dtinv_loc[1] + @gppor[igaus]
-              }
-
-              block_fact5 = lambda{
-                pr fact[6] === fact[5] * (@agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] * @agrau[jnode,igaus] * @agrau[inode,igaus]
-              }
-              
-              block_factn = lambda{|dim|
-                dim.times{|i|
-                  pr fact[i+2] === fact[1] * @gpcar[i+1,inode,igaus]
-                }
-              }
-
-              block_fact4 = lambda {
-                pr fact[5] === @gpsha[inode,igaus] * @gpvol[igaus]
-              }
-
-              block_elauu = lambda{|dim|              
-                for i in 0...dim do 
-                  for j in 0...dim do
-                    exp = "pr @elauu[idof[#{j}],jdof[#{i}]] === @elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+2}] * @gpcar[#{i+1},jnode,igaus]"
-                    exp = exp + " + fact[6]" if i == j
-                    eval exp
-                  end
-                end
-              }
-              # end            
-
-              for1 = []
-              2.times{|j|
-                dim = j+2
-                for1[j] = For(igaus,1,@pgaus){ 
-                  block_fact0.call               
-                  block_fact6.call
-                  block_fact7.call
-                  block_fact8.call
-
-                  pr For(inode,1,@pnode){
-                    dim.times{|i|
-                      pr idof[i] === inode*dim - dim+i+1
-                    }
-                    block_factn.call(dim)
-                    block_fact4.call
-                    
-                    pr For(jnode,1,@pnode){
-                      dim.times{|i|
-                        pr jdof[i] === jnode*dim - dim+i+1
-                      }
-
-                      block_fact5.call
-                      block_elauu.call(dim)
-                    }
-                  }
-                }
-              }
-
-              main_block = lambda{
-                decl fact,igaus,inode,jnode,idof,jdof unless @usage == :included
-                pr If(@ndime == 2 => lambda{
-                        pr for1[0]
-                      }, else: lambda{
-                        pr for1[1]
-                      })
-              }
-              
               construct(main_block)
             end
           end
