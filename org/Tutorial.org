@@ -2666,6 +2666,7 @@
 
       #+END_SRC
 ***** Class                                                       :Technical:
+      <<boast-nest1-class>>
       The nest 1 is encapsulated into the class =Nest1=. First,
       parameters and local variables are defined. The code block
       contains the BOAST description of the nest 1
