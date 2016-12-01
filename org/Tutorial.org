@@ -3262,7 +3262,24 @@ EOF
           end
         #+END_SRC
 **** Seventh nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      Same principle as in [[boast-nest1-body][<<boast-nest1-body>>]]
+      #+NAME: boast-nest7-body
+      #+BEGIN_SRC ruby
+        main_block = lambda {
+          decl fact,igaus,inode unless @usage == :included
+          pr For(igaus,1,@pgaus){
+            pr fact[2] === @penal_nsi * @gpvol[igaus]
+            pr For(inode,1,@pnode){
+              pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2] * @gpsha[inode,igaus]
+              pr @elrbp[inode]       === @elrbp[inode]       + fact[2] * @gpsha[inode,igaus] * @elpre[inode,1]
+            }
+          }
+        }
+      #+END_SRC
+***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest7 < Subroutine
             def initialize(options, functions = nil)
               super("nest7",options,functions)
@@ -3287,16 +3304,7 @@ EOF
               igaus = $igaus
               inode = $inode
 
-              main_block = lambda {
-                decl fact,igaus,inode unless @usage == :included
-                pr For(igaus,1,@pgaus){
-                  pr fact[2] === @penal_nsi * @gpvol[igaus]
-                  pr For(inode,1,@pnode){
-                    pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2] * @gpsha[inode,igaus]
-                    pr @elrbp[inode]       === @elrbp[inode]       + fact[2] * @gpsha[inode,igaus] * @elpre[inode,1]
-                  }
-                }
-              }
+              <<boast-nest7-body>>
 
               construct(main_block)
             end
