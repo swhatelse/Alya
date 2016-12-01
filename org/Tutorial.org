@@ -2938,7 +2938,135 @@
           end
         #+END_SRC
 **** Fourth nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      Some expressions have been store into variables as they are used
+      several time in this nest.
+      #+NAME: boast-nest4-body-expressions
+      #+BEGIN_SRC ruby
+        exp_fact0 = fact[1] === @gpvol[igaus] * @gpden[igaus] * @dtinv_mod[1]            
+        exp_fact1 = fact[2] === fact[1] * @gpsha[inode,igaus]
+        exp_elrbu = @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @elvel[idime,inode,2]
+      #+END_SRC
+
+      Here we build the loops that compute =elauu= and =elrbu=. The 2
+      first (=for_elauu1= and =for_elrbu2=) can be unrolled for =ndime=
+      equals 2 and 3 or not unrolled at all. The 2 other (=for_elauu2=
+      and =for_elrbu1=) can only be unrolled for =ndime= equals 3 or not. 
+      #+NAME: boast-nest4-body-build-loops
+      #+BEGIN_SRC ruby
+        for_elauu1 = []           
+        for_elrbu2 = []
+        @dimensions.each{|dim|
+          for_elauu1[for_elauu1.length] = For(idime,1,dim){
+            pr idof[idime] === (inode-1)*dim+idime
+            pr @elauu[idof[idime],idof[idime]] === @elauu[idof[idime],idof[idime]] + fact[2]
+          }
+          for_elrbu2[for_elrbu2.length] = For(idime,1,dim){
+            pr exp_elrbu
+          }
+        }
+
+        for_elauu2 = For(jdime,1,3){
+          pr jdof[jdime] === (jnode-1)*@ndime+jdime
+          pr @elauu[idof[jdime],jdof[jdime]] === @elauu[idof[jdime],jdof[jdime]] - fact[2] * @gpsha[jnode,igaus]
+        }
+
+        for_elrbu1 = For(idime,1,3){
+          pr @elrbu[idime,inode] ===  @elrbu[idime,inode] - fact[2] * @gpveo[idime]
+          pr exp_elrbu
+        }              
+      #+END_SRC
+      
+      Then we built the different blocks for the different values that
+      can take =kfl_lumped=. Here we create the block for =kfl_lumped=
+      equals 1. This time again, we need to use C code to
+      initialize =gpveo=. 
+      #+NAME: boast-nest4-body-kfl-lumped
+      #+BEGIN_SRC ruby
+        block_kfl_lumped_1 = lambda{
+          pr For(igaus,1,@pgaus){
+            if get_lang == FORTRAN then
+              pr @gpveo === 0.0.to_var
+            elsif get_lang == C
+              code =<<EOF
+              memset(gpveo,0,sizeof(#{@gpveo.type.decl}) * #{@gpveo.dimension[0]});
+EOF
+              get_output.print code
+            end
+            pr For(inode,1,@pnode){
+              for1 = For(idime,1,3){
+                pr @gpveo[idime] === @gpveo[idime] + @elvel[idime,inode,2] * @gpsha[inode,igaus] 
+              }
+              if @unroll then
+                pr for1.unroll
+              else
+                pr for1
+              end
+            }
+            pr exp_fact0
+            pr For(inode,1,@pnode){
+              pr exp_fact1
+              if @unroll then
+                pr for_elauu1[1].unroll
+                pr for_elrbu1.unroll
+              else
+                pr for_elauu1[0]
+                pr for_elrbu1
+              end
+              pr For(jnode,1,@pnode){
+                if @unroll then
+                  pr for_elauu2.unroll
+                else
+                  pr for_elauu2
+                end
+              }
+            }
+          }
+        }
+      #+END_SRC
+      
+      The following block is for =kfl_lumped equals= 2. However the
+      loops have been built earlier we actually unroll them here. 
+      #+NAME: boast-nest4-body-unroll-kfl-lumped
+      #+BEGIN_SRC ruby      
+        block_kfl_lumped_2 = []
+        @dimensions.length.times{|i|
+          block_kfl_lumped_2[i] = lambda{
+            pr For(igaus,1,@pgaus){
+              pr exp_fact0
+              pr For(inode,1,@pnode){
+                pr exp_fact1
+                if @unroll then
+                  pr for_elauu1[i].unroll
+                  pr for_elrbu2[i].unroll
+                else
+                  pr for_elauu1[i]
+                  pr for_elrbu2[i]
+                end
+              }
+            }
+          }
+        }
+      #+END_SRC
+
+      Finally, we position the different blocks in =if= statements.
+      #+NAME: boast-nest4-body-ifs
+      #+BEGIN_SRC ruby
+        if_kfl_lumped_1 = lambda{ pr If(@ndime == 2 => lambda{}, :else => block_kfl_lumped_1) }      
+        if @unroll then
+          if_kfl_lumped_2 = lambda{ pr If(@ndime == 2 => block_kfl_lumped_2[0] , :else => block_kfl_lumped_2[1])}
+        else
+          if_kfl_lumped_2 = block_kfl_lumped_2[0]
+        end
+
+        main_block = lambda{ 
+          decl idime,jdime,igaus,inode,jnode,fact,idof,jdof unless @usage == :included
+          pr If(@kfl_lumped == 1 => if_kfl_lumped_1, @kfl_lumped == 2 => if_kfl_lumped_2) 
+        }      
+      #+END_SRC
+***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest4 < Subroutine
             def initialize(options, functions = nil)
               super("nest4",options,functions)
@@ -2972,103 +3100,11 @@
               idof = $idof
               jdof = $jdof
 
-              exp_fact0 = fact[1] === @gpvol[igaus] * @gpden[igaus] * @dtinv_mod[1]            
-              exp_fact1 = fact[2] === fact[1] * @gpsha[inode,igaus]
-              exp_elrbu = @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @elvel[idime,inode,2]
-
-              for_elauu1 = []           
-              for_elbru2 = []
-              @dimensions.each{|dim|
-                for_elauu1[for_elauu1.length] = For(idime,1,dim){
-                  pr idof[idime] === (inode-1)*dim+idime
-                  pr @elauu[idof[idime],idof[idime]] === @elauu[idof[idime],idof[idime]] + fact[2]
-                }
-                for_elbru2[for_elbru2.length] = For(idime,1,dim){
-                  pr exp_elrbu
-                }
-              }
-              
-              for_elauu2 = For(jdime,1,3){
-                pr jdof[jdime] === (jnode-1)*@ndime+jdime
-                pr @elauu[idof[jdime],jdof[jdime]] === @elauu[idof[jdime],jdof[jdime]] - fact[2] * @gpsha[jnode,igaus]
-              }
-
-              for_elbru1 = For(idime,1,3){
-                pr @elrbu[idime,inode] ===  @elrbu[idime,inode] - fact[2] * @gpveo[idime]
-                pr exp_elrbu
-              }
-
-              block_kfl_lumped_1 = lambda{
-                pr For(igaus,1,@pgaus){
-                  if get_lang == FORTRAN then
-                    pr @gpveo === 0.0.to_var
-                  elsif get_lang == C
-                    code =<<EOF
-                    memset(gpveo,0,sizeof(#{@gpveo.type.decl}) * #{@gpveo.dimension[0]});
-EOF
-                    get_output.print code
-                  end
-                  pr For(inode,1,@pnode){
-                    for1 = For(idime,1,3){
-                      pr @gpveo[idime] === @gpveo[idime] + @elvel[idime,inode,2] * @gpsha[inode,igaus] 
-                    }
-                    if @unroll then
-                      pr for1.unroll
-                    else
-                      pr for1
-                    end
-                  }
-                  pr exp_fact0
-                  pr For(inode,1,@pnode){
-                    pr exp_fact1
-                    if @unroll then
-                      pr for_elauu1[1].unroll
-                      pr for_elbru1.unroll
-                    else
-                      pr for_elauu1[0]
-                      pr for_elbru1
-                    end
-                    pr For(jnode,1,@pnode){
-                      if @unroll then
-                        pr for_elauu2.unroll
-                      else
-                        pr for_elauu2
-                      end
-                    }
-                  }
-                }
-              }
-
-              block_kfl_lumped_2 = []
-              @dimensions.length.times{|i|
-                block_kfl_lumped_2[i] = lambda{
-                  pr For(igaus,1,@pgaus){
-                    pr exp_fact0
-                    pr For(inode,1,@pnode){
-                      pr exp_fact1
-                      if @unroll then
-                        pr for_elauu1[i].unroll
-                        pr for_elbru2[i].unroll
-                      else
-                        pr for_elauu1[i]
-                        pr for_elbru2[i]
-                      end
-                    }
-                  }
-                }
-              }
-
-              if_kfl_lumped_1 = lambda{ pr If(@ndime == 2 => lambda{}, :else => block_kfl_lumped_1) }      
-              if @unroll then
-                if_kfl_lumped_2 = lambda{ pr If(@ndime == 2 => block_kfl_lumped_2[0] , :else => block_kfl_lumped_2[1])}
-              else
-                if_kfl_lumped_2 = block_kfl_lumped_2[0]
-              end
-
-              main_block = lambda{ 
-                decl idime,jdime,igaus,inode,jnode,fact,idof,jdof unless @usage == :included
-                pr If(@kfl_lumped == 1 => if_kfl_lumped_1, @kfl_lumped == 2 => if_kfl_lumped_2) 
-              }
+              <<boast-nest4-body-expressions>>
+              <<boast-nest4-body-build-loops>>
+          <<boast-nest4-body-kfl-lumped>>
+              <<boast-nest4-body-unroll-kfl-lumped>>
+              <<boast-nest4-body-ifs>>
               
               construct(main_block)
             end
