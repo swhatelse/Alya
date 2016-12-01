@@ -3024,11 +3024,12 @@ EOF
           }
         }
       #+END_SRC
-      
+
+      <<boast-nest4-body-unroll-kfl-lumped>>
       The following block is for =kfl_lumped equals= 2. However the
       loops have been built earlier we actually unroll them here. 
       #+NAME: boast-nest4-body-unroll-kfl-lumped
-      #+BEGIN_SRC ruby      
+      #+BEGIN_SRC ruby
         block_kfl_lumped_2 = []
         @dimensions.length.times{|i|
           block_kfl_lumped_2[i] = lambda{
@@ -3111,7 +3112,64 @@ EOF
           end
         #+END_SRC
 **** Fifth nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      Same principle as in [[boast-nest4-body-unroll-kfl-lumped][<<boast-nest4-body-unroll-kfl-lumped>>]], we unroll
+      according the values that can take =ndime= or not. And place the
+      code in =if= statement.
+      #+NAME: boast-nest5-body
+      #+BEGIN_SRC ruby
+        for1 = []
+        @dimensions.each{|dim|
+          for1[for1.length] = For(igaus,1,@pgaus){
+            pr For(inode,1,@pnode){
+              for2 = For(idime,1,dim){
+                pr idof[idime] === (inode-1)*dim + idime
+              }
+              if @unroll then 
+                pr for2.unroll 
+              else
+                pr for2
+              end
+              pr For(jnode,1,@pnode){
+                pr fact[1] === @gpvol[igaus] * @gpsha[jnode,igaus]
+                for2 = For(jdime,1,dim){
+                  pr fact[jdime+1] === fact[1] * @gpcar[jdime,inode,igaus]
+                  pr @elapu[jnode,idof[jdime]] === @elapu[jnode,idof[jdime]] + fact[jdime+1]
+                }
+                if @unroll then
+                  pr for2.unroll
+                else
+                  pr for2
+                end
+                for2 = For(jdime,1,dim){
+                  pr @elaup[idof[jdime],jnode] === @elaup[idof[jdime],jnode] - fact[jdime+1]
+                }
+                if @unroll then
+                  pr for2.unroll
+                else
+                  pr for2
+                end
+              }
+            }
+          }
+        }
+
+        main_block = lambda{
+          decl igaus,inode,jnode,idime,jdime,idof,fact unless @usage == :included
+          if @unroll then
+            pr If(@ndime == 2 => lambda{
+                    pr for1[0]
+                  }, else: lambda{
+                    pr for1[1]
+                  })  
+          else
+            pr for1[0]
+          end
+        }
+      #+END_SRC
+***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest5 < Subroutine
             def initialize(options, functions = nil)
               super("nest5",options,functions)
@@ -3142,54 +3200,7 @@ EOF
               idof = $idof
               fact = $fact
 
-              for1 = []
-              @dimensions.each{|dim|
-                for1[for1.length] = For(igaus,1,@pgaus){
-                  pr For(inode,1,@pnode){
-                    for2 = For(idime,1,dim){
-                      pr idof[idime] === (inode-1)*dim + idime
-                    }
-                    if @unroll then
-                      pr for2.unroll
-                    else
-                      pr for2
-                    end
-                    pr For(jnode,1,@pnode){
-                      pr fact[1] === @gpvol[igaus] * @gpsha[jnode,igaus]
-                      for2 = For(jdime,1,dim){
-                        pr fact[jdime+1] === fact[1] * @gpcar[jdime,inode,igaus]
-                        pr @elapu[jnode,idof[jdime]] === @elapu[jnode,idof[jdime]] + fact[jdime+1]
-                      }
-                      if @unroll then
-                        pr for2.unroll
-                      else
-                        pr for2
-                      end
-                      for2 = For(jdime,1,dim){
-                        pr @elaup[idof[jdime],jnode] === @elaup[idof[jdime],jnode] - fact[jdime+1]
-                      }
-                      if @unroll then
-                        pr for2.unroll
-                      else
-                        pr for2
-                      end
-                    }
-                  }
-                }
-              }
-
-              main_block = lambda{
-                decl igaus,inode,jnode,idime,jdime,idof,fact unless @usage == :included
-                if @unroll then
-                  pr If(@ndime == 2 => lambda{
-                          pr for1[0]
-                        }, else: lambda{
-                          pr for1[1]
-                        })  
-                else
-                  pr for1[0]
-                end
-              }
+              <<boast-nest5-body>>
               
               construct(main_block)
             end
