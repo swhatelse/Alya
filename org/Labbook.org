@@ -212,6 +212,20 @@
        - Blocking the inner loops that compute elauu. 2-D blocking
          should be enough.
        - Unrolling the jnode loops.
+
+       - Different loop reorganisation can be made here. Fact1 could be
+         computed more efficiently. The memory access to gpcar are made
+         in a contiguous way but by column. It access different memory
+         location pnode^2 x ndime times for gpcar. Same thing for elauu,
+         there are 2.(2.ndime^2 . pnode^2 + ndime/x . pnode ). The 1/x
+         come from contiguous memory access that allow to take
+         advantages of L1 cache with a size of cache x. Because gpcar
+         is accessed sequentially to compute elauu. Here to compute elauu
+         we can either use the cache for elauu or gpcar.
+         Access to elauu are most costly than gpcar because it is accessed more
+         often. So made be it worth to reorganize loops to access elauu
+         the more sequentially possible.
+
 ****** 4th nest
        - Blocking the jnode loop because elauu not accessed
          sequentially. 2-D blocking.
