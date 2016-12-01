@@ -3207,7 +3207,30 @@ EOF
           end
         #+END_SRC
 **** Sixth nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      Same principle as in [[boast-nest1-body][<<boast-nest1-body>>]]
+      #+NAME: boast-nest6-body
+      #+BEGIN_SRC ruby
+        main_block = lambda{
+          decl igaus,inode,jnode,fact unless @usage == :included
+          pr If(@kfl_stabi_nsi != -1){
+            pr For(igaus,1,@pgaus){
+              pr For(inode,1,@pnode){
+                pr For(jnode,inode+1,@pnode){
+                  pr fact[2]             === @gpsp1_p[igaus] * @wgrgr[jnode,inode,igaus] * @gpvol[igaus]
+                  pr @elapp[jnode,inode] === @elapp[jnode,inode] + fact[2]
+                  pr @elapp[inode,jnode] === @elapp[inode,jnode] + fact[2]
+                }
+                pr fact[2]             === @gpsp1_p[igaus] * @wgrgr[inode,inode,igaus] * @gpvol[igaus]
+                pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2]
+              }
+            }
+          }
+        }      
+      #+END_SRC
+***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest6 < Subroutine
             def initialize(options, functions = nil)
               super("nest6",options,functions)
@@ -3232,22 +3255,7 @@ EOF
               jnode = $jnode
               fact = $fact
               
-              main_block = lambda{
-                decl igaus,inode,jnode,fact unless @usage == :included
-                pr If(@kfl_stabi_nsi != -1){
-                  pr For(igaus,1,@pgaus){
-                    pr For(inode,1,@pnode){
-                      pr For(jnode,inode+1,@pnode){
-                        pr fact[2]             === @gpsp1_p[igaus] * @wgrgr[jnode,inode,igaus] * @gpvol[igaus]
-                        pr @elapp[jnode,inode] === @elapp[jnode,inode] + fact[2]
-                        pr @elapp[inode,jnode] === @elapp[inode,jnode] + fact[2]
-                      }
-                      pr fact[2]             === @gpsp1_p[igaus] * @wgrgr[inode,inode,igaus] * @gpvol[igaus]
-                      pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2]
-                    }
-                  }
-                }
-              }
+              <<boast-nest6-body>>
 
               construct(main_block)
             end
