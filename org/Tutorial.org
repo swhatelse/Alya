@@ -1274,7 +1274,7 @@
      First we declare the parameters of the kernel with BOAST using
      the module =Argument.=
      #+NAME: common-declare-parameters
-     #+BEGIN_SRC ruby 
+     #+BEGIN_SRC ruby
        Arguments.initialize(@opts[:vector_length])
        @args = []
        @args.push @ndime         = $ndime
@@ -2488,7 +2488,7 @@
    different nests.
 *** Local variable declaration
     The local variable declaration is simply done using the parameters
-    defined in the module Arguments:
+    defined in the module Arguments. 
         #+NAME: boast-local-vars
         #+BEGIN_SRC ruby
           # Local arrays
@@ -2528,7 +2528,8 @@
     Writing the initialization of the arrays for FORTRAN is straight
     forward but in C we need to use C code to the set the arrays
     efficiently. These instruction are stored as =strings= and included
-    into the kernel with =get_output.print=
+    into the kernel with =get_output.print=.
+    <<boast-initialization>>
         #+NAME: boast-initialization
         #+BEGIN_SRC ruby
           if get_lang == FORTRAN
@@ -2695,7 +2696,8 @@
               @agrau = Arguments.copy($agrau,:inout)
 
               @args.push @ndime,@mnode,@pnode,@pgaus,@gpden,@gpcar,@gpadv,@wgrgr,@agrau
-            end 
+            end
+ 
             def generate
               # locals
               inode = $inode
@@ -2712,8 +2714,11 @@
             end
           end
         #+END_SRC
-**** Second loop
+**** TODO Second loop
 ***** Body
+      Same principle as before, the code is unrolled according to
+      =ndime=.
+      The expression computing =elauu= is built by =block_elauu= 
       #+NAME: boast-nest2-body
       #+BEGIN_SRC ruby 
         block_factn = lambda{|dim|
