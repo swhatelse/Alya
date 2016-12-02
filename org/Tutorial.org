@@ -2720,7 +2720,7 @@
       =ndime=.
       The expression computing =elauu= is built by =block_elauu= 
       #+NAME: boast-nest2-body
-      #+BEGIN_SRC ruby 
+      #+BEGIN_SRC ruby
         block_factn = lambda{|dim|
           dim.times{|i|
             pr fact[i+2] === fact[1] * @gpcar[i+1,inode,igaus]
@@ -2775,6 +2775,7 @@
               
       #+END_SRC
 ***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest2 < Subroutine
             def initialize(options, functions = nil)
