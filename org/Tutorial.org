@@ -2721,24 +2721,8 @@
       The expression computing =elauu= is built by =block_elauu= 
       #+NAME: boast-nest2-body
       #+BEGIN_SRC ruby
-        block_factn = lambda{|dim|
-          dim.times{|i|
-            pr fact[i+2] === fact[1] * @gpcar[i+1,inode,igaus]
-          }
-        }
-
-        block_elauu = lambda{|dim|              
-          for i in 0...dim do 
-            for j in 0...dim do
-              exp = "pr @elauu[idof[#{j}],jdof[#{i}]] === @elauu[idof[#{j}],jdof[#{i}]] + fact[#{j+2}] * @gpcar[#{i+1},jnode,igaus]"
-              exp = exp + " + fact[6]" if i == j
-              eval exp
-            end
-          end
-        }
-
         for1 = []
-        [2,3].each{|dim|
+        @dimensions.each{|dim|
           for1.push For(igaus,1,@pgaus){ 
             pr fact[1] === @gpsp2[igaus] * @gpvol[igaus]
             pr fact[7] === @gpvis[igaus] * @gpvol[igaus]
@@ -2746,31 +2730,41 @@
             pr fact[9] ===  @gpden[igaus] * @functions[:pabdf_nsi].call(1) * @dtinv_loc[1] + @gppor[igaus]
 
             pr For(inode,1,@pnode){
-              dim.times{|i|
-                pr idof[i] === inode*dim - dim+i+1
-              }
-              block_factn.call(dim)
-              pr fact[5] === @gpsha[inode,igaus] * @gpvol[igaus]
-     
-              pr For(jnode,1,@pnode){
-                dim.times{|i|
-                  pr jdof[i] === jnode*dim - dim+i+1
-                }
+              pr For(idime,1,dim){
+                pr idof[1] === (inode-1)*@ndime+idime
+                pr fact[2] === fact[1] * @gpcar[idime,inode,igaus]      
+                pr For(jnode,1,@pnode){
+                  for2 = For(jdime,1,dim){
+                    pr jdof[jdime]              === (jnode-1)*@ndime+jdime
+                    pr @elauu[idof[1],jdof[jdime]] === @elauu[idof[1],jdof[jdime]] + fact[2] * @gpcar[jdime,jnode,igaus]                   
+                  }
+                  if @unroll then
+                    pr for2.unroll
+                  else
+                    pr for2
+                  end
+                  pr jdof[1]              === (jnode-1)*@ndime+idime
+                  pr fact[5]              === @gpsha[inode,igaus] * @gpvol[igaus]
+                  pr fact[6]              === fact[5] * ( @agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] *   @agrau[jnode,igaus] * @agrau[inode,igaus]
+                  pr @elauu[idof[1],jdof[1]] === @elauu[idof[1],jdof[1]] + fact[6]
 
-                pr fact[6] === fact[5] * (@agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] * @agrau[jnode,igaus] * @agrau[inode,igaus]
-                block_elauu.call(dim)
+                }
               }
             }
           }
         }
 
         main_block = lambda{
-          decl fact,igaus,inode,jnode,idof,jdof unless @usage == :included
-          pr If(@ndime == 2 => lambda{
-                  pr for1[0]
-                }, else: lambda{
-                  pr for1[1]
-                })
+          decl fact,igaus,inode,jnode,idof,jdof,idime,jdime unless @usage == :included
+          if @unroll then
+            pr If(@ndime == 2 => lambda{
+                    pr for1[0]
+                  }, else: lambda{
+                    pr for1[1]
+                  })
+          else
+            pr for1[0]
+          end
         }
               
       #+END_SRC
@@ -2812,6 +2806,8 @@
               jnode = Arguments.copy($jnode)
               idof = Arguments.copy($idof)
               jdof = Arguments.copy($jdof)
+              idime = Arguments.copy($idime)
+              jdime = Arguments.copy($jdime)
 
               <<boast-nest2-body>>
 
