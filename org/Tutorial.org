@@ -3809,7 +3809,6 @@ EOF
              y3 = Real("y", :vector_length => @opts[:vector_length])
 
              @p_tanh = Procedure("Tanh", [x3], :return => y3){
-               register_funccall("tanh")
                decl i = Int("i")
                decl tmp1 = Real("tmp1", :dim => [Dim(@opts[:vector_length])], :allocate => true)
                decl tmp2 = Real("tmp2", :dim => [Dim(@opts[:vector_length])], :allocate => true)
@@ -3817,7 +3816,7 @@ EOF
                pr tmp1[1] === x3
 
                pr For(i,1,@opts[:vector_length]){
-                 pr tmp2[i] === tanh(tmp1[i])
+                 pr tmp2[i] === Tanh(tmp1[i])
                }
                pr y3 === tmp2[1] 
              }
@@ -3831,7 +3830,6 @@ EOF
              y4 = Real("y", :vector_length => @opts[:vector_length])
 
              @p_sqrt = Procedure("Sqrt", [x4], :return => y4){
-               register_funccall("sqrt")
                decl i = Int("i")
                decl tmp1 = Real("tmp1", :dim => [Dim(@opts[:vector_length])], :allocate => true)
                decl tmp2 = Real("tmp2", :dim => [Dim(@opts[:vector_length])], :allocate => true)
@@ -3839,7 +3837,7 @@ EOF
                pr tmp1[1] === x4
 
                pr For(i,1,@opts[:vector_length]){
-                 pr tmp2[i] === sqrt(tmp1[i])
+                 pr tmp2[i] === Sqrt(tmp1[i])
                }
                pr y4 === tmp2[1] 
              }
