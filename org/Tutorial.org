@@ -3510,6 +3510,10 @@ EOF
             end
           end
         #+END_SRC        
+**** Nineth nest
+***** Body
+      #+NAME: boast-nest9-body
+      #+BEGIN_SRC ruby
               for_igaus = []
               for_igaus[0] = []
               for_igaus[1] = []
@@ -3575,6 +3579,40 @@ EOF
                         get_output.print code
                       }, :else => block)
               }
+      
+      #+END_SRC
+***** Class                                                       :Technical:
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+          class Nest9 < Subroutine
+            def initialize(options, functions = nil)
+              super("nest9",options,functions)
+              
+              # ins
+              @ndime = Arguments.copy($ndime)
+              @pgaus = Arguments.copy($pgaus)
+              @gpsp1_p = Arguments.copy($gpsp1_p)
+              @gprhs = Arguments.copy($gprhs)
+              @gpden = Arguments.copy($gpden)
+              @dtsgs = Arguments.copy($dtsgs)
+              @gpsp1_v = Arguments.copy($gpsp1_v)
+              @gpsgs = Arguments.copy($gpsgs)
+              @kfl_sgsti_nsi = Arguments.copy($kfl_sgsti_nsi)
+              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+
+              # inouts
+              @gpgrp = Arguments.copy($gpgrp)
+              @gpvep = Arguments.copy($gpvep)
+
+              @args.push @ndime,@pgaus,@gpsp1_p,@gprhs,@gpden,@dtsgs,@gpsp1_v,@gpsgs,@kfl_sgsti_nsi,@kfl_stabi_nsi,@gpgrp,@gpvep
+            end
+            def generate
+              # local
+              igaus = $igaus
+              idime = $idime
+              fact = $fact
+              fact1_p = $fact1_p
+
+          <<boast-nest9-body>>
               
               construct(main_block)
             end
@@ -3804,8 +3842,9 @@ EOF
       }          
     #+END_SRC
 *** C equivalents functions                                       :Technical:
-    Because in C there are no equivalent of the following functions we
-    need to write them.
+    Because in C there are no equivalent of the following functions,
+    or intrinsics we need to write them.
+    <<boast-c-functions>>
 **** Maxval
         #+NAME: boast-generate-maxval
         #+BEGIN_SRC ruby
@@ -3900,7 +3939,9 @@ EOF
          #+END_SRC
 *** Subroutine instanciation                                      :Technical:
     The subroutines are created by simply creating instances and
-    generating the procedure.
+    generating the procedure. When a user defined functions is used by
+    a subroutine it need to be referenced by the Procedure like it is
+    the case for the nest 2,8,10 and 11:
     #+NAME: boast-subroutines-instanciate
     #+BEGIN_SRC ruby
       nests = {}
@@ -3920,8 +3961,8 @@ EOF
       }
     #+END_SRC
 *** Frame to generate the kernel                                  :Technical:
-    However the subroutine has been previously generated the code has
-    not been printed yet it is done why the method =call= of the subroutine.
+    However the subroutines have been previously generated the code has
+    not been printed yet it is done using the method =call= of the subroutines.
         #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class KSplitBoast < KSplitOss
             def generate
