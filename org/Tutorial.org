@@ -3311,8 +3311,162 @@ EOF
           end
         #+END_SRC        
 **** Eighth nest
-        Maybe blocking can be interesting for the first nested loop.
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+***** Body
+      First, this nest uses the function =epsilon= for which a C macro
+      equivalent exists. For the FORTRAN version we can call directly
+      this function with BOAST by telling it this is an external
+      function with =register_funccall=. 
+      Second, the FORTRAN functions =tanh= and =min= can work with either
+      vector or scalar variables. Intrinsics exist for these
+      functions and BOAST provides support for them (=Tanh= and =Min=) by
+      calling the corresponding instruction whether working on scalar
+      or vector variables. However these Intrinsics only work with ICC
+      and we wrote scalar equivalent, they be found later in this
+      tutorial. For more convenience the call to either our scalar
+      versions or the BOAST versions have been encapsulated into the
+      lambdas =tanh= and =min=.
+      #+NAME: boast-nest8-body-functions
+      #+BEGIN_SRC ruby
+        register_funccall("epsilon") if get_lang == FORTRAN
+
+        tanh = lambda{|x|
+          if get_lang == FORTRAN or @vector_length < 2 then
+            return Tanh(x)
+          else
+            return @functions[:tanh].call(x)
+          end
+        }
+
+        min = lambda{|x,y|
+          if get_lang == FORTRAN then 
+            return Min( x, y )
+          else
+            if @vector_length > 1 then
+              return @functions[:min].call(x,y)
+            else
+              return Ternary(x < y, x, y)
+            end
+          end
+        }
+      #+END_SRC
+
+      As in [[boast-initialization][<<boast-initialization>>]] we used directly C code to initialize
+      the arrays: 
+      #+NAME: boast-nest8-body-init
+      #+BEGIN_SRC ruby
+              for_igaus = For(igaus,1,@pgaus){
+                if get_lang == FORTRAN then
+                  pr c1[1] === 0.0.to_var 
+                  pr c2[1] === 0.0.to_var 
+                  pr c3[1] === 0.0.to_var 
+                elsif get_lang == C
+                  code =<<EOF
+                  memset(c1,0,sizeof(c1));
+                  memset(c2,0,sizeof(c2));
+                  memset(c3,0,sizeof(c3));
+EOF
+                  get_output.print code
+                end
+                pr For(idime,1,@ndime){
+                  if get_lang == FORTRAN then
+                    pr c4[1] === 0.0.to_var
+                  elsif get_lang == C
+                    code =<<EOF
+                    memset(c4,0,sizeof(c4));
+EOF
+                    get_output.print code
+                  end
+      #+END_SRC
+
+      Like for =tanh= and =min= the Intrinsic for the exponential is only
+      available for the ICC so here we just replaced it with a
+      multiplication:
+      #+NAME: boast-nest8-body-pow
+      #+BEGIN_SRC ruby
+                  pr For(inode,1,@pnode){
+                    pr c4[1] === c4[1] + @agrau[inode,igaus] * @elvel[idime,inode,1]
+                  }
+                  pr c4[1] === @gpsp1[igaus] * c4[1]
+                  # Exponential intrinsics only works with ICC
+                  # pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] )**2
+                  pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] ) * ( @gpvep[idime,igaus] - c4[1] )
+                  pr c3[1] === c3[1] + @gpvep[idime,igaus] * @gpvep[idime,igaus]
+                  pr c2[1] === c2[1] + c4[1] * c4[1]
+                }
+
+      #+END_SRC
+
+      For square root no need to use scalar function when working on
+      vectors, the corresponding intrinsics are not only supported by
+      ICC: 
+      #+NAME: boast-nest8-body-sqrt
+      #+BEGIN_SRC ruby
+                pr c3[1]   === Sqrt( c2[1] ) + Sqrt( c3[1] )  
+                pr c1[1]   === Sqrt( c1[1] )
+      #+END_SRC
+
+      For the C version, we just need to use the C macro that gives
+      the epsilon: 
+      #+NAME: boast-nest8-body-epsilon
+      #+BEGIN_SRC ruby
+                if get_lang == FORTRAN then
+                  pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0.to_var) )
+                elsif get_lang == C
+                  code =<<EOF
+                  beta[0] = c1[0] / ( c3[0] + DBL_EPSILON );
+EOF
+                  get_output.print code
+                end
+      #+END_SRC
+
+      For the call to min we need to use Set, for the 1.0 value, to
+      convert it as a vector if work on vectors. For tanh there is
+      need as everything is done implicitly:
+      #+NAME: boast-nest8-body-c-calls
+      #+BEGIN_SRC ruby
+                pr If(@kfl_limit_nsi == 1 => lambda{
+                        pr alpha[1] === min.call( Set(1.0.to_var, alpha), 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
+                      }, @kfl_limit_nsi == 2 => lambda{
+                        pr alpha[1] === 0.5.to_var * ( tanh.call( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
+                      })              
+      #+END_SRC
+
+      The following is as previously, we close the for loop opened at
+      the beginning and we build the subroutine: 
+      #+NAME: boast-nest8-body-end
+      #+BEGIN_SRC ruby
+                pr For(idime,1,@ndime){
+                  pr @gpvep[idime,igaus] === alpha[1] * @gpvep[idime,igaus]
+                }
+              }
+
+              if get_lang == C then
+                code =<<EOF
+                memset(gpvep,0,sizeof(#{@gpvep.type.decl}) * ndime * pgaus);
+EOF
+              end
+
+              main_block = lambda{
+                decl igaus,idime,inode,c1,c2,c3,c4,beta,alpha unless @usage == :included
+
+                pr If( @kfl_stabi_nsi == -1 => lambda{
+                         if get_lang == FORTRAN then
+                           pr @gpvep === 0.0
+                         elsif get_lang == C
+                           get_output.print code
+                         end           
+                       }, @kfl_limit_nsi == -1 => lambda{
+                         if get_lang == FORTRAN then
+                           pr @gpvep === 0.0
+                         elsif get_lang == C
+                           get_output.print code
+                         end           
+                       }, @kfl_limit_nsi > 0 => lambda{ pr for_igaus } )
+              }
+      #+END_SRC
+***** Class                                                       :Technical:
+      Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
+        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
           class Nest8 < Subroutine
             def initialize(options, functions = nil)
               super("nest8",options,functions)
@@ -3344,142 +3498,18 @@ EOF
               beta = $beta
               alpha = $alpha
 
-              register_funccall("epsilon")
-
-              tanh = lambda{|x|
-                if get_lang == FORTRAN
-                  return Tanh(x)
-                else
-                  return @functions[:tanh].call(x)
-                end
-              }
-
-              min = lambda{|x,y|
-                if get_lang == FORTRAN then
-                  return Min( x, y )
-                else
-                  if @vector_length > 1 then
-                    return @functions[:min].call(x,y)
-                  else
-                   return Ternary(x < y, x, y)
-                  end
-                end
-              }
-
-              for_igaus = For(igaus,1,@pgaus){
-                if get_lang == FORTRAN then
-                  pr c1[1] === 0.0.to_var 
-                  pr c2[1] === 0.0.to_var 
-                  pr c3[1] === 0.0.to_var 
-                elsif get_lang == C
-                  code =<<EOF
-                  memset(c1,0,sizeof(c1));
-                  memset(c2,0,sizeof(c2));
-                  memset(c3,0,sizeof(c3));
-EOF
-                  get_output.print code
-                end
-                pr For(idime,1,@ndime){
-                  if get_lang == FORTRAN then
-                    pr c4[1] === 0.0.to_var
-                  elsif get_lang == C
-                    code =<<EOF
-                    memset(c4,0,sizeof(c4));
-EOF
-                    get_output.print code
-                  end
-                  pr For(inode,1,@pnode){
-                    pr c4[1] === c4[1] + @agrau[inode,igaus] * @elvel[idime,inode,1]
-                  }
-                  pr c4[1] === @gpsp1[igaus] * c4[1]
-                  # Exponential intrinsics works only with ICC
-                  # pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] )**2
-                  pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] ) * ( @gpvep[idime,igaus] - c4[1] )
-                  pr c3[1] === c3[1] + @gpvep[idime,igaus] * @gpvep[idime,igaus]
-                  pr c2[1] === c2[1] + c4[1] * c4[1]
-                }
-                
-                pr c3[1]   === Sqrt( c2[1] ) + Sqrt( c3[1] )  
-                pr c1[1]   === Sqrt( c1[1] )
-                if get_lang == FORTRAN then
-                  pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0.to_var) )
-                elsif get_lang == C
-                  code =<<EOF
-                  beta[0] = c1[0] / ( c3[0] + DBL_EPSILON );
-EOF
-                  get_output.print code
-                end
-                
-                pr If(@kfl_limit_nsi == 1 => lambda{
-                        pr alpha[1] === min.call( Set(1.0.to_var, alpha), 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
-                      }, @kfl_limit_nsi == 2 => lambda{
-                        # Tanh works only with ICC
-                        pr alpha[1] === 0.5.to_var * ( tanh.call( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
-                      })
-                pr For(idime,1,@ndime){
-                  pr @gpvep[idime,igaus] === alpha[1] * @gpvep[idime,igaus]
-                }
-              }
-              
-              if get_lang == C then
-                code =<<EOF
-                memset(gpvep,0,sizeof(#{@gpvep.type.decl}) * ndime * pgaus);
-EOF
-              end
-
-              main_block = lambda{
-                decl igaus,idime,inode,c1,c2,c3,c4,beta,alpha unless @usage == :included
-
-                pr If( @kfl_stabi_nsi == -1 => lambda{
-                         if get_lang == FORTRAN then
-                           pr @gpvep === 0.0
-                         elsif get_lang == C
-                           get_output.print code
-                         end           
-                       }, @kfl_limit_nsi == -1 => lambda{
-                         if get_lang == FORTRAN then
-                           pr @gpvep === 0.0
-                         elsif get_lang == C
-                           get_output.print code
-                         end           
-                       }, @kfl_limit_nsi > 0 => lambda{ pr for_igaus } )
-              }
+              <<boast-nest8-body-functions>>
+          <<boast-nest8-body-init>>
+              <<boast-nest8-body-pow>>
+              <<boast-nest8-body-sqrt>>
+          <<boast-nest8-body-epsilon>>
+              <<boast-nest8-body-c-calls>>
+          <<boast-nest8-body-end>>
 
               construct(main_block)
             end
           end
         #+END_SRC        
-**** Nineth nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
-          class Nest9 < Subroutine
-            def initialize(options, functions = nil)
-              super("nest9",options,functions)
-              
-              # ins
-              @ndime = Arguments.copy($ndime)
-              @pgaus = Arguments.copy($pgaus)
-              @gpsp1_p = Arguments.copy($gpsp1_p)
-              @gprhs = Arguments.copy($gprhs)
-              @gpden = Arguments.copy($gpden)
-              @dtsgs = Arguments.copy($dtsgs)
-              @gpsp1_v = Arguments.copy($gpsp1_v)
-              @gpsgs = Arguments.copy($gpsgs)
-              @kfl_sgsti_nsi = Arguments.copy($kfl_sgsti_nsi)
-              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
-
-              # inouts
-              @gpgrp = Arguments.copy($gpgrp)
-              @gpvep = Arguments.copy($gpvep)
-
-              @args.push @ndime,@pgaus,@gpsp1_p,@gprhs,@gpden,@dtsgs,@gpsp1_v,@gpsgs,@kfl_sgsti_nsi,@kfl_stabi_nsi,@gpgrp,@gpvep
-            end
-            def generate
-              # local
-              igaus = $igaus
-              idime = $idime
-              fact = $fact
-              fact1_p = $fact1_p
-
               for_igaus = []
               for_igaus[0] = []
               for_igaus[1] = []
