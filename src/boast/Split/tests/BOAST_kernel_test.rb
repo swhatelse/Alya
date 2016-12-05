@@ -2,9 +2,9 @@ gem "minitest"
 require 'minitest/autorun'
 require 'BOAST'
 include BOAST
-require '/tmp/KSplitOssRef_v1.rb'
-require '/tmp/KSplitOssRef_v2.rb'
-require '/tmp/KSplitOssBoast.rb'
+require '../KSplitOssRef_v1.rb'
+require '../KSplitOssRef_v2.rb'
+require '../KSplitOssBoast.rb'
 require '../mod_set_params.rb'
 
 class TestFor < Minitest::Test

@@ -1148,7 +1148,7 @@
     when changing the original direction of a variable is that it
     would impact the declaration of all the procedures using this
     variable. 
-        #+BEGIN_SRC ruby :tangle /tmp/arguments.rb
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/arguments.rb
           require 'BOAST'
           include BOAST
 
@@ -1363,8 +1363,8 @@
      implementation, thus, the following class is used to encapsulate
      the different implementation of the kernel by gathering the
      parameters declaration and the generation of the procedure header.
-     #+BEGIN_SRC ruby :tangle /tmp/KSplitOss.rb :noweb tangle
-       require '/tmp/arguments'
+     #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOss.rb :noweb tangle
+       require_relative './arguments.rb'
        class KSplitOss
          include Arguments
          attr_reader :kernel
@@ -2002,8 +2002,8 @@
           EOF
         #+END_SRC
 **** Frame to generate the kernel                                 :Technical:
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v1.rb :noweb tangle
-          require '/tmp/KSplitOss.rb'
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssRef_v1.rb :noweb tangle
+          require_relative './KSplitOss.rb'
 
           <<ref-mocks>>
           <<generate-ref-declaration>>
@@ -2404,8 +2404,8 @@
      The FORTRAN code is then simply printed in the body of the main
      procedure using =get_output.print=.
 
-       #+BEGIN_SRC ruby :tangle /tmp/KSplitOssRef_v2.rb :noweb tangle
-          require '/tmp/KSplitOss.rb'
+       #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssRef_v2.rb :noweb tangle
+          require_relative './KSplitOss.rb'
  
           <<ref-mocks>>
           <<generate-ref-declaration>>
@@ -2585,8 +2585,8 @@
      or generate a =Procedure= that can be inlined or not.
      The function =call= is here only just avoid to have to specify the
      arguments when calling the subroutine effectively.
-         #+BEGIN_SRC ruby :tangle /tmp/subroutine.rb
-           require '/tmp/arguments.rb'
+         #+BEGIN_SRC ruby :tangle ../src/boast/Split/subroutine.rb
+           require_relative './arguments.rb'
            class Subroutine
              include Arguments
              attr_accessor :code
@@ -2675,9 +2675,9 @@
       is intended to be pasted directly into the main kernel body
       there is no need to declare the local variables otherwise they
       will conflict with the kernel's ones. 
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
-          require '/tmp/subroutine.rb'
-          require '/tmp/KSplitOss'
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
+          require_relative './subroutine.rb'
+          require_relative './KSplitOss.rb'
 
           class Nest1 < Subroutine
             def initialize(options,functions = nil)
@@ -2770,7 +2770,7 @@
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest2 < Subroutine
             def initialize(options, functions = nil)
               super("nest2",options,functions)
@@ -2900,7 +2900,7 @@
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
             class Nest3 < Subroutine
               def initialize(options, functions = nil)
                 super("nest3",options,functions)
@@ -3069,7 +3069,7 @@ EOF
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest4 < Subroutine
             def initialize(options, functions = nil)
               super("nest4",options,functions)
@@ -3171,7 +3171,7 @@ EOF
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest5 < Subroutine
             def initialize(options, functions = nil)
               super("nest5",options,functions)
@@ -3232,7 +3232,7 @@ EOF
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest6 < Subroutine
             def initialize(options, functions = nil)
               super("nest6",options,functions)
@@ -3281,7 +3281,7 @@ EOF
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest7 < Subroutine
             def initialize(options, functions = nil)
               super("nest7",options,functions)
@@ -3468,7 +3468,7 @@ EOF
       #+END_SRC
 ***** Class                                                       :Technical:
       Same principle as in [[boast-nest1-class][<<boast-nest1-class>>]]
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest8 < Subroutine
             def initialize(options, functions = nil)
               super("nest8",options,functions)
@@ -3584,7 +3584,7 @@ EOF
       
       #+END_SRC
 ***** Class                                                       :Technical:
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class Nest9 < Subroutine
             def initialize(options, functions = nil)
               super("nest9",options,functions)
@@ -3621,7 +3621,7 @@ EOF
           end
         #+END_SRC        
 **** Tenth nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb
           class Nest10 < Subroutine
             def initialize(options, functions = nil)
               super("nest10",options,functions)
@@ -3711,7 +3711,7 @@ EOF
           end
         #+END_SRC        
 **** Eleventh nest
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb
           class Nest11 < Subroutine
             def initialize(options, functions = nil)
               super("nest11",options,functions)
@@ -3965,7 +3965,7 @@ EOF
 *** Frame to generate the kernel                                  :Technical:
     However the subroutines have been previously generated the code has
     not been printed yet it is done using the method =call= of the subroutines.
-        #+BEGIN_SRC ruby :tangle /tmp/KSplitOssBoast.rb :noweb tangle
+        #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class KSplitBoast < KSplitOss
             def generate
               if @opts[:unroll] then

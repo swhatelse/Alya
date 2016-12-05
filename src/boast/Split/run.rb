@@ -1,4 +1,6 @@
-require '/tmp/alya.rb'
+require './KSplitOssRef_v1.rb'
+require './KSplitOssRef_v2.rb'
+require './KSplitOssBoast.rb'
 require 'narray_ffi'
 require_relative './mod_set_params.rb'
 require 'yaml'
@@ -10,10 +12,9 @@ require_relative './LogInfo.rb'
 class Experiment
   include Params
   def self.run(output_info)
-    # nests = (1..11).to_a
+    nests = (1..11).to_a
     LogInfo.init(output_info)
     LogInfo.get_info
-    nests = [1,2,3,4,5,6,7,9]
     vector_size=2
     dimension=2
     seed = 10
@@ -23,18 +24,22 @@ class Experiment
     k = {}
     nests.each{|n|
       nest_name = ":nest#{n}"
-      opts = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => true}
-      h_ref = {:kernel => :ref, :nest => n}
-      h_boast = {:kernel => :boast, :nest => n}
-
-      set_fortran_line_length(100)
-      k[h_ref] = KSplitRef::new(opts)
-      k[h_ref].generate_ref_v2
-      LogInfo.register_kernel_info(h_ref, k[h_ref].kernel.to_s)
-      k[h_ref].kernel.build(:FCFLAGS => "-O3")
+      opts1 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :included}
+      opts2 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :inlined}
+      h_ref = {:kernel => :included, :nest => n}
+      h_boast = {:kernel => :inlined, :nest => n}
 
       set_lang(C)
-      k[h_boast] = KSplitBoast::new(opts)
+      set_fortran_line_length(100)
+      # k[h_ref] = KSplitOssRef_v2::new(opts)
+      k[h_ref] = KSplitBoast::new(opts1)
+      k[h_ref].generate
+      LogInfo.register_kernel_info(h_ref, k[h_ref].kernel.to_s)
+      # k[h_ref].kernel.build(:FCFLAGS => "-O3")
+      k[h_ref].kernel.build(:CFLAGS => "-O3")
+
+      set_lang(C)
+      k[h_boast] = KSplitBoast::new(opts2)
       k[h_boast].generate
       LogInfo.register_kernel_info(h_boast, k[h_boast].kernel.to_s)
       k[h_boast].kernel.build(:CFLAGS => "-O3")
@@ -70,7 +75,7 @@ class Experiment
                @@elaqq_boast,@@elrbq_boast)
       }
       
-      10.times{|i|
+      1000.times{|i|
         Params.init(vector_size,dimension,seed)
         @@kfl_lumped = 2 # 1
         @@kfl_limit_nsi = 1 # 2
