@@ -9,23 +9,28 @@
   Kernels. Here, we focus on the kernel 
   =nsi_element_assembly_split_oss= which is a kernel assembly of Navier
   Stokes equations using the split OSS Variational Multiscale Model.
-  This tutorial is written using the org-mode of emacs and following
-  the litterate programming style. Each part of the code used to
-  generate the kernel is explained step by step and the .org version
-  of this tutorial (available here:
+  This tutorial is written using the org-mode of Emacs, it follows
+  the literate programming style and contains the entire source code
+  to generate the kernel. The source code is split into blocks which
+  are explained step by step. Two different kinds of sections compose
+  this tutorial, the first kind explains how the core of the kernel is
+  ported with BOAST, this is the description of the kernel. The second
+  kind addresses more technical aspects such as assembling all the
+  different pieces of the kernel together and is marked by the tag
+  *technical*. As the code is split this way, code blocks are 
+  referenced by =<<some-block>>= and are included in other code blocks
+  using org-mode functionality. 
+
+  The .org version of this tutorial (available here:
   https://github.com/swhatelse/Alya/blob/master/org/Tutorial.org) can
   be used to generate the necessary ruby files to generate the
-  kernel. 
-  Two different kinds of sections compose this tutorial, the first kind
-  explains how the core of the kernel is ported with BOAST. The second
-  kind addresses more technical aspects such as assembling all the
-  different pieces of the kernel together and can be recognized by the
-  *technical* tag.
+  kernel by using the org-mode tangling function by press C-c C-v t.
 * Original FORTRAN source code
-  This section contains 2 versions FORTRAN source code of the kernel
-  =nsi_element_assembly_split_oss=. The version 1 has only been kept for
-  information purpose and only the second version is used as reference
-  implementation to check the BOAST generated version. 
+  This section contains 2 FORTRAN source code versions of the kernel
+  =nsi_element_assembly_split_oss=. The version 1 is deprecated and has
+  only been kept for information purpose. Only the second version
+  is used as reference implementation to check the BOAST generated
+  version.  
 ** V1                                                           :deprecated:
      #+BEGIN_SRC fortran
              subroutine nsi_element_assembly_split_oss(&
@@ -1123,31 +1128,30 @@
   language and the meta-programming style.
   The kernel =nsi_element_assembly_split_oss= contains 11 loop nests
   that we isolated to eases the porting. This gave us the possibility
-  to test them separately, extracted them in different subroutine that
-  can be either pasted in the main kernel procedure, either inlined or
-  simply called as normal function. And this also gave the possibility
-  to bench them independently.
+  to test and bench them separately and extract them into different
+  subroutine that can be either pasted in the main kernel procedure,
+  either inlined or simply called as normal function. 
 ** BOAST preparation
-  For the both implementations we need to tell BOAST what are the
+  For the both implementations we need to tell to BOAST what are the
   parameters of the kernel.
-*** Parameters definition
-    For more convenience all the variables used by
-    =nsi_element_assembly_split_oss= (including local variables) are
-    referenced in the following module. They are used for the kernel
-    declaration of the reference implementation, the BOAST
-    implementation and the different subroutines. When a variable is
-    needed by the kernel it can be used as it is. However when needed
-    by a subroutine, it must be asked by the =copy= function. Indeed a 
-    subroutine may need a variable but with a different direction than
-    originally defined. For instance the =agrau= variable is defined
-    as =:out= by the kernel but a subroutine may need to read only this
-    variable and only the =:in= direction is necessary. Thus =copy=
-    returns either directly the variable if there is no need to change
-    the original direction or a copy in a different direction than the
-    original one direction is asked. The reason why a copy is needed
-    when changing the original direction of a variable is that it
-    would impact the declaration of all the procedures using this
-    variable. 
+*** Parameters definition                                         :Technical:
+    As the different implementations (reference and BOAST) of the
+    kernel and the different loop nests encapsulated into subroutines
+    share common variable definition, the definition of all the
+    variables used by =nsi_element_assembly_split_oss= (including local
+    variables) are centralized in the following module. When a
+    variable is needed by the main routine (the kernel), it can be
+    used as it is. However when needed by a subroutine, it must be
+    asked by the =copy= function. Indeed a subroutine may need a
+    variable but with a different direction than originally
+    defined. For instance the =agrau= variable is defined as =:out= by the
+    kernel but a subroutine may need to read only this variable and
+    only the =:in= direction is necessary. Thus =copy= returns either
+    directly the variable if there is no need to change the original
+    direction or a copy in a different direction than the original one
+    direction is asked. The reason why a copy is needed when changing
+    the original direction of a parameter is that otherwise it will
+    impact the declaration of all the procedures using this parameter. 
         #+BEGIN_SRC ruby :tangle ../src/boast/Split/arguments.rb
           require 'BOAST'
           include BOAST
@@ -1354,8 +1358,7 @@
      #+NAME: common-declare-procedure
      #+BEGIN_SRC ruby
        def declare_procedure(functions = nil)
-         p = Procedure("nsi_element_assembly_split_oss", @args, :functions => functions)
-         return p
+         return Procedure("nsi_element_assembly_split_oss", @args, :functions => functions)
        end
      #+END_SRC
 **** Kernel wrapper                                               :Technical:
@@ -1380,11 +1383,12 @@
        end
      #+END_SRC
 ** Generate reference implementation 
-  Here we simply reuse the FORTRAN code that manipulate as string.
-  For convenience purpose we replaced the macro =VECTOR_LENGTH= and
-  =DEF_VECT= by ruby variable =$p_vector_length= and =$p_def_vect= that will
-  either use =DEF_VECT= and =VECTOR_LENGTH= or either paste directly the
-  corresponding values depending to the options passed to the kernel.
+  Here we simply reuse the FORTRAN code that we simply manipulate as
+  string. For convenience purpose we replaced the macro =VECTOR_LENGTH=
+  and =DEF_VECT= by ruby variable =$p_vector_length= and =$p_def_vect= that
+  will either use =DEF_VECT= and =VECTOR_LENGTH= or either paste directly
+  the corresponding values depending to the options passed to the
+  kernel.
 *** Mocks                                                         :Technical:
         Some variables/functions are not available so we need to fake
         them like it is the case with =pabdf_nsi= :
@@ -1430,9 +1434,10 @@
            return parameters
          end
        #+END_SRC
-*** Function declaration:
+*** Function declaration
         Here by calling =gen_def_parameters= we just paste the code of
-        =def_parameters= 
+        =def_parameters= just between the function header and the
+        parameters declaration. 
         #+NAME: generate-ref-declaration
         #+BEGIN_SRC ruby           
           def generate_ref_declaration
@@ -2525,10 +2530,10 @@
                @ivect,@igaus,@idime,@jdofv,@itime,@fact,@idof,@jdof 
         #+END_SRC
 *** Initialization
-    Writing the initialization of the arrays for FORTRAN is straight
-    forward but in C we need to use C code to the set the arrays
-    efficiently. These instruction are stored as =strings= and included
-    into the kernel with =get_output.print=.
+    Writing the initialization of the arrays for FORTRAN with BOAST is
+    straight forward but in C we need to use C code to the set the
+    arrays efficiently. These instruction are stored as =strings= and
+    included into the kernel with =get_output.print=.
     <<boast-initialization>>
         #+NAME: boast-initialization
         #+BEGIN_SRC ruby
@@ -2568,21 +2573,23 @@
 *** Subroutines
     Like in the reference implementation we split the kernel according
     to the different loop nests. This gave us the possibility to
-    either create subroutine that can be inlined or simply paste the
-    code of the subroutine into the kernel.
-    Subroutines are wrapped into classes for more convenience.
-    For each subroutine, the parameters (with their direction =:in=,
-    =:out=, =:inout=) and variables used have to be defined.
+    either wrap the nests into subroutines. We can either inline them
+    manually, rely on the compiler to do it or just use a simple 
+    function call. Subroutines are wrapped into classes for more
+    convenience. Like it is the case for the kernel, for each
+    subroutine, the parameters (with their direction =:in=, =:out=,
+    =:inout=) and variables used have to be defined. 
 
 **** Class wrapper                                            :Technical:
-     The goal of the class =Subroutine= is to instanciate loop nests
-     as subroutine or not. The properties of the subroutines such as
-     the vector length are register but also the parameters and the
-     variables used by the subroutine are created dynamically.
-     The usage of a subroutine can either be =:included=, =:call=,
-     =:inline=. And depending this the function =construct= will either
-     only return the code of the subroutine to paste it in the kernel
-     or generate a =Procedure= that can be inlined or not.
+     The goal of the class =Subroutine= is to wrap the different loop
+     nests into subroutines which can either be inlined manually, by
+     the compiler or used as simple subroutine. The properties of a
+     subroutine (such as the vector length) are registered but also the
+     parameters and the variables used by the subroutine which are created
+     dynamically. The usage of a subroutine can either be =:included=,
+     =:call=, =:inline=. Depending on the usage, the function =construct= will
+     either only return the code of the subroutine to paste it in the
+     kernel or generate a =Procedure= that can be inlined or not. 
      The function =call= is here only just avoid to have to specify the
      arguments when calling the subroutine effectively.
          #+BEGIN_SRC ruby :tangle ../src/boast/Split/subroutine.rb
@@ -2669,12 +2676,11 @@
 ***** Class                                                       :Technical:
       <<boast-nest1-class>>
       The nest 1 is encapsulated into the class =Nest1=. First,
-      parameters and local variables are defined. The code block
-      contains the BOAST description of the nest 1
-      [[boast-nest1-body][<<boast-nest1-body>>]] and is used to generate . If the nest 
-      is intended to be pasted directly into the main kernel body
-      there is no need to declare the local variables otherwise they
-      will conflict with the kernel's ones. 
+      parameters and local variables are defined. Then the =block= that
+      contains the nest1 is built by declaring the local variables if
+      the inline is done manually (otherwise they will conflict with
+      the kernel ones) and using the previous descriptions of the
+      nest1 [[boast-nest1-body][<<boast-nest1-body>>]].  
         #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           require_relative './subroutine.rb'
           require_relative './KSplitOss.rb'
@@ -2714,11 +2720,12 @@
             end
           end
         #+END_SRC
-**** TODO Second loop
+**** Second loop
 ***** Body
       Same principle as before, the code is unrolled according to
-      =ndime=.
-      The expression computing =elauu= is built by =block_elauu= 
+      =ndime= or not unrolled at all, then the different version of the
+      nest loop are stacked into array, and wrap into an if
+      statement. 
       #+NAME: boast-nest2-body
       #+BEGIN_SRC ruby
         for1 = []
@@ -2813,9 +2820,9 @@
         #+END_SRC
 **** Third nest
 ***** Body
-      In this nest every expressions, group of expression have been
-      store into variables, same for the loops as we envision the
-      possibility to reorder the loops as we think it would be
+      In this nest every expressions and group of expression have been
+      stored into variables, same for the loops as we envision the
+      possibility to reorder the loops as we think it could be
       beneficial. This way loops and expressions can be reused and
       eases the reordering. However this feature is not implemented
       yet and the order follows the reference implementation one. 
@@ -2844,7 +2851,7 @@
       
       Same principle is in [[boast-nest1-body][<<boast-nest1-body>>]] the code can be
       unrolled for values =ndime= 2 and 3 or not. We previously defined
-      empty, their content can be simply filled by opening it with =opn=
+      empty loops, their content can be simply filled by opening it with =opn=,
       print expression as usual end closing it with =close=.
       #+NAME: boast-nest3-body-loops
       #+BEGIN_SRC ruby
@@ -2929,7 +2936,7 @@
         #+END_SRC
 **** Fourth nest
 ***** Body
-      Some expressions have been store into variables as they are used
+      Some expressions have been stored into variables as they are used
       several time in this nest.
       #+NAME: boast-nest4-body-expressions
       #+BEGIN_SRC ruby
@@ -3091,8 +3098,8 @@ EOF
 **** Fifth nest
 ***** Body
       Same principle as in [[boast-nest4-body-unroll-kfl-lumped][<<boast-nest4-body-unroll-kfl-lumped>>]], we unroll
-      according the values that can take =ndime= or not. And place the
-      code in =if= statement.
+      according to the values that can take =ndime= or not. And we place the
+      block in =if= statement.
       #+NAME: boast-nest5-body
       #+BEGIN_SRC ruby
         for1 = []
@@ -3285,7 +3292,7 @@ EOF
       functions and BOAST provides support for them (=Tanh= and =Min=) by
       calling the corresponding instruction whether working on scalar
       or vector variables. However these Intrinsics only work with ICC
-      and we wrote scalar equivalent, they be found later in this
+      and we wrote scalar equivalent, they can be found later in this
       tutorial. For more convenience the call to either our scalar
       versions or the BOAST versions have been encapsulated into the
       lambdas =tanh= and =min=.
@@ -3361,8 +3368,8 @@ EOF
       #+END_SRC
 
       For square root no need to use scalar function when working on
-      vectors, the corresponding intrinsics are not only supported by
-      ICC: 
+      vectors, unlike with =tanh= and =min= the corresponding intrinsics
+      are not ICC exclusive: 
       #+NAME: boast-nest8-body-sqrt
       #+BEGIN_SRC ruby
                 pr c3[1]   === Sqrt( c2[1] ) + Sqrt( c3[1] )  
@@ -3383,9 +3390,9 @@ EOF
                 end
       #+END_SRC
 
-      For the call to min we need to use Set, for the 1.0 value, to
-      convert it as a vector if work on vectors. For tanh there is
-      need as everything is done implicitly:
+      For the call to =min= we need to use =Set=, for the 1.0 value, to
+      convert it as a vector if working on vectors. For tanh there is
+      no need because done implicitly by =Tanh=:
       #+NAME: boast-nest8-body-c-calls
       #+BEGIN_SRC ruby
                 pr If(@kfl_limit_nsi == 1 => lambda{
@@ -3896,7 +3903,8 @@ EOF
     #+END_SRC
 *** Frame to generate the kernel                                  :Technical:
     However the subroutines have been previously generated the code has
-    not been printed yet it is done using the method =call= of the subroutines.
+    not been printed yet into the kernel, this is done using the
+    method =call= of the subroutines. 
         #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
           class KSplitBoast < KSplitOss
             def generate
