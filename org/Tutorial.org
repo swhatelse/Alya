@@ -1152,11 +1152,11 @@
     direction is asked. The reason why a copy is needed when changing
     the original direction of a parameter is that otherwise it will
     impact the declaration of all the procedures using this parameter. 
-        #+BEGIN_SRC ruby :tangle ../src/boast/Split/arguments.rb
+        #+BEGIN_SRC ruby :tangle ../src/boast/Common/Parameters.rb
           require 'BOAST'
           include BOAST
 
-          module Arguments
+          module Parameters
             $ndime         = Int("ndime", :dir => :in )
             $kfl_lumped    = Int("kfl_lumped",    :dir => :in)
             $mnode         = Int("mnode",         :dir => :in)
@@ -1173,6 +1173,7 @@
             $kfl_press_nsi = Int("kfl_press_nsi", :dir => :in)
             $kfl_p1ve2_nsi = Int("kfl_p1ve2_nsi", :dir => :in)
             $kfl_linea_nsi = Int("kfl_linea_nsi", :dir => :in)
+            $pabdf_nsi     = Real("pabdf_nsi",    :dir => :in, :dim => [Dim()])
             $kfl_confi_nsi = Int("kfl_confi_nsi", :dir => :in)
             $nbdfp_nsi     = Int("nbdfp_nsi",     :dir => :in)
             $kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir => :in)
@@ -1198,67 +1199,120 @@
             def self.initialize(vector_length)
               allocate = get_lang == C ? true : false
 
-              $gpden     = Real("gpden",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpvis     = Real("gpvis",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])              
-              $gppor     = Real("gppor",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpsp1     = Real("gpsp1",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpsp2     = Real("gpsp2",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpvol     = Real("gpvol",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpsha     = Real("gpsha",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
-              $gpcar     = Real("gpcar",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($ndime),Dim($mnode),Dim($pgaus)])
-              $gpadv     = Real("gpadv",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-              $gpvep     = Real("gpvep",            :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-              $gpgrp     = Real("gpgrp",            :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-              $gprhs     = Real("gprhs",            :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-              $gprhc     = Real("gprhc",            :dir => :inout , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpvel     = Real("gpvel",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus),Dim()])
-              $gpsgs     = Real("gpsgs",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus),Dim()])
-              $elvel     = Real("elvel",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim()])
-              $elpre     = Real("elpre",            :dir => :in    , :vector_length => vector_length, :dim => [Dim($pnode),Dim()])
-              $elbub     = Real("elbub",            :dir => :in    , :vector_length => vector_length, :dim => [Dim(1)])
+              $gpden     = Real("gpden",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpvis     = Real("gpvis",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])              
+              $gppor     = Real("gppor",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpgvi     = Real("gpgvi",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $gptt1     = Real("gptt1",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gptt2     = Real("gptt2",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gplap     = Real("gplap",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
+              $gphes     = Real("gphes",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ntens),Dim($mnode),Dim($pgaus)])
+              $gprhs_sgs = Real("gprhs_sgs", :dir => :inout,  :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $gprh2     = Real("gprh2",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $rmomu     = Real("rmomu",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
+              $rcont     = Real("rcont",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim($pgaus)])
+              $gpsp1     = Real("gpsp1",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpsp2     = Real("gpsp2",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpvol     = Real("gpvol",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpsha     = Real("gpsha",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
+              $gpcar     = Real("gpcar",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($mnode),Dim($pgaus)])
+              $gpadv     = Real("gpadv",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $gpvep     = Real("gpvep",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $gpgrp     = Real("gpgrp",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $gprhs     = Real("gprhs",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $gprhc     = Real("gprhc",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpvel     = Real("gpvel",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus),Dim()])
+              $gpsgs     = Real("gpsgs",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus),Dim()])
+              $elvel     = Real("elvel",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim()])
+              $elpre     = Real("elpre",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim()])
+              $elbub     = Real("elbub",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(1)])
 
-              $wgrgr     = Real("wgrgr",            :dir => :out   ,:vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode),Dim($pgaus)])
-              $agrau     = Real("agrau",            :dir => :out   ,:vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
+              $wgrgr     = Real("wgrgr",     :dir => :out,    :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode),Dim($pgaus)])
+              $agrau     = Real("agrau",     :dir => :out,    :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
 
               # Matrices
-              $elauu     = Real("elauu",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim($pnode*$ndime)])
-              $elaup     = Real("elaup",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim($pnode)])
-              $elapp     = Real("elapp",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode)])
-              $elapu     = Real("elapu",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode*$ndime)])
-              $elrbu     = Real("elrbu",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode)])
-              $elrbp     = Real("elrbp",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode)])
+              $elauu = Real("elauu", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim($pnode*$ndime)])
+              $elaup = Real("elaup", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim($pnode)])
+              $elapp = Real("elapp", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode)])
+              $elapu = Real("elapu", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode*$ndime)])
+              $elrbu = Real("elrbu", :dir => :out, :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode)])
+              $elrbp = Real("elrbp", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode)])
+              $rmom2 = Real("rmom2", :dir => :in,  :vector_length => vector_length, :dim => [Dim($ndime),Dim($ndime),Dim($pnode),Dim($pgaus)])
+              $gpst1 = Real("gpst1", :dir => :in,  :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpgve = Real("gpgve", :dir => :in,  :vector_length => vector_length, :dim => [Dim($ndime),Dim($ndime),Dim($pgaus)])
+              $ellum = Real("ellum", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode)])
+              $gppre = Real("gppre", :dir => :in,  :vector_length => vector_length, :dim => [Dim($pgaus)]) 
+
               # Others
-              $dtinv_loc = Real("dtinv_loc",        :dir => :in    , :vector_length => vector_length, :dim => [Dim(1)])
-              $dtsgs     = Real("dtsgs",            :dir => :in    , :vector_length => vector_length, :dim => [Dim(1)])
-              $pbubl     = Int("pbubl",             :dir => :in    , :vector_length => vector_length, :dim => [Dim(1)])
-              $gpsha_bub = Real("gpsha_bub",        :dir => :in    , :vector_length => vector_length, :dim => [Dim($pgaus)])
-              $gpcar_bub = Real("gpcar_bub",        :dir => :in    , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+              $dtinv_loc = Real("dtinv_loc", :dir => :in, :vector_length => vector_length, :dim => [Dim(1)])
+              $dtsgs     = Real("dtsgs",     :dir => :in, :vector_length => vector_length, :dim => [Dim(1)])
+              $pbubl     = Int("pbubl",      :dir => :in, :vector_length => vector_length, :dim => [Dim(1)])
+              $gpsha_bub = Real("gpsha_bub", :dir => :in, :vector_length => vector_length, :dim => [Dim($pgaus)])
+              $gpcar_bub = Real("gpcar_bub", :dir => :in, :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+
               # Enrichement Element matrices
-              $elauq     = Real("elauq",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim(1)])
-              $elapq     = Real("elapq",            :dir => :out   , :vector_length => vector_length, :dim => [Dim($pnode),Dim(1)])
-              $elaqu     = Real("elaqu",            :dir => :out   , :vector_length => vector_length, :dim => [Dim(1),Dim($pnode*$ndime)])
-              $elaqp     = Real("elaqp",            :dir => :out   , :vector_length => vector_length, :dim => [Dim(1),Dim($pnode)])
-              $elaqq     = Real("elaqq",            :dir => :out   , :vector_length => vector_length, :dim => [Dim(1),Dim(1)])
-              $elrbq     = Real("elrbq",            :dir => :out   , :vector_length => vector_length, :dim => [Dim(1)])
+              $elauq     = Real("elauq",     :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim(1)])
+              $elapq     = Real("elapq",     :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim(1)])
+              $elaqu     = Real("elaqu",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim($pnode*$ndime)])
+              $elaqp     = Real("elaqp",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim($pnode)])
+              $elaqq     = Real("elaqq",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim(1)])
+              $elrbq     = Real("elrbq",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1)])
 
               # Locals
+              $ivect  = Int("ivect")
+              $kdime  = Int("kdime")
+              $xvis2  = Real("xvis2")
+              $xvisc  = Real("xvisc")
+              $one_rp = Real("one_rp")
+              $p1ve2  = Real("p1ve2",        :vector_length => vector_length, :dim => [Dim($ndime),Dim($ndime),Dim($pnode),Dim($pgaus)], :allocate => allocate)
+              $p1vec  = Real("p1vec",        :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)], :allocate => allocate)
+              $p2vec  = Real("p2vec",        :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim($pgaus)], :allocate => allocate)
+              $p2sca  = Real("p2sca",        :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)], :allocate => allocate)
+              $wgrvi  = Real("wgrvi",        :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)], :allocate => allocate)
+
+              $factx     = Real("factx",     :vector_length => vector_length)
+              $facty     = Real("facty",     :vector_length => vector_length)
+              $facx1     = Real("facx1",     :vector_length => vector_length)
+              $facy1     = Real("facy1",     :vector_length => vector_length)
+              $ugraN     = Real("ugraN",     :vector_length => vector_length)
+              $gramugraN = Real("gramugraN", :vector_length => vector_length)
+              $penal     = Real("penal",     :vector_length => vector_length)
+              $gprhh     = Real("gprhh",     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)], :allocate => allocate)
+              $taupr     = Real("taupr",     :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
+              $gpveo     = Real("gpveo",     :vector_length => vector_length, :dim => [Dim($ndime)], :allocate => allocate)
+              $gpcar1ji  = Real("gpcar1ji",  :vector_length => vector_length)
+              $gpcar2ji  = Real("gpcar2ji",  :vector_length => vector_length)
+              $gpcar3ji  = Real("gpcar3ji",  :vector_length => vector_length)
+              $p2sca_bub = Real("p2sca_bub", :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
+              $p2vec_bub = Real("p2vec_bub", :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)], :allocate => allocate)
+
+              for i in 1..3 do
+                for j in 1..3 do 
+                  eval '$elauu#{i}#{j} = Real("elauu#{i}#{j}", :vector_length => vector_length, :dim => [Dim(4*((pnode+3)/4)), Dim($pnode)], :allocate => allocate)'
+                end
+              end
+
+              for i in 1..4 do
+                eval '$factvec#{i} = Real("factvec#{i}", :vector_length => vector_length, :dim=> [Dim(4*((pnode+3)/4))], :allocate => allocate)'
+              end
+
               $gpsp1_p   = Real("gpsp1_p",   :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
               $gpsp1_v   = Real("gpsp1_v",   :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
               $gpsp2_v   = Real("gpsp2_v",   :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
-              $c1        = Real("c1",        :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $c2        = Real("c2",        :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $c3        = Real("c3",        :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $c4        = Real("c4",        :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $alpha     = Real("alpha",     :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $beta      = Real("beta",      :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
+              $c1        = Real("c1",        :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $c2        = Real("c2",        :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $c3        = Real("c3",        :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $c4        = Real("c4",        :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $alpha     = Real("alpha",     :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $beta      = Real("beta",      :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
 
-              $gpveo     = Real("gpveo",     :vector_length => vector_length, :dim => [Dim(3)], :allocate => allocate)
-              $fact1_p   = Real("fact1_p",   :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $dtinv_mod = Real("dtinv_mod", :vector_length => vector_length, :dim => [Dim(1)], :allocate => allocate)
-              $fact = Real('fact',           :vector_length => vector_length, :dim => [Dim(9)], :allocate => allocate)
+              $gpveo     = Real("gpveo",     :vector_length => vector_length, :dim => [Dim(3)],      :allocate => allocate)
+              $fact1_p   = Real("fact1_p",   :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $dtinv_mod = Real("dtinv_mod", :vector_length => vector_length, :dim => [Dim(1)],      :allocate => allocate)
+              $fact      = Real('fact',      :vector_length => vector_length, :dim => [Dim(9)],      :allocate => allocate)
 
-              $idof = Int("idof", :dim => [Dim(3)], :allocate => allocate)
-              $jdof = Int("jdof", :dim => [Dim(3)], :allocate => allocate)
+              $idof      = Int("idof", :dim => [Dim(3)], :allocate => allocate)
+              $jdof      = Int("jdof", :dim => [Dim(3)], :allocate => allocate)
             end
 
             def self.copy(arg, direction = nil)
@@ -1269,7 +1323,8 @@
                 return copy
               end
             end
-          end  
+          end
+
         #+END_SRC
 *** BOAST Kernel declaration
     For each implementation we need to declare the prototype of the
@@ -1279,7 +1334,7 @@
      the module =Argument.=
      #+NAME: common-declare-parameters
      #+BEGIN_SRC ruby
-       Arguments.initialize(@opts[:vector_length])
+       Parameters.initialize(@opts[:vector_length])
        @args = []
        @args.push @ndime         = $ndime
        @args.push @kfl_lumped    = $kfl_lumped
@@ -1367,9 +1422,9 @@
      the different implementation of the kernel by gathering the
      parameters declaration and the generation of the procedure header.
      #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOss.rb :noweb tangle
-       require_relative './arguments.rb'
+       require_relative '../Common/Parameters.rb'
        class KSplitOss
-         include Arguments
+         include Parameters
          attr_reader :kernel
 
          def initialize(options)
@@ -2592,10 +2647,10 @@
      kernel or generate a =Procedure= that can be inlined or not. 
      The function =call= is here only just avoid to have to specify the
      arguments when calling the subroutine effectively.
-         #+BEGIN_SRC ruby :tangle ../src/boast/Split/subroutine.rb
-           require_relative './arguments.rb'
+         #+BEGIN_SRC ruby :tangle ../src/boast/Common/subroutine.rb
+           require_relative './Parameters.rb'
            class Subroutine
-             include Arguments
+             include Parameters
              attr_accessor :code
              def initialize(name,options,functions)
                opts = {:vector_length => 1, :unroll => false, :inline => :included}
@@ -2682,24 +2737,24 @@
       the kernel ones) and using the previous descriptions of the
       nest1 [[boast-nest1-body][<<boast-nest1-body>>]].  
         #+BEGIN_SRC ruby :tangle ../src/boast/Split/KSplitOssBoast.rb :noweb tangle
-          require_relative './subroutine.rb'
+          require_relative '../Common/subroutine.rb'
           require_relative './KSplitOss.rb'
 
           class Nest1 < Subroutine
             def initialize(options,functions = nil)
               super("nest1",options,functions)
               # ins
-              @ndime = Arguments.copy($ndime,:in) 
-              @mnode = Arguments.copy($mnode,:in)
-              @pnode = Arguments.copy($pnode,:in)
-              @pgaus = Arguments.copy($pgaus,:in)
-              @gpden = Arguments.copy($gpden,:in)
-              @gpcar = Arguments.copy($gpcar,:in)
-              @gpadv = Arguments.copy($gpadv,:in)
+              @ndime = Parameters.copy($ndime,:in) 
+              @mnode = Parameters.copy($mnode,:in)
+              @pnode = Parameters.copy($pnode,:in)
+              @pgaus = Parameters.copy($pgaus,:in)
+              @gpden = Parameters.copy($gpden,:in)
+              @gpcar = Parameters.copy($gpcar,:in)
+              @gpadv = Parameters.copy($gpadv,:in)
 
               # inouts
-              @wgrgr = Arguments.copy($wgrgr,:inout)
-              @agrau = Arguments.copy($agrau,:inout)
+              @wgrgr = Parameters.copy($wgrgr,:inout)
+              @agrau = Parameters.copy($agrau,:inout)
 
               @args.push @ndime,@mnode,@pnode,@pgaus,@gpden,@gpcar,@gpadv,@wgrgr,@agrau
             end
@@ -2779,38 +2834,38 @@
               super("nest2",options,functions)
 
               # ins
-              @ndime = Arguments.copy($ndime,:in)
-              @mnode = Arguments.copy($mnode,:in)
-              @pnode = Arguments.copy($pnode,:in)
-              @pgaus = Arguments.copy($pgaus,:in)
-              @gpden = Arguments.copy($gpden,:in)
-              @gpcar = Arguments.copy($gpcar,:in)
-              @gpsp2 = Arguments.copy($gpsp2,:in)
-              @gpvol = Arguments.copy($gpvol,:in)
-              @gpvis = Arguments.copy($gpvis,:in)
-              @dtinv_loc = Arguments.copy($dtinv_loc,:in)
-              @gppor = Arguments.copy($gppor,:in)
-              @gpsha = Arguments.copy($gpsha,:in)
-              @gpsp1_v = Arguments.copy($gpsp1_v,:in)
-              @wgrgr = Arguments.copy($wgrgr,:in)
-              @agrau = Arguments.copy($agrau,:in)
+              @ndime = Parameters.copy($ndime,:in)
+              @mnode = Parameters.copy($mnode,:in)
+              @pnode = Parameters.copy($pnode,:in)
+              @pgaus = Parameters.copy($pgaus,:in)
+              @gpden = Parameters.copy($gpden,:in)
+              @gpcar = Parameters.copy($gpcar,:in)
+              @gpsp2 = Parameters.copy($gpsp2,:in)
+              @gpvol = Parameters.copy($gpvol,:in)
+              @gpvis = Parameters.copy($gpvis,:in)
+              @dtinv_loc = Parameters.copy($dtinv_loc,:in)
+              @gppor = Parameters.copy($gppor,:in)
+              @gpsha = Parameters.copy($gpsha,:in)
+              @gpsp1_v = Parameters.copy($gpsp1_v,:in)
+              @wgrgr = Parameters.copy($wgrgr,:in)
+              @agrau = Parameters.copy($agrau,:in)
 
               #inouts
-              @elauu = Arguments.copy($elauu,:inout)
+              @elauu = Parameters.copy($elauu,:inout)
 
               @args.push @ndime,@mnode,@pnode,@pgaus,@gpden,@gpcar,@gpsp2,@gpvol,@gpvis,@dtinv_loc,
                           @gppor,@gpsha,@gpsp1_v,@wgrgr,@agrau,@elauu
             end
             def generate
               # locals
-              fact = Arguments.copy($fact)
-              igaus = Arguments.copy($igaus)
-              inode = Arguments.copy($inode)
-              jnode = Arguments.copy($jnode)
-              idof = Arguments.copy($idof)
-              jdof = Arguments.copy($jdof)
-              idime = Arguments.copy($idime)
-              jdime = Arguments.copy($jdime)
+              fact = Parameters.copy($fact)
+              igaus = Parameters.copy($igaus)
+              inode = Parameters.copy($inode)
+              jnode = Parameters.copy($jnode)
+              idof = Parameters.copy($idof)
+              jdof = Parameters.copy($jdof)
+              idime = Parameters.copy($idime)
+              jdime = Parameters.copy($jdime)
 
               <<boast-nest2-body>>
 
@@ -2901,17 +2956,17 @@
                 super("nest3",options,functions)
                 
                 # ins
-                @pgaus = Arguments.copy($pgaus,:in)
-                @pnode = Arguments.copy($pnode,:in)
-                @mnode = Arguments.copy($mnode,:in)
-                @ndime = Arguments.copy($ndime,:in)
-                @gpvis = Arguments.copy($gpvis,:in)
-                @gpvol = Arguments.copy($gpvol,:in)
-                @gpcar = Arguments.copy($gpcar,:in)
-                @fvins_nsi = Arguments.copy($fvins_nsi,:in)
+                @pgaus = Parameters.copy($pgaus,:in)
+                @pnode = Parameters.copy($pnode,:in)
+                @mnode = Parameters.copy($mnode,:in)
+                @ndime = Parameters.copy($ndime,:in)
+                @gpvis = Parameters.copy($gpvis,:in)
+                @gpvol = Parameters.copy($gpvol,:in)
+                @gpcar = Parameters.copy($gpcar,:in)
+                @fvins_nsi = Parameters.copy($fvins_nsi,:in)
 
                 # inouts
-                @elauu = Arguments.copy($elauu,:inout)
+                @elauu = Parameters.copy($elauu,:inout)
 
                 @args.push @pgaus,@pnode,@mnode,@ndime,@gpvis,@gpvol,@gpcar,@fvins_nsi,@elauu
               end
@@ -3057,20 +3112,20 @@ EOF
               super("nest4",options,functions)
 
               # ins
-              @ndime = Arguments.copy($ndime,:in)
-              @pgaus = Arguments.copy($pgaus,:in)
-              @pnode = Arguments.copy($pnode,:in)
-              @gpvol = Arguments.copy($gpvol,:in)
-              @gpden = Arguments.copy($gpden,:in)
-              @dtinv_mod = Arguments.copy($dtinv_mod,:in)
-              @gpsha = Arguments.copy($gpsha,:in)
-              @elvel = Arguments.copy($elvel,:in)
-              @kfl_lumped = Arguments.copy($kfl_lumped,:in)
+              @ndime = Parameters.copy($ndime,:in)
+              @pgaus = Parameters.copy($pgaus,:in)
+              @pnode = Parameters.copy($pnode,:in)
+              @gpvol = Parameters.copy($gpvol,:in)
+              @gpden = Parameters.copy($gpden,:in)
+              @dtinv_mod = Parameters.copy($dtinv_mod,:in)
+              @gpsha = Parameters.copy($gpsha,:in)
+              @elvel = Parameters.copy($elvel,:in)
+              @kfl_lumped = Parameters.copy($kfl_lumped,:in)
 
               # inouts
-              @gpveo = Arguments.copy($gpveo,:inout)
-              @elrbu = Arguments.copy($elrbu,:inout)
-              @elauu = Arguments.copy($elauu,:inout)
+              @gpveo = Parameters.copy($gpveo,:inout)
+              @elrbu = Parameters.copy($elrbu,:inout)
+              @elauu = Parameters.copy($elauu,:inout)
 
               @args.push @ndime,@pgaus,@pnode,@gpvol,@gpden,@dtinv_mod,@gpsha,@elvel,@kfl_lumped,@gpveo,@elrbu,@elauu
             end
@@ -3146,17 +3201,17 @@ EOF
               super("nest5",options,functions)
               
               # ins
-              @ndime = Arguments.copy($ndime,:in)
-              @mnode = Arguments.copy($mnode,:in)
-              @pgaus = Arguments.copy($pgaus,:in)
-              @pnode = Arguments.copy($pnode,:in)
-              @gpvol = Arguments.copy($gpvol,:in)
-              @gpsha = Arguments.copy($gpsha,:in)
-              @gpcar = Arguments.copy($gpcar,:in)
+              @ndime = Parameters.copy($ndime,:in)
+              @mnode = Parameters.copy($mnode,:in)
+              @pgaus = Parameters.copy($pgaus,:in)
+              @pnode = Parameters.copy($pnode,:in)
+              @gpvol = Parameters.copy($gpvol,:in)
+              @gpsha = Parameters.copy($gpsha,:in)
+              @gpcar = Parameters.copy($gpcar,:in)
 
               # inouts
-              @elapu = Arguments.copy($elapu,:inout)
-              @elaup = Arguments.copy($elaup,:inout)
+              @elapu = Parameters.copy($elapu,:inout)
+              @elaup = Parameters.copy($elaup,:inout)
 
               @args.push @ndime,@mnode,@pgaus,@pnode,@gpvol,@gpsha,@gpcar,@elapu,@elaup
             end
@@ -3207,15 +3262,15 @@ EOF
               super("nest6",options,functions)
               
               # ins
-              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
-              @pgaus = Arguments.copy($pgaus)
-              @pnode = Arguments.copy($pnode)
-              @gpsp1_p = Arguments.copy($gpsp1_p)
-              @wgrgr = Arguments.copy($wgrgr)
-              @gpvol = Arguments.copy($gpvol)
+              @kfl_stabi_nsi = Parameters.copy($kfl_stabi_nsi)
+              @pgaus = Parameters.copy($pgaus)
+              @pnode = Parameters.copy($pnode)
+              @gpsp1_p = Parameters.copy($gpsp1_p)
+              @wgrgr = Parameters.copy($wgrgr)
+              @gpvol = Parameters.copy($gpvol)
 
               # inouts
-              @elapp = Arguments.copy($elapp)
+              @elapp = Parameters.copy($elapp)
 
               @args.push @kfl_stabi_nsi,@pgaus,@pnode,@gpsp1_p,@wgrgr,@gpvol,@elapp
             end
@@ -3256,16 +3311,16 @@ EOF
               super("nest7",options,functions)
 
               # ins
-              @pnode = Arguments.copy($pnode)
-              @pgaus = Arguments.copy($pgaus)
-              @penal_nsi = Arguments.copy($penal_nsi)
-              @gpvol = Arguments.copy($gpvol)
-              @gpsha = Arguments.copy($gpsha)
-              @elpre = Arguments.copy($elpre)
+              @pnode = Parameters.copy($pnode)
+              @pgaus = Parameters.copy($pgaus)
+              @penal_nsi = Parameters.copy($penal_nsi)
+              @gpvol = Parameters.copy($gpvol)
+              @gpsha = Parameters.copy($gpsha)
+              @elpre = Parameters.copy($elpre)
 
               # inouts
-              @elapp = Arguments.copy($elapp)
-              @elrbp = Arguments.copy($elrbp)
+              @elapp = Parameters.copy($elapp)
+              @elrbp = Parameters.copy($elrbp)
 
               @args.push @pnode,@pgaus,@penal_nsi,@gpvol,@gpsha,@elpre,@elapp,@elrbp
             end  
@@ -3443,17 +3498,17 @@ EOF
               super("nest8",options,functions)
               
               # ins
-              @pgaus = Arguments.copy($pgaus)
-              @ndime = Arguments.copy($ndime)
-              @pnode = Arguments.copy($pnode)
-              @elvel = Arguments.copy($elvel)
-              @agrau = Arguments.copy($agrau)
-              @gpsp1 = Arguments.copy($gpsp1)
-              @kfl_limit_nsi = Arguments.copy($kfl_limit_nsi)
-              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+              @pgaus = Parameters.copy($pgaus)
+              @ndime = Parameters.copy($ndime)
+              @pnode = Parameters.copy($pnode)
+              @elvel = Parameters.copy($elvel)
+              @agrau = Parameters.copy($agrau)
+              @gpsp1 = Parameters.copy($gpsp1)
+              @kfl_limit_nsi = Parameters.copy($kfl_limit_nsi)
+              @kfl_stabi_nsi = Parameters.copy($kfl_stabi_nsi)
 
               # inouts
-              @gpvep = Arguments.copy($gpvep)
+              @gpvep = Parameters.copy($gpvep)
 
               @args.push @pgaus,@ndime,@pnode,@elvel,@agrau,@gpsp1,@kfl_limit_nsi,@kfl_stabi_nsi,@gpvep
             end
@@ -3549,20 +3604,20 @@ EOF
               super("nest9",options,functions)
               
               # ins
-              @ndime = Arguments.copy($ndime)
-              @pgaus = Arguments.copy($pgaus)
-              @gpsp1_p = Arguments.copy($gpsp1_p)
-              @gprhs = Arguments.copy($gprhs)
-              @gpden = Arguments.copy($gpden)
-              @dtsgs = Arguments.copy($dtsgs)
-              @gpsp1_v = Arguments.copy($gpsp1_v)
-              @gpsgs = Arguments.copy($gpsgs)
-              @kfl_sgsti_nsi = Arguments.copy($kfl_sgsti_nsi)
-              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+              @ndime = Parameters.copy($ndime)
+              @pgaus = Parameters.copy($pgaus)
+              @gpsp1_p = Parameters.copy($gpsp1_p)
+              @gprhs = Parameters.copy($gprhs)
+              @gpden = Parameters.copy($gpden)
+              @dtsgs = Parameters.copy($dtsgs)
+              @gpsp1_v = Parameters.copy($gpsp1_v)
+              @gpsgs = Parameters.copy($gpsgs)
+              @kfl_sgsti_nsi = Parameters.copy($kfl_sgsti_nsi)
+              @kfl_stabi_nsi = Parameters.copy($kfl_stabi_nsi)
 
               # inouts
-              @gpgrp = Arguments.copy($gpgrp)
-              @gpvep = Arguments.copy($gpvep)
+              @gpgrp = Parameters.copy($gpgrp)
+              @gpvep = Parameters.copy($gpvep)
 
               @args.push @ndime,@pgaus,@gpsp1_p,@gprhs,@gpden,@dtsgs,@gpsp1_v,@gpsgs,@kfl_sgsti_nsi,@kfl_stabi_nsi,@gpgrp,@gpvep
             end
@@ -3586,26 +3641,26 @@ EOF
               super("nest10",options,functions)
               
               # ins
-              @mnode = Arguments.copy($mnode)
-              @ndime = Arguments.copy($ndime)
-              @pgaus = Arguments.copy($pgaus)
-              @gpden = Arguments.copy($gpden)
-              @dtinv_mod = Arguments.copy($dtinv_mod)
-              @nbdfp_nsi = Arguments.copy($nbdfp_nsi)
-              @gpvel = Arguments.copy($gpvel)
-              @pnode = Arguments.copy($pnode)
-              @gpvol = Arguments.copy($gpvol)
-              @gpsha = Arguments.copy($gpsha)
-              @agrau = Arguments.copy($agrau)
-              @gprhc = Arguments.copy($gprhc)
-              @gpcar = Arguments.copy($gpcar)
-              @gpvep = Arguments.copy($gpvep)
-              @gpgrp = Arguments.copy($gpgrp)
+              @mnode = Parameters.copy($mnode)
+              @ndime = Parameters.copy($ndime)
+              @pgaus = Parameters.copy($pgaus)
+              @gpden = Parameters.copy($gpden)
+              @dtinv_mod = Parameters.copy($dtinv_mod)
+              @nbdfp_nsi = Parameters.copy($nbdfp_nsi)
+              @gpvel = Parameters.copy($gpvel)
+              @pnode = Parameters.copy($pnode)
+              @gpvol = Parameters.copy($gpvol)
+              @gpsha = Parameters.copy($gpsha)
+              @agrau = Parameters.copy($agrau)
+              @gprhc = Parameters.copy($gprhc)
+              @gpcar = Parameters.copy($gpcar)
+              @gpvep = Parameters.copy($gpvep)
+              @gpgrp = Parameters.copy($gpgrp)
 
               # inouts
-              @gprhs = Arguments.copy($gprhs)
-              @elrbu = Arguments.copy($elrbu)
-              @elrbp = Arguments.copy($elrbp)
+              @gprhs = Parameters.copy($gprhs)
+              @elrbu = Parameters.copy($elrbu)
+              @elrbp = Parameters.copy($elrbp)
 
               @args.push @mnode,@ndime,@pgaus,@gpden,@dtinv_mod,@nbdfp_nsi,@gpvel,@pnode,@gpvol,@gpsha,@agrau,@gprhc,@gpcar,@gpvep,@gpgrp,@gprhs,@elrbu,@elrbp
             end
@@ -3661,29 +3716,29 @@ EOF
               super("nest11",options,functions)
               
               # ins
-              @mnode = Arguments.copy($mnode)
-              @pgaus = Arguments.copy($pgaus)
-              @pnode = Arguments.copy($pnode)
-              @ndime = Arguments.copy($ndime)
-              @gpcar = Arguments.copy($gpcar)
-              @gpvol = Arguments.copy($gpvol)
-              @gpsha = Arguments.copy($gpsha)
-              @gpcar_bub = Arguments.copy($gpcar_bub)
-              @pbubl = Arguments.copy($pbubl)
-              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
-              @kfl_press_nsi = Arguments.copy($kfl_press_nsi)
-              @penal_nsi = Arguments.copy($penal_nsi)
-              @elbub = Arguments.copy($elbub)
-              @gprhc = Arguments.copy($gprhc)
-              @gpsha_bub = Arguments.copy($gpsha_bub)
+              @mnode = Parameters.copy($mnode)
+              @pgaus = Parameters.copy($pgaus)
+              @pnode = Parameters.copy($pnode)
+              @ndime = Parameters.copy($ndime)
+              @gpcar = Parameters.copy($gpcar)
+              @gpvol = Parameters.copy($gpvol)
+              @gpsha = Parameters.copy($gpsha)
+              @gpcar_bub = Parameters.copy($gpcar_bub)
+              @pbubl = Parameters.copy($pbubl)
+              @kfl_stabi_nsi = Parameters.copy($kfl_stabi_nsi)
+              @kfl_press_nsi = Parameters.copy($kfl_press_nsi)
+              @penal_nsi = Parameters.copy($penal_nsi)
+              @elbub = Parameters.copy($elbub)
+              @gprhc = Parameters.copy($gprhc)
+              @gpsha_bub = Parameters.copy($gpsha_bub)
 
               # inouts
-              @elauq = Arguments.copy($elauq)
-              @elaqu = Arguments.copy($elaqu)
-              @elapq = Arguments.copy($elapq)
-              @elaqp = Arguments.copy($elaqp)
-              @elaqq = Arguments.copy($elaqq)
-              @elrbq = Arguments.copy($elrbq)
+              @elauq = Parameters.copy($elauq)
+              @elaqu = Parameters.copy($elaqu)
+              @elapq = Parameters.copy($elapq)
+              @elaqp = Parameters.copy($elaqp)
+              @elaqq = Parameters.copy($elaqq)
+              @elrbq = Parameters.copy($elrbq)
 
               @args.push @mnode,@pgaus,@pnode,@ndime,@gpcar,@gpvol,@gpsha,@gpcar_bub,@pbubl,@kfl_stabi_nsi,@kfl_press_nsi,@penal_nsi,@elbub,@gprhc,@gpsha_bub,@elauq,@elaqu,@elapq,@elaqp,@elaqq,@elrbq
             end

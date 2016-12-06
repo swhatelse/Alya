@@ -1,4 +1,4 @@
-require './ASGS_Parameters.rb'
+require '../Common/Parameters.rb'
 
 class KASGS
   include Parameters
