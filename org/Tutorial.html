@@ -1,0 +1,4092 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Tutorial: Porting Alya kernels with BOAST</title>
+<!-- 2016-12-06 mar. 16:22 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
+<meta  name="author" content="Steven QUINITO MASNADA" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+
+<script type="text/javascript" src="http://orgmode.org/org-info.js">
+/**
+ *
+ * @source: http://orgmode.org/org-info.js
+ *
+ * @licstart  The following is the entire license notice for the
+ *  JavaScript code in http://orgmode.org/org-info.js.
+ *
+ * Copyright (C) 2012-2013 Free Software Foundation, Inc.
+ *
+ *
+ * The JavaScript code in this tag is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GNU GPL) as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ *
+ * As additional permission under GNU GPL version 3 section 7, you
+ * may distribute non-source (e.g., minimized or compacted) forms of
+ * that code without the copy of the GNU GPL normally required by
+ * section 4, provided you include this license notice and a URL
+ * through which recipients can access the Corresponding Source.
+ *
+ * @licend  The above is the entire license notice
+ * for the JavaScript code in http://orgmode.org/org-info.js.
+ *
+ */
+</script>
+
+<script type="text/javascript">
+
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+
+<!--/*--><![CDATA[/*><!--*/
+org_html_manager.set("TOC_DEPTH", "3");
+org_html_manager.set("LINK_HOME", "");
+org_html_manager.set("LINK_UP", "");
+org_html_manager.set("LOCAL_TOC", "1");
+org_html_manager.set("VIEW_BUTTONS", "0");
+org_html_manager.set("MOUSE_HINT", "underline");
+org_html_manager.set("FIXED_TOC", "0");
+org_html_manager.set("TOC", "1");
+org_html_manager.set("VIEW", "info");
+org_html_manager.setup();  // activate after the parameters are set
+/*]]>*///-->
+</script>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Tutorial: Porting Alya kernels with BOAST</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. Introduction</a></li>
+<li><a href="#sec-2">2. Original FORTRAN source code</a>
+<ul>
+<li><a href="#sec-2-1">2.1. V1&#xa0;&#xa0;&#xa0;<span class="tag"><span class="deprecated">deprecated</span></span></a></li>
+<li><a href="#sec-2-2">2.2. V2</a></li>
+</ul>
+</li>
+<li><a href="#sec-3">3. Using BOAST</a>
+<ul>
+<li><a href="#sec-3-1">3.1. BOAST preparation</a>
+<ul>
+<li><a href="#sec-3-1-1">3.1.1. Parameters definition&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></a></li>
+<li><a href="#sec-3-1-2">3.1.2. BOAST Kernel declaration</a></li>
+</ul>
+</li>
+<li><a href="#sec-3-2">3.2. Generate reference implementation</a>
+<ul>
+<li><a href="#sec-3-2-1">3.2.1. Mocks&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></a></li>
+<li><a href="#sec-3-2-2">3.2.2. Def parameters</a></li>
+<li><a href="#sec-3-2-3">3.2.3. Function declaration</a></li>
+<li><a href="#sec-3-2-4">3.2.4. Initialization</a></li>
+<li><a href="#sec-3-2-5">3.2.5. V2</a></li>
+</ul>
+</li>
+<li><a href="#sec-3-3">3.3. BOAST implementation</a>
+<ul>
+<li><a href="#sec-3-3-1">3.3.1. Local variable declaration</a></li>
+<li><a href="#sec-3-3-2">3.3.2. Initialization</a></li>
+<li><a href="#sec-3-3-3">3.3.3. Subroutines</a></li>
+<li><a href="#sec-3-3-4">3.3.4. Mocks&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></a></li>
+<li><a href="#sec-3-3-5">3.3.5. C equivalents functions&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></a></li>
+<li><a href="#sec-3-3-6">3.3.6. Subroutine instanciation&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></a></li>
+<li><a href="#sec-3-3-7">3.3.7. Frame to generate the kernel&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This tutorial explains how we used BOAST to port one of Alya
+Kernels. Here, we focus on the kernel 
+<code>nsi_element_assembly_split_oss</code> which is a kernel assembly of Navier
+Stokes equations using the split OSS Variational Multiscale Model.
+This tutorial is written using the org-mode of Emacs, it follows
+the literate programming style and contains the entire source code
+to generate the kernel. The source code is split into blocks which
+are explained step by step. Two different kinds of sections compose
+this tutorial, the first kind explains how the core of the kernel is
+ported with BOAST, this is the description of the kernel. The second
+kind addresses more technical aspects such as assembling all the
+different pieces of the kernel together and is marked by the tag
+<b>technical</b>. As the code is split this way, code blocks are 
+referenced by <code>&lt;&lt;some-block&gt;&gt;</code> and are included in other code blocks
+using org-mode functionality. 
+</p>
+
+<p>
+The .org version of this tutorial (available here:
+<a href="https://github.com/swhatelse/Alya/blob/master/org/Tutorial.org">https://github.com/swhatelse/Alya/blob/master/org/Tutorial.org</a>) can
+be used to generate the necessary ruby files to generate the
+kernel by using the org-mode tangling function by press C-c C-v t.
+</p>
+</div>
+</div>
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Original FORTRAN source code</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+This section contains 2 FORTRAN source code versions of the kernel
+<code>nsi_element_assembly_split_oss</code>. The version 1 is deprecated and has
+only been kept for information purpose. Only the second version
+is used as reference implementation to check the BOAST generated
+version.  
+</p>
+</div>
+<div id="outline-container-sec-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> V1&#xa0;&#xa0;&#xa0;<span class="tag"><span class="deprecated">deprecated</span></span></h3>
+<div class="outline-text-3" id="text-2-1">
+<div class="org-src-container">
+
+<pre class="src src-fortran">      subroutine nsi_element_assembly_split_oss(&amp;
+      pnode,pgaus,pevat,gpden,gpvis,gppor,gpsp1,gpsp2,&amp;
+      gpvol,gpsha,gpcar,gpadv,gpvep,gpprp,gpgrp,gprhs,&amp;
+      gpvel,gpsgs,wgrgr,agrau,elvel,elauu,elaup,elapp,&amp;
+      elapu,elrbu,elrbp,dtinv_loc,dtsgs)
+
+      integer(ip), intent(in)    :: pnode,pgaus,pevat
+      real(rp),    intent(in)    :: gpden(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpvis(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gppor(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpsp1(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpsp2(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpvol(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpsha(VECTOR_SIZE,pnode,pgaus)
+      real(rp),    intent(in)    :: gpcar(VECTOR_SIZE,ndime,mnode,pgaus)
+      real(rp),    intent(in)    :: gpadv(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gpvep(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gpprp(VECTOR_SIZE,pgaus)      
+      real(rp),    intent(inout) :: gpgrp(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gprhs(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(in)    :: gpvel(VECTOR_SIZE,ndime,pgaus,*)
+      real(rp),    intent(in)    :: gpsgs(VECTOR_SIZE,ndime,pgaus,*)
+      real(rp),    intent(out)   :: wgrgr(VECTOR_SIZE,pnode,pnode,pgaus)
+      real(rp),    intent(out)   :: agrau(VECTOR_SIZE,pnode,pgaus)
+      real(rp),    intent(in)    :: elvel(VECTOR_SIZE,ndime,pnode,*)
+      real(rp),    intent(out)   :: elauu(VECTOR_SIZE,pnode*ndime,pnode*ndime)
+      real(rp),    intent(out)   :: elaup(VECTOR_SIZE,pnode*ndime,pnode)
+      real(rp),    intent(out)   :: elapp(VECTOR_SIZE,pnode,pnode)
+      real(rp),    intent(out)   :: elapu(VECTOR_SIZE,pnode,pnode*ndime)
+      real(rp),    intent(out)   :: elrbu(VECTOR_SIZE,ndime,pnode)
+      real(rp),    intent(out)   :: elrbp(VECTOR_SIZE,pnode)
+      real(rp),    intent(in)    :: dtinv_loc(VECTOR_SIZE)
+      real(rp),    intent(in)    :: dtsgs(VECTOR_SIZE)
+      real(rp)                   :: gpsp1_p(VECTOR_SIZE,pgaus)
+      real(rp)                   :: gpsp1_v(VECTOR_SIZE,pgaus)
+      real(rp)                   :: c1(VECTOR_SIZE),c2(VECTOR_SIZE)
+      real(rp)                   :: c3(VECTOR_SIZE),c4(VECTOR_SIZE)
+      real(rp)                   :: alpha(VECTOR_SIZE),beta(VECTOR_SIZE)
+      real(rp)                   :: fact0(VECTOR_SIZE)
+      real(rp)                   :: fact1(VECTOR_SIZE)
+      real(rp)                   :: fact2(VECTOR_SIZE)
+      real(rp)                   :: fact3(VECTOR_SIZE)
+      real(rp)                   :: fact4(VECTOR_SIZE)
+      real(rp)                   :: fact5(VECTOR_SIZE)
+      real(rp)                   :: fact6(VECTOR_SIZE)
+      real(rp)                   :: fact7(VECTOR_SIZE)
+      real(rp)                   :: fact8(VECTOR_SIZE)
+      real(rp)                   :: gpveo(VECTOR_SIZE,3)
+      real(rp)                   :: fact1_p(VECTOR_SIZE)
+      integer(ip)                :: inode,jnode,idofn,jdofn,idofv,jdof2,jdof3
+      integer(ip)                :: idof1,idof3,idof2,igaus,idime,jdof1,jdofv,itime
+
+#ifdef OPENACC
+#define DEF_VECT ivect
+#else
+#define DEF_VECT 1:VECTOR_SIZE
+#endif
+
+!----------------------------------------------------------------------
+!
+! possibility of using only pressure stabilization - not ready with limiter - nor with shock capturing
+!
+!----------------------------------------------------------------------
+
+      gpsp1_p = gpsp1
+      gpsp1_v = gpsp1
+!if(1==2) gpsp1_v = 0.0_rp
+!if(1==2) gpsp1_p = min(gpsp1_p,1.0_rp/dtinv_loc)    ! Activate this line only if runing without subscales
+! and you want to limit tau1 like most groups do for small time step
+
+!----------------------------------------------------------------------
+!
+! Initialization
+!
+!----------------------------------------------------------------------
+
+      elrbp = 0.0_rp
+      elrbu = 0.0_rp
+      elapp = 0.0_rp
+      elauu = 0.0_rp
+      elaup = 0.0_rp
+      elapu = 0.0_rp
+
+!----------------------------------------------------------------------
+!
+! Test functions
+!
+!----------------------------------------------------------------------
+
+!
+! AGRAU = rho * (a.grad) Ni
+! WGRGR = grad(Ni) . grad(Nj)
+!
+      if( ndime == 2 ) then
+
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               agrau(DEF_VECT,inode,igaus) =  gpden(DEF_VECT,igaus) * (                    &amp;
+               &amp;                gpadv(DEF_VECT,1,igaus)*gpcar(DEF_VECT,1,inode,igaus) &amp;
+               &amp;              + gpadv(DEF_VECT,2,igaus)*gpcar(DEF_VECT,2,inode,igaus) )
+               do jnode = 1,pnode
+                  wgrgr(DEF_VECT,inode,jnode,igaus) = &amp;
+                  &amp;             gpcar(DEF_VECT,1,inode,igaus)*gpcar(DEF_VECT,1,jnode,igaus) &amp;
+                  &amp;           + gpcar(DEF_VECT,2,inode,igaus)*gpcar(DEF_VECT,2,jnode,igaus) 
+               end do
+            end do
+         end do
+
+      else
+
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               agrau(DEF_VECT,inode,igaus) =  gpden(DEF_VECT,igaus) * (                    &amp;
+               &amp;                gpadv(DEF_VECT,1,igaus)*gpcar(DEF_VECT,1,inode,igaus) &amp;
+               &amp;              + gpadv(DEF_VECT,2,igaus)*gpcar(DEF_VECT,2,inode,igaus) &amp;
+               &amp;              + gpadv(DEF_VECT,3,igaus)*gpcar(DEF_VECT,3,inode,igaus) )
+               do jnode = 1,pnode
+                  wgrgr(DEF_VECT,inode,jnode,igaus) = &amp;
+                  &amp;             gpcar(DEF_VECT,1,inode,igaus)*gpcar(DEF_VECT,1,jnode,igaus) &amp;
+                  &amp;           + gpcar(DEF_VECT,2,inode,igaus)*gpcar(DEF_VECT,2,jnode,igaus) &amp; 
+                  &amp;           + gpcar(DEF_VECT,3,inode,igaus)*gpcar(DEF_VECT,3,jnode,igaus) 
+               end do
+            end do
+         end do
+
+      end if
+
+!----------------------------------------------------------------------
+!
+! Auu
+!
+!----------------------------------------------------------------------
+
+!
+! Galerkin + ( tau2 * div(u) , div(v) ) + ( tau1 * rho*a.grad(u), rho*a.grad(v) )
+!
+      if( ndime == 2 ) then
+
+         do igaus = 1,pgaus
+
+            fact0(DEF_VECT) = gpsp2(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+            fact6(DEF_VECT) = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+            fact7(DEF_VECT) = gpsp1_v(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) 
+            fact8(DEF_VECT) = pabdf_nsi(1) * gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT) + gppor(DEF_VECT,igaus)
+
+            do inode = 1,pnode
+
+               idof1 = 2*inode-1
+               idof2 = 2*inode
+
+               fact1(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus) ! div(u) * tau2' * dv/dx
+               fact2(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus) ! div(u) * tau2' * dv/dy
+               fact4(DEF_VECT) = gpsha(DEF_VECT,inode,igaus) * gpvol(DEF_VECT,igaus)
+
+               do jnode = 1,pnode    
+
+                  jdof1 = 2*jnode-1
+                  jdof2 = 2*jnode
+
+                  fact5(DEF_VECT) = fact4(DEF_VECT) * ( agrau(DEF_VECT,jnode,igaus) + fact8(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) ) &amp; ! ( rho/dt N_j + s Nj + rho*(a.grad)Nj ) Ni
+                  &amp;         +  fact6(DEF_VECT) * wgrgr(DEF_VECT,inode,jnode,igaus) &amp; ! mu * grad(Ni) . grad(Nj)
+                  &amp;         +  fact7(DEF_VECT) * agrau(DEF_VECT,jnode,igaus) * agrau(DEF_VECT,inode,igaus) ! tau1 * rho*(a.grad)Nj * rho*(a.grad)Ni
+
+                  elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus) + fact5(DEF_VECT)
+                  elauu(DEF_VECT,idof2,jdof1) = elauu(DEF_VECT,idof2,jdof1) + fact2(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                  elauu(DEF_VECT,idof1,jdof2) = elauu(DEF_VECT,idof1,jdof2) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) 
+                  elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) + fact2(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) + fact5(DEF_VECT)
+
+               end do
+
+            end do
+         end do
+
+      else
+
+         do igaus = 1,pgaus
+
+            fact0(DEF_VECT) = gpsp2(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+            fact6(DEF_VECT) = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+            fact7(DEF_VECT) = gpsp1_v(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+            fact8(DEF_VECT) = pabdf_nsi(1) * gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT) + gppor(DEF_VECT,igaus)
+
+            do inode = 1,pnode
+
+               idof1 = 3*inode-2
+               idof2 = 3*inode-1
+               idof3 = 3*inode
+
+               fact1(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus) ! div(u) * tau2' * dv/dx
+               fact2(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus) ! div(u) * tau2' * dv/dy
+               fact3(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,3,inode,igaus) ! div(u) * tau2' * dv/dz
+               fact4(DEF_VECT) = gpsha(DEF_VECT,inode,igaus) * gpvol(DEF_VECT,igaus)
+
+               do jnode = 1,pnode    
+
+                  jdof1 = 3*jnode-2
+                  jdof2 = 3*jnode-1
+                  jdof3 = 3*jnode
+
+                  fact5(DEF_VECT) = fact4(DEF_VECT) * ( agrau(DEF_VECT,jnode,igaus) + fact8(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) ) &amp; ! ( rho/dt N_j + s Nj + rho*(a.grad)Nj ) Ni
+                  +  fact6(DEF_VECT) * wgrgr(DEF_VECT,inode,jnode,igaus) &amp; ! mu * grad(Ni) . grad(Nj)
+                  +  fact7(DEF_VECT) * agrau(DEF_VECT,jnode,igaus) * agrau(DEF_VECT,inode,igaus) ! t1 * rho*(a.grad)Nj * rho*(a.grad)Ni
+
+                  elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus) + fact5(DEF_VECT)
+                  elauu(DEF_VECT,idof2,jdof1) = elauu(DEF_VECT,idof2,jdof1) + fact2(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                  elauu(DEF_VECT,idof3,jdof1) = elauu(DEF_VECT,idof3,jdof1) + fact3(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+
+                  elauu(DEF_VECT,idof1,jdof2) = elauu(DEF_VECT,idof1,jdof2) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) 
+                  elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) + fact2(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) + fact5(DEF_VECT)
+                  elauu(DEF_VECT,idof3,jdof2) = elauu(DEF_VECT,idof3,jdof2) + fact3(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus) 
+
+                  elauu(DEF_VECT,idof1,jdof3) = elauu(DEF_VECT,idof1,jdof3) + fact1(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus) 
+                  elauu(DEF_VECT,idof2,jdof3) = elauu(DEF_VECT,idof2,jdof3) + fact2(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus)
+                  elauu(DEF_VECT,idof3,jdof3) = elauu(DEF_VECT,idof3,jdof3) + fact3(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus) + fact5(DEF_VECT)
+
+               end do
+
+            end do
+         end do
+
+      end if
+
+      if( fvins_nsi &gt; 0.9_rp ) then
+!
+! ( mu*duj/dxi , dv/dxj ) (only div form)
+!
+         if( ndime == 2 ) then
+            do igaus = 1,pgaus
+               do inode = 1,pnode
+                  do idime = 1,ndime
+                     idofv =  (inode-1)*ndime+idime
+                     do jnode = 1,pnode
+                        fact1                       = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,jnode,igaus)     
+                        jdofv                       = (jnode-1)*ndime + 1
+                        elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                        jdofv                       = (jnode-1)*ndime + 2
+                        elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                     end do
+                     if( fvins_nsi == 2.0_rp ) then
+                        fact1 = -2.0_rp/3.0_rp * gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,inode,igaus)
+                        do jnode = 1,pnode
+                           jdofv                       = (jnode-1)*ndime + 1 
+                           elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                           jdofv                       = (jnode-1)*ndime + 2
+                           elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus)
+                        end do
+                     end if
+                  end do
+               end do
+            end do
+         else
+            do igaus = 1,pgaus
+               do inode = 1,pnode
+                  do idime = 1,ndime
+                     idofv = (inode-1)*ndime + idime
+                     do jnode = 1,pnode
+                        fact1                       = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,jnode,igaus)     
+                        jdofv                       = (jnode-1)*ndime + 1
+                        elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                        jdofv                       = (jnode-1)*ndime + 2
+                        elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                        jdofv                       = (jnode-1)*ndime + 3
+                        elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,3,inode,igaus)
+                     end do
+                     if( fvins_nsi == 2.0_rp ) then
+                        fact1                          = -2.0_rp / 3.0_rp * gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,inode,igaus)
+                        do jnode = 1,pnode
+                           jdofv                       = (jnode-1)*ndime + 1
+                           elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,1,jnode,igaus)
+                           jdofv                       = (jnode-1)*ndime + 2
+                           elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,2,jnode,igaus)
+                           jdofv                       = (jnode-1)*ndime + 3
+                           elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,3,jnode,igaus)
+                        end do
+                     end if
+                  end do
+               end do
+            end do
+         end if
+      end if
+
+!
+! Lumped evolution matrix (only backward euler)
+!
+      if( kfl_lumped == 1 ) then 
+!
+! Remove Galerkin term and add lumped term 
+! 
+         if( ndime == 2 ) then
+            call runend('PREGUNTAR A MATIAS QUE LO PROGRAME')
+         else
+            do igaus = 1,pgaus
+               gpveo(DEF_VECT,1:3) = 0.0_rp
+               do inode = 1,pnode
+                  do idime = 1,ndime
+                     gpveo(DEF_VECT,idime) = gpveo(DEF_VECT,idime) + elvel(DEF_VECT,idime,inode,2) * gpsha(DEF_VECT,inode,igaus)
+                  end do
+               end do
+               do inode = 1,pnode
+                  idof1                       = 3*inode-2
+                  idof2                       = 3*inode-1
+                  idof3                       = 3*inode
+                  fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpden(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) * dtinv_loc(DEF_VECT)
+                  elauu(DEF_VECT,idof1,idof1) = elauu(DEF_VECT,idof1,idof1) + fact0(DEF_VECT)
+                  elauu(DEF_VECT,idof2,idof2) = elauu(DEF_VECT,idof2,idof2) + fact0(DEF_VECT)
+                  elauu(DEF_VECT,idof3,idof3) = elauu(DEF_VECT,idof3,idof3) + fact0(DEF_VECT)
+                  do idime = 1,ndime
+                     elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) - fact0(DEF_VECT) * gpveo(DEF_VECT,idime)
+                     elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact0(DEF_VECT) * elvel(DEF_VECT,idime,inode,2)
+                  end do
+                  do jnode = 1,pnode 
+                     jdof1                       = 3*jnode-2
+                     jdof2                       = 3*jnode-1
+                     jdof3                       = 3*jnode
+                     elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) - fact0*gpsha(DEF_VECT,jnode,igaus) 
+                     elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) - fact0*gpsha(DEF_VECT,jnode,igaus) 
+                     elauu(DEF_VECT,idof3,jdof3) = elauu(DEF_VECT,idof3,jdof3) - fact0*gpsha(DEF_VECT,jnode,igaus) 
+                  end do
+               end do
+            end do
+         end if
+
+      else if( kfl_lumped == 2 ) then 
+!
+! No time term have been added up to now: add Galerkin term
+!
+         do igaus = 1,pgaus
+            fact0(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT)
+            do inode = 1, pnode
+               fact1(DEF_VECT) = fact0(DEF_VECT) * gpsha(DEF_VECT,inode,igaus)
+               do idime = 1,ndime
+                  idof1                       = (inode-1) * ndime + idime
+                  elauu(DEF_VECT,idof1,idof1) = elauu(DEF_VECT,idof1,idof1) + fact1(DEF_VECT)
+                  elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact1(DEF_VECT) * elvel(DEF_VECT,idime,inode,2)
+               end do
+            end do
+         end do
+
+      end if
+
+!----------------------------------------------------------------------
+!
+! Apu and Aup
+!
+!----------------------------------------------------------------------
+!
+! ( div(u) , q ) and - ( p , div(v) ) 
+!
+      if( ndime == 2 ) then
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               idof1 = 2*inode-1
+               idof2 = 2*inode
+               do jnode = 1,pnode
+                  fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,jnode,igaus) 
+                  fact1(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                  fact2(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                  elapu(DEF_VECT,jnode,idof1) = elapu(DEF_VECT,jnode,idof1) + fact1(DEF_VECT)
+                  elapu(DEF_VECT,jnode,idof2) = elapu(DEF_VECT,jnode,idof2) + fact2(DEF_VECT)
+                  elaup(DEF_VECT,idof1,jnode) = elaup(DEF_VECT,idof1,jnode) - fact1(DEF_VECT)
+                  elaup(DEF_VECT,idof2,jnode) = elaup(DEF_VECT,idof2,jnode) - fact2(DEF_VECT)
+               end do
+            end do
+         end do
+      else
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               idof1 = 3*inode-2
+               idof2 = 3*inode-1
+               idof3 = 3*inode
+               do jnode = 1,pnode
+                  fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,jnode,igaus) 
+                  fact1(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,1,inode,igaus)
+                  fact2(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,2,inode,igaus)
+                  fact3(DEF_VECT)             = fact0(DEF_VECT) * gpcar(DEF_VECT,3,inode,igaus)
+                  elapu(DEF_VECT,jnode,idof1) = elapu(DEF_VECT,jnode,idof1) + fact1(DEF_VECT)
+                  elapu(DEF_VECT,jnode,idof2) = elapu(DEF_VECT,jnode,idof2) + fact2(DEF_VECT)
+                  elapu(DEF_VECT,jnode,idof3) = elapu(DEF_VECT,jnode,idof3) + fact3(DEF_VECT)
+                  elaup(DEF_VECT,idof1,jnode) = elaup(DEF_VECT,idof1,jnode) - fact1(DEF_VECT)
+                  elaup(DEF_VECT,idof2,jnode) = elaup(DEF_VECT,idof2,jnode) - fact2(DEF_VECT)
+                  elaup(DEF_VECT,idof3,jnode) = elaup(DEF_VECT,idof3,jnode) - fact3(DEF_VECT)
+               end do
+            end do
+         end do
+      end if
+
+!----------------------------------------------------------------------
+!
+! App
+!
+!----------------------------------------------------------------------
+!
+! Pressure: ( tau1' * grad(p) , grad(q) )
+! 
+      do igaus = 1,pgaus
+         do inode = 1,pnode
+            do jnode = inode+1,pnode
+               fact1(DEF_VECT)             = gpsp1_p(DEF_VECT,igaus) * wgrgr(DEF_VECT,jnode,inode,igaus) * gpvol(DEF_VECT,igaus)
+               elapp(DEF_VECT,jnode,inode) = elapp(DEF_VECT,jnode,inode) + fact1(DEF_VECT)
+               elapp(DEF_VECT,inode,jnode) = elapp(DEF_VECT,inode,jnode) + fact1(DEF_VECT)
+            end do
+            fact1(DEF_VECT)             = gpsp1_p(DEF_VECT,igaus) * wgrgr(DEF_VECT,inode,inode,igaus) * gpvol(DEF_VECT,igaus)
+            elapp(DEF_VECT,inode,inode) = elapp(DEF_VECT,inode,inode) + fact1(DEF_VECT)
+         end do
+      end do
+
+!----------------------------------------------------------------------
+!
+! bu and bp
+!
+! P1  = P [ tau1' * rho * a.grad(u) ]
+! P1' = P1 + tau1' * rho * u'n / dt
+!
+! P2  = P [ tau1' * ( grad(p) - f ) ]
+! P2' = P2 + tau1' * rho * u'n / dt + tau1' * f 
+!
+!----------------------------------------------------------------------
+!
+! Limiter
+!
+      if( kfl_limit_nsi == -1 ) then
+
+         gpvep(DEF_VECT,:,:) = 0.0_rp
+
+      else if( kfl_limit_nsi &gt; 0 ) then
+
+         do igaus = 1,pgaus
+            c1(DEF_VECT) = 0.0_rp
+            c2(DEF_VECT) = 0.0_rp
+            c3(DEF_VECT) = 0.0_rp
+            do idime = 1,ndime
+               c4(DEF_VECT) = 0.0_rp
+               do inode = 1,pnode
+                  c4(DEF_VECT) = c4(DEF_VECT) + agrau(DEF_VECT,inode,igaus) * elvel(DEF_VECT,idime,inode,1)
+               end do
+               c4(DEF_VECT) = gpsp1(DEF_VECT,igaus) * c4(DEF_VECT)
+               c1(DEF_VECT) = c1(DEF_VECT) + ( gpvep(DEF_VECT,idime,igaus) - c4(DEF_VECT) )**2
+               c3(DEF_VECT) = c3(DEF_VECT) + gpvep(DEF_VECT,idime,igaus) * gpvep(DEF_VECT,idime,igaus)
+               c2(DEF_VECT) = c2(DEF_VECT) + c4(DEF_VECT) * c4(DEF_VECT)
+            end do
+            c3(DEF_VECT)   = sqrt( c2(DEF_VECT) ) + sqrt( c3(DEF_VECT) )
+            c1(DEF_VECT)   = sqrt( c1(DEF_VECT) )
+            beta(DEF_VECT) = c1(DEF_VECT) / ( c3(DEF_VECT) + epsilon(1.0_rp) )
+            if( kfl_limit_nsi == 1 ) then
+               alpha(DEF_VECT) = min(1.0_rp,2.0_rp*(1.0_rp-beta(DEF_VECT)))
+            else if( kfl_limit_nsi == 2 ) then
+               alpha(DEF_VECT) = 0.5_rp*(tanh(20.0_rp*(beta(DEF_VECT)-0.8_rp))+1.0_rp)
+            end if
+            do idime = 1,ndime
+               gpvep(DEF_VECT,idime,igaus) = alpha(DEF_VECT) * gpvep(DEF_VECT,idime,igaus)
+            end do
+         end do
+
+      end if
+!
+! P2 &lt;= P2 + tau1' * f
+!
+      do igaus = 1,pgaus
+         do idime = 1,ndime
+            gpgrp(DEF_VECT,idime,igaus) = gpgrp(DEF_VECT,idime,igaus) + gpsp1_p(DEF_VECT,igaus) * gprhs(DEF_VECT,idime,igaus)
+         end do
+      end do
+!
+! P1 &lt;= P1 + tau1' * rho * u'n / dt
+! P2 &lt;= P2 + tau1' * rho * u'n / dt
+!
+      if( kfl_sgsti_nsi == 1 ) then
+         do igaus = 1,pgaus 
+            fact1(DEF_VECT)    = gpden(DEF_VECT,igaus) * dtsgs(DEF_VECT) * gpsp1_v(DEF_VECT,igaus)
+            fact1_p (DEF_VECT) = gpden(DEF_VECT,igaus) * dtsgs(DEF_VECT) * gpsp1_p(DEF_VECT,igaus)
+            do idime = 1,ndime
+               gpvep(DEF_VECT,idime,igaus) = gpvep(DEF_VECT,idime,igaus) + fact1(DEF_VECT)   * gpsgs(DEF_VECT,idime,igaus,2)
+               gpgrp(DEF_VECT,idime,igaus) = gpgrp(DEF_VECT,idime,igaus) + fact1_p(DEF_VECT) * gpsgs(DEF_VECT,idime,igaus,2)
+            end do
+         end do
+      end if
+!
+! bu = ( f + rho*u^n/dt , v ) + ( rho * a.grad(v) , tau1' * rho u'^n/dt + P1 ) 
+!    = ( f + rho*u^n/dt , v ) + ( rho * a.grad(v) , P1' ) 
+!
+! bp = ( f + rho*u'^n/dt , tau1' grad(q) ) + ( P2 , grad(q) )
+!    = ( P2' , grad(q) ) 
+!
+      if( ndime == 2 ) then
+         do igaus = 1,pgaus
+            fact4(DEF_VECT) = gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT)
+            do itime = 2,nbdfp_nsi
+               gprhs(DEF_VECT,1,igaus) = gprhs(DEF_VECT,1,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,1,igaus,itime)  
+               gprhs(DEF_VECT,2,igaus) = gprhs(DEF_VECT,2,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,2,igaus,itime)
+            end do
+            do inode = 1,pnode
+               fact1(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) ! ( f + rho*u^n/dt , v )
+               fact3(DEF_VECT) = gpvol(DEF_VECT,igaus) * agrau(DEF_VECT,inode,igaus) ! ( rho * a.grad(v) , P1' ) 
+               elrbu(DEF_VECT,1,inode)  = elrbu(DEF_VECT,1,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,1,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,1,igaus) 
+               elrbu(DEF_VECT,2,inode)  = elrbu(DEF_VECT,2,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,2,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,2,igaus) 
+               elrbp(DEF_VECT,inode)    = elrbp(DEF_VECT,inode)   + gpvol(DEF_VECT,igaus) * ( &amp; ! ( P2' , grad(q) ) 
+               &amp;    gpcar(DEF_VECT,1,inode,igaus) * gpgrp(DEF_VECT,1,igaus)  &amp;
+               &amp;  + gpcar(DEF_VECT,2,inode,igaus) * gpgrp(DEF_VECT,2,igaus)  )
+            end do
+         end do
+      else
+         do igaus = 1,pgaus
+            fact4(DEF_VECT) = gpden(DEF_VECT,igaus) * dtinv_loc(DEF_VECT)
+            do itime = 2,nbdfp_nsi
+               gprhs(DEF_VECT,1,igaus) = gprhs(DEF_VECT,1,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,1,igaus,itime)  
+               gprhs(DEF_VECT,2,igaus) = gprhs(DEF_VECT,2,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,2,igaus,itime)
+               gprhs(DEF_VECT,3,igaus) = gprhs(DEF_VECT,3,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,3,igaus,itime)
+            end do
+            do inode = 1,pnode
+               fact1          = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus)
+               fact3          = gpvol(DEF_VECT,igaus) * agrau(DEF_VECT,inode,igaus)
+               elrbu(DEF_VECT,1,inode) = elrbu(DEF_VECT,1,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,1,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,1,igaus) 
+               elrbu(DEF_VECT,2,inode) = elrbu(DEF_VECT,2,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,2,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,2,igaus) 
+               elrbu(DEF_VECT,3,inode) = elrbu(DEF_VECT,3,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,3,igaus) + fact3(DEF_VECT) * gpvep(DEF_VECT,3,igaus) 
+               elrbp(DEF_VECT,inode)   = elrbp(DEF_VECT,inode)   + gpvol(DEF_VECT,igaus) * ( &amp;
+               &amp;    gpcar(DEF_VECT,1,inode,igaus) * gpgrp(DEF_VECT,1,igaus) &amp;
+               &amp;  + gpcar(DEF_VECT,2,inode,igaus) * gpgrp(DEF_VECT,2,igaus) &amp;
+               &amp;  + gpcar(DEF_VECT,3,inode,igaus) * gpgrp(DEF_VECT,3,igaus) )
+            end do
+         end do
+      end if
+
+      end subroutine nsi_element_assembly_split_oss
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> V2</h3>
+<div class="outline-text-3" id="text-2-2">
+<div class="org-src-container">
+
+<pre class="src src-fortran">      subroutine nsi_element_assembly_split_oss(&amp;
+      pnode,pgaus,gpden,gpvis,gppor,gpsp1,gpsp2,gpvol,   &amp;
+      gpsha,gpcar,gpadv,gpvep,gpgrp,gprhs,gprhc,gpvel,   &amp;
+      gpsgs,elvel,elpre,elbub,elauu,elaup,elapp,elapu,   &amp;
+      elrbu,elrbp,dtinv_loc,dtsgs,pbubl,gpsha_bub,       &amp;
+      gpcar_bub,elauq,elapq,elaqu,elaqp,elaqq,elrbq,&amp;
+! Original global variables
+      kfl_lumped,&amp;
+      mnode,ntens,&amp;
+      kfl_duatss,&amp;
+      fact_duatss,&amp;
+      kfl_stabi_nsi,&amp;
+      fvins_nsi,fcons_nsi,bemol_nsi,kfl_regim_nsi,&amp;
+      fvela_nsi,kfl_rmom2_nsi,kfl_press_nsi,&amp;
+      kfl_p1ve2_nsi,kfl_linea_nsi,pabdf_nsi,&amp;
+      kfl_confi_nsi,nbdfp_nsi,kfl_sgsti_nsi,&amp;
+      kfl_nota1_nsi,kfl_limit_nsi,kfl_penal_nsi,&amp;
+      penal_nsi,&amp;
+      kfl_bubbl_nsi)
+
+      integer(ip), intent(in)    :: kfl_lumped
+      integer(ip), intent(in)    :: mnode
+      integer(ip), intent(in)    :: ntens
+      integer(ip), intent(in)    :: kfl_duatss
+      integer(ip), intent(in)    :: fact_duatss
+      integer(ip), intent(in)    :: kfl_stabi_nsi
+      real(rp),    intent(in)    :: fvins_nsi
+      real(rp),    intent(in)    :: fcons_nsi
+      real(rp),    intent(in)    :: bemol_nsi
+      integer(ip), intent(in)    :: kfl_regim_nsi
+      real(rp),    intent(in)    :: fvela_nsi(3)
+      integer(ip), intent(in)    :: kfl_rmom2_nsi
+      integer(ip), intent(in)    :: kfl_press_nsi
+      integer(ip), intent(in)    :: kfl_p1ve2_nsi
+      integer(ip), intent(in)    :: kfl_linea_nsi
+      real(rp),    intent(in)    :: pabdf_nsi(*)
+      integer(ip), intent(in)    :: kfl_confi_nsi
+      integer(ip), intent(in)    :: nbdfp_nsi
+      integer(ip), intent(in)    :: kfl_sgsti_nsi
+      integer(ip), intent(in)    :: kfl_nota1_nsi
+      integer(ip), intent(in)    :: kfl_limit_nsi
+      integer(ip), intent(in)    :: kfl_penal_nsi
+      real(rp),    intent(in)    :: penal_nsi
+      integer(ip), intent(in)    :: kfl_bubbl_nsi
+
+      integer(ip), intent(in)    :: pnode,pgaus
+      real(rp),    intent(in)    :: gpden(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpvis(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gppor(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpsp1(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpsp2(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpvol(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpsha(VECTOR_SIZE,pnode,pgaus)
+      real(rp),    intent(in)    :: gpcar(VECTOR_SIZE,ndime,mnode,pgaus)
+      real(rp),    intent(in)    :: gpadv(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gpvep(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gpgrp(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gprhs(VECTOR_SIZE,ndime,pgaus)
+      real(rp),    intent(inout) :: gprhc(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpvel(VECTOR_SIZE,ndime,pgaus,*)
+      real(rp),    intent(in)    :: gpsgs(VECTOR_SIZE,ndime,pgaus,*)
+      real(rp),    intent(in)    :: elvel(VECTOR_SIZE,ndime,pnode,*)
+      real(rp),    intent(in)    :: elpre(VECTOR_SIZE,pnode,*)
+      real(rp),    intent(in)    :: elbub(VECTOR_SIZE)
+! Matrices
+      real(rp),    intent(out)   :: elauu(VECTOR_SIZE,pnode*ndime,pnode*ndime)
+      real(rp),    intent(out)   :: elaup(VECTOR_SIZE,pnode*ndime,pnode)
+      real(rp),    intent(out)   :: elapp(VECTOR_SIZE,pnode,pnode)
+      real(rp),    intent(out)   :: elapu(VECTOR_SIZE,pnode,pnode*ndime)
+      real(rp),    intent(out)   :: elrbu(VECTOR_SIZE,ndime,pnode)
+      real(rp),    intent(out)   :: elrbp(VECTOR_SIZE,pnode)
+! Others
+      real(rp),    intent(in)    :: dtinv_loc(VECTOR_SIZE)
+      real(rp),    intent(in)    :: dtsgs(VECTOR_SIZE)
+      integer(ip), intent(in)    :: pbubl(VECTOR_SIZE)
+      real(rp),    intent(in)    :: gpsha_bub(VECTOR_SIZE,pgaus)
+      real(rp),    intent(in)    :: gpcar_bub(VECTOR_SIZE,ndime,pgaus)
+! Enrichement Element matrices
+      real(rp),    intent(out)   :: elauq(VECTOR_SIZE,pnode*ndime,1)
+      real(rp),    intent(out)   :: elapq(VECTOR_SIZE,pnode,1)
+      real(rp),    intent(out)   :: elaqu(VECTOR_SIZE,1,pnode*ndime)
+      real(rp),    intent(out)   :: elaqp(VECTOR_SIZE,1,pnode)
+      real(rp),    intent(out)   :: elaqq(VECTOR_SIZE,1,1)
+      real(rp),    intent(out)   :: elrbq(VECTOR_SIZE,1)
+! Local arrays
+      real(rp)                   :: wgrgr(VECTOR_SIZE,pnode,pnode,pgaus)
+      real(rp)                   :: agrau(VECTOR_SIZE,pnode,pgaus)
+      real(rp)                   :: gpsp1_p(VECTOR_SIZE,pgaus)
+      real(rp)                   :: gpsp1_v(VECTOR_SIZE,pgaus)
+      real(rp)                   :: gpsp2_v(VECTOR_SIZE,pgaus)
+      real(rp)                   :: c1(VECTOR_SIZE)
+      real(rp)                   :: c2(VECTOR_SIZE)
+      real(rp)                   :: c3(VECTOR_SIZE)
+      real(rp)                   :: c4(VECTOR_SIZE)
+      real(rp)                   :: alpha(VECTOR_SIZE)
+      real(rp)                   :: beta(VECTOR_SIZE)
+      real(rp)                   :: fact0(VECTOR_SIZE)
+      real(rp)                   :: fact1(VECTOR_SIZE)
+      real(rp)                   :: fact2(VECTOR_SIZE)
+      real(rp)                   :: fact3(VECTOR_SIZE)
+      real(rp)                   :: fact4(VECTOR_SIZE)
+      real(rp)                   :: fact5(VECTOR_SIZE)
+      real(rp)                   :: fact6(VECTOR_SIZE)
+      real(rp)                   :: fact7(VECTOR_SIZE)
+      real(rp)                   :: fact8(VECTOR_SIZE)
+      real(rp)                   :: gpveo(VECTOR_SIZE,3)
+      real(rp)                   :: fact1_p(VECTOR_SIZE)
+      real(rp)                   :: dtinv_mod(VECTOR_SIZE)
+      integer(ip)                :: inode,jnode,jdime
+      integer(ip)                :: idofv,jdof2,jdof3,ivect
+      integer(ip)                :: idof1,idof3,idof2,igaus
+      integer(ip)                :: idime,jdof1,jdofv,itime
+
+
+#ifdef OPENACC
+#define DEF_VECT ivect
+#else
+#define DEF_VECT 1:VECTOR_SIZE
+#endif
+
+      dtinv_mod = dtinv_loc
+
+!----------------------------------------------------------------------
+!
+! possibility of using only pressure stabilization - not ready with limiter - nor with shock capturing
+!
+!----------------------------------------------------------------------
+
+      gpsp1_p = gpsp1
+      gpsp1_v = gpsp1
+      gpsp2_v = gpsp2
+
+      if( kfl_nota1_nsi == 1 ) gpsp1_v = 0.0_rp 
+
+!----------------------------------------------------------------------
+!
+! Initialization
+!
+!----------------------------------------------------------------------
+
+      elrbp = 0.0_rp
+      elrbu = 0.0_rp
+      elapp = 0.0_rp
+      elauu = 0.0_rp
+      elaup = 0.0_rp
+      elapu = 0.0_rp
+
+!----------------------------------------------------------------------
+!
+! Test functions
+!
+!----------------------------------------------------------------------
+
+!
+! AGRAU = rho * (a.grad) Ni
+! WGRGR = grad(Ni) . grad(Nj)
+!
+      agrau(DEF_VECT,:,:)   = 0.0_rp
+      wgrgr(DEF_VECT,:,:,:) = 0.0_rp 
+      do igaus = 1,pgaus
+         do inode = 1,pnode
+            do idime = 1,ndime
+               agrau(DEF_VECT,inode,igaus) =  agrau(DEF_VECT,inode,igaus) + &amp;
+               &amp;                         gpadv(DEF_VECT,idime,igaus) * gpcar(DEF_VECT,idime,inode,igaus)
+            end do
+            agrau(DEF_VECT,inode,igaus) =  gpden(DEF_VECT,igaus) * agrau(DEF_VECT,inode,igaus) 
+            do jnode = 1,pnode
+               do idime = 1,ndime
+                  wgrgr(DEF_VECT,inode,jnode,igaus) = wgrgr(DEF_VECT,inode,jnode,igaus) + &amp;
+                  &amp;                              gpcar(DEF_VECT,idime,inode,igaus)*gpcar(DEF_VECT,idime,jnode,igaus)
+               end do
+            end do
+         end do
+      end do
+
+!----------------------------------------------------------------------
+!
+! Auu
+!
+!----------------------------------------------------------------------
+!
+! Galerkin + ( tau2 * div(u) , div(v) ) + ( tau1 * rho*a.grad(u), rho*a.grad(v) )
+!
+      do igaus = 1,pgaus
+
+         fact0(DEF_VECT) = gpsp2_v(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+         fact6(DEF_VECT) = gpvis(DEF_VECT,igaus)   * gpvol(DEF_VECT,igaus)
+         fact7(DEF_VECT) = gpsp1_v(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus)
+         fact8(DEF_VECT) = pabdf_nsi(1) * gpden(DEF_VECT,igaus) * dtinv_mod(DEF_VECT) + gppor(DEF_VECT,igaus)
+
+         do inode = 1,pnode
+            do idime = 1,ndime
+
+               idofv           = (inode-1)*ndime+idime
+               fact1(DEF_VECT) = fact0(DEF_VECT) * gpcar(DEF_VECT,idime,inode,igaus)      
+
+               do jnode = 1,pnode    
+!
+! div(u) * tau2' * div(v)
+!
+                  do jdime = 1,ndime                   
+                     jdofv                       = (jnode-1)*ndime+jdime
+                     elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,jdime,jnode,igaus)                   
+                  end do
+!
+! ( rho/dt N_j + s Nj + rho*(a.grad)Nj ) Ni 
+! + mu * grad(Ni) . grad(Nj)
+! + t1 * rho*(a.grad)Nj * rho*(a.grad)Ni
+!
+                  jdofv           = (jnode-1)*ndime+idime
+                  fact4(DEF_VECT) = gpsha(DEF_VECT,inode,igaus) * gpvol(DEF_VECT,igaus)
+                  fact5(DEF_VECT) = fact4(DEF_VECT) * ( agrau(DEF_VECT,jnode,igaus) + fact8(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) ) &amp; 
+                  &amp;           + fact6(DEF_VECT) *   wgrgr(DEF_VECT,inode,jnode,igaus) &amp;                                               
+                  &amp;           + fact7(DEF_VECT) *   agrau(DEF_VECT,jnode,igaus) * agrau(DEF_VECT,inode,igaus)   
+                  elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact5(DEF_VECT)
+
+               end do
+            end do
+         end do
+      end do
+!
+! ( mu*duj/dxi , dv/dxj ) (only div form)
+!
+      if( fvins_nsi &gt; 0.9_rp ) then
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               do idime = 1,ndime
+                  idofv = (inode-1)*ndime + idime
+                  do jnode = 1,pnode
+                     fact1(DEF_VECT) = gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,jnode,igaus)     
+                     do jdime = 1,ndime
+                        jdofv                       = (jnode-1)*ndime + jdime
+                        elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,jdime,inode,igaus)
+                     end do
+                  end do
+                  if( fvins_nsi == 2.0_rp ) then
+                     fact1(DEF_VECT) = -2.0_rp / 3.0_rp * gpvis(DEF_VECT,igaus) * gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,inode,igaus)
+                     do jnode = 1,pnode
+                        do jdime = 1,ndime
+                           jdofv                       = (jnode-1)*ndime + jdime
+                           elauu(DEF_VECT,idofv,jdofv) = elauu(DEF_VECT,idofv,jdofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,jdime,jnode,igaus)
+                        end do
+                     end do
+                  end if
+               end do
+            end do
+         end do
+      end if
+
+!call nsi_element_system_output(&amp;
+!     pnode,elauu(1,:,:),elaup(1,:,:),elapp(1,:,:),elapu(1,:,:),elrbu(1,:,:),elrbp(1,:),&amp;
+!     elauq(1,:,:),elapq(1,:,:),elaqu(1,:,:),elaqp(1,:,:),elaqq(1,:,:),elrbq(1,:))
+!stop
+!
+! Lumped evolution matrix (only backward euler)
+!
+      if( kfl_lumped == 1 ) then 
+!
+! Remove Galerkin term and add lumped term 
+! 
+         if( ndime == 2 ) then
+            stop
+         else
+            do igaus = 1,pgaus
+               gpveo(DEF_VECT,1:3) = 0.0_rp
+               do inode = 1,pnode
+                  do idime = 1,ndime
+                     gpveo(DEF_VECT,idime) = gpveo(DEF_VECT,idime) + elvel(DEF_VECT,idime,inode,2) * gpsha(DEF_VECT,inode,igaus)
+                  end do
+               end do
+               do inode = 1,pnode
+                  idof1                       = 3*inode-2
+                  idof2                       = 3*inode-1
+                  idof3                       = 3*inode
+                  fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus) * gpden(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) * dtinv_mod(DEF_VECT)
+                  elauu(DEF_VECT,idof1,idof1) = elauu(DEF_VECT,idof1,idof1) + fact0(DEF_VECT)
+                  elauu(DEF_VECT,idof2,idof2) = elauu(DEF_VECT,idof2,idof2) + fact0(DEF_VECT)
+                  elauu(DEF_VECT,idof3,idof3) = elauu(DEF_VECT,idof3,idof3) + fact0(DEF_VECT)
+                  do idime = 1,ndime
+                     elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) - fact0(DEF_VECT) * gpveo(DEF_VECT,idime)
+                     elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact0(DEF_VECT) * elvel(DEF_VECT,idime,inode,2)
+                  end do
+                  do jnode = 1,pnode 
+                     jdof1                       = 3*jnode-2
+                     jdof2                       = 3*jnode-1
+                     jdof3                       = 3*jnode
+                     elauu(DEF_VECT,idof1,jdof1) = elauu(DEF_VECT,idof1,jdof1) - fact0(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) 
+                     elauu(DEF_VECT,idof2,jdof2) = elauu(DEF_VECT,idof2,jdof2) - fact0(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) 
+                     elauu(DEF_VECT,idof3,jdof3) = elauu(DEF_VECT,idof3,jdof3) - fact0(DEF_VECT) * gpsha(DEF_VECT,jnode,igaus) 
+                  end do
+               end do
+            end do
+         end if
+
+      else if( kfl_lumped == 2 ) then 
+!
+! No time term have been added up to now: add Galerkin term
+!
+         do igaus = 1,pgaus
+            fact0(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpden(DEF_VECT,igaus) * dtinv_mod(DEF_VECT)
+            do inode = 1, pnode
+               fact1(DEF_VECT) = fact0(DEF_VECT) * gpsha(DEF_VECT,inode,igaus)
+               do idime = 1,ndime
+                  idof1                       = (inode-1) * ndime + idime
+                  elauu(DEF_VECT,idof1,idof1) = elauu(DEF_VECT,idof1,idof1) + fact1(DEF_VECT)
+                  elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact1(DEF_VECT) * elvel(DEF_VECT,idime,inode,2)
+               end do
+            end do
+         end do
+
+      end if
+
+!----------------------------------------------------------------------
+!
+! Apu and Aup
+!
+!----------------------------------------------------------------------
+!
+! ( div(u) , q ) and - ( p , div(v) ) 
+!
+      if( ndime == 2 ) then
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               idof1 = 2*inode-1
+               idof2 = 2*inode
+               do jnode = 1,pnode
+                  fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus)       * gpsha(DEF_VECT,jnode,igaus) 
+                  fact1(DEF_VECT)             = fact0(DEF_VECT)             * gpcar(DEF_VECT,1,inode,igaus)
+                  fact2(DEF_VECT)             = fact0(DEF_VECT)             * gpcar(DEF_VECT,2,inode,igaus)
+                  elapu(DEF_VECT,jnode,idof1) = elapu(DEF_VECT,jnode,idof1) + fact1(DEF_VECT)
+                  elapu(DEF_VECT,jnode,idof2) = elapu(DEF_VECT,jnode,idof2) + fact2(DEF_VECT)
+                  elaup(DEF_VECT,idof1,jnode) = elaup(DEF_VECT,idof1,jnode) - fact1(DEF_VECT)
+                  elaup(DEF_VECT,idof2,jnode) = elaup(DEF_VECT,idof2,jnode) - fact2(DEF_VECT)
+               end do
+            end do
+         end do
+      else
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               idof1 = 3*inode-2
+               idof2 = 3*inode-1
+               idof3 = 3*inode
+               do jnode = 1,pnode
+                  fact0(DEF_VECT)             = gpvol(DEF_VECT,igaus)       * gpsha(DEF_VECT,jnode,igaus) 
+                  fact1(DEF_VECT)             = fact0(DEF_VECT)             * gpcar(DEF_VECT,1,inode,igaus)
+                  fact2(DEF_VECT)             = fact0(DEF_VECT)             * gpcar(DEF_VECT,2,inode,igaus)
+                  fact3(DEF_VECT)             = fact0(DEF_VECT)             * gpcar(DEF_VECT,3,inode,igaus)
+                  elapu(DEF_VECT,jnode,idof1) = elapu(DEF_VECT,jnode,idof1) + fact1(DEF_VECT)
+                  elapu(DEF_VECT,jnode,idof2) = elapu(DEF_VECT,jnode,idof2) + fact2(DEF_VECT)
+                  elapu(DEF_VECT,jnode,idof3) = elapu(DEF_VECT,jnode,idof3) + fact3(DEF_VECT) 
+                  elaup(DEF_VECT,idof1,jnode) = elaup(DEF_VECT,idof1,jnode) - fact1(DEF_VECT)
+                  elaup(DEF_VECT,idof2,jnode) = elaup(DEF_VECT,idof2,jnode) - fact2(DEF_VECT)
+                  elaup(DEF_VECT,idof3,jnode) = elaup(DEF_VECT,idof3,jnode) - fact3(DEF_VECT)
+               end do
+            end do
+         end do
+      end if
+
+!----------------------------------------------------------------------
+!
+! App
+!
+!----------------------------------------------------------------------
+!
+! Pressure: ( tau1' * grad(p) , grad(q) )
+! 
+      if( kfl_stabi_nsi /= -1 ) then
+         do igaus = 1,pgaus
+            do inode = 1,pnode
+               do jnode = inode+1,pnode
+                  fact1(DEF_VECT)             = gpsp1_p(DEF_VECT,igaus) * wgrgr(DEF_VECT,jnode,inode,igaus) * gpvol(DEF_VECT,igaus)
+                  elapp(DEF_VECT,jnode,inode) = elapp(DEF_VECT,jnode,inode) + fact1(DEF_VECT)
+                  elapp(DEF_VECT,inode,jnode) = elapp(DEF_VECT,inode,jnode) + fact1(DEF_VECT)
+               end do
+               fact1(DEF_VECT)             = gpsp1_p(DEF_VECT,igaus) * wgrgr(DEF_VECT,inode,inode,igaus) * gpvol(DEF_VECT,igaus)
+               elapp(DEF_VECT,inode,inode) = elapp(DEF_VECT,inode,inode) + fact1(DEF_VECT)
+            end do
+         end do
+      end if
+!
+! Penalization
+!
+      do igaus = 1,pgaus
+         fact1(DEF_VECT) = penal_nsi * gpvol(DEF_VECT,igaus)
+         do inode = 1,pnode
+            elapp(DEF_VECT,inode,inode) = elapp(DEF_VECT,inode,inode) + fact1(DEF_VECT) * gpsha(DEF_VECT,inode,igaus)
+            elrbp(DEF_VECT,inode)       = elrbp(DEF_VECT,inode)       + fact1(DEF_VECT) * gpsha(DEF_VECT,inode,igaus) * elpre(DEF_VECT,inode,1) 
+         end do
+      end do
+
+!----------------------------------------------------------------------
+!
+! bu and bp
+!
+! P1  = P [ tau1' * rho * a.grad(u) ]
+! P1' = P1 + tau1' * rho * u'n / dt
+!
+! P2  = P [ tau1' * ( grad(p) - f ) ]
+! P2' = P2 + tau1' * rho * u'n / dt + tau1' * f 
+!
+!----------------------------------------------------------------------
+!
+! Limiter
+!
+      if( kfl_stabi_nsi == -1 ) then
+
+         gpvep(DEF_VECT,:,:) = 0.0_rp 
+
+      else if( kfl_limit_nsi == -1 ) then
+
+         gpvep(DEF_VECT,:,:) = 0.0_rp
+
+      else if( kfl_limit_nsi &gt; 0 ) then
+
+         do igaus = 1,pgaus
+            c1(DEF_VECT) = 0.0_rp
+            c2(DEF_VECT) = 0.0_rp
+            c3(DEF_VECT) = 0.0_rp
+            do idime = 1,ndime
+               c4(DEF_VECT) = 0.0_rp
+               do inode = 1,pnode
+                  c4(DEF_VECT) = c4(DEF_VECT) + agrau(DEF_VECT,inode,igaus) * elvel(DEF_VECT,idime,inode,1)
+               end do
+               c4(DEF_VECT) = gpsp1(DEF_VECT,igaus) * c4(DEF_VECT)
+               c1(DEF_VECT) = c1(DEF_VECT) + ( gpvep(DEF_VECT,idime,igaus) - c4(DEF_VECT) )**2
+               c3(DEF_VECT) = c3(DEF_VECT) + gpvep(DEF_VECT,idime,igaus) * gpvep(DEF_VECT,idime,igaus)
+               c2(DEF_VECT) = c2(DEF_VECT) + c4(DEF_VECT) * c4(DEF_VECT)
+            end do
+            c3(DEF_VECT)   = sqrt( c2(DEF_VECT) ) + sqrt( c3(DEF_VECT) )
+            c1(DEF_VECT)   = sqrt( c1(DEF_VECT) )
+            beta(DEF_VECT) = c1(DEF_VECT) / ( c3(DEF_VECT) + epsilon(1.0_rp) )
+            if( kfl_limit_nsi == 1 ) then
+               alpha(DEF_VECT) = min(1.0_rp,2.0_rp*(1.0_rp-beta(DEF_VECT)))
+            else if( kfl_limit_nsi == 2 ) then
+               alpha(DEF_VECT) = 0.5_rp*(tanh(20.0_rp*(beta(DEF_VECT)-0.8_rp))+1.0_rp)
+            end if
+            do idime = 1,ndime
+               gpvep(DEF_VECT,idime,igaus) = alpha(DEF_VECT) * gpvep(DEF_VECT,idime,igaus)
+            end do
+         end do
+
+      end if
+!
+! P2 &lt;= P2 + tau1' * f
+!
+      if( kfl_stabi_nsi == -1 ) then
+         gpgrp(DEF_VECT,:,:) = 0.0_rp
+      else
+         do igaus = 1,pgaus
+            do idime = 1,ndime
+               gpgrp(DEF_VECT,idime,igaus) = gpgrp(DEF_VECT,idime,igaus) + gpsp1_p(DEF_VECT,igaus) * gprhs(DEF_VECT,idime,igaus)
+            end do
+         end do
+!
+! P1 &lt;= P1 + tau1' * rho * u'n / dt
+! P2 &lt;= P2 + tau1' * rho * u'n / dt
+!
+         if( kfl_sgsti_nsi == 1 ) then
+            do igaus = 1,pgaus 
+               fact1(DEF_VECT)    = gpden(DEF_VECT,igaus) * dtsgs(DEF_VECT) * gpsp1_v(DEF_VECT,igaus)
+               fact1_p (DEF_VECT) = gpden(DEF_VECT,igaus) * dtsgs(DEF_VECT) * gpsp1_p(DEF_VECT,igaus)
+               do idime = 1,ndime
+                  gpvep(DEF_VECT,idime,igaus) = gpvep(DEF_VECT,idime,igaus) + fact1(DEF_VECT)   * gpsgs(DEF_VECT,idime,igaus,2)
+                  gpgrp(DEF_VECT,idime,igaus) = gpgrp(DEF_VECT,idime,igaus) + fact1_p(DEF_VECT) * gpsgs(DEF_VECT,idime,igaus,2)
+               end do
+            end do
+         end if
+      end if
+!
+! bu = ( f + rho*u^n/dt , v ) + ( rho * a.grad(v) , tau1' * rho u'^n/dt + P1 ) 
+!    = ( f + rho*u^n/dt , v ) + ( rho * a.grad(v) , P1' ) 
+!
+! bp = ( f + rho*u'^n/dt , tau1' grad(q) ) + ( P2 , grad(q) )
+!    = ( P2' , grad(q) ) 
+! 
+      do igaus = 1,pgaus
+         fact4(DEF_VECT) = gpden(DEF_VECT,igaus) * dtinv_mod(DEF_VECT)
+         do itime = 2,nbdfp_nsi
+            do idime = 1,ndime
+               gprhs(DEF_VECT,idime,igaus) = gprhs(DEF_VECT,idime,igaus) - pabdf_nsi(itime) * fact4(DEF_VECT) * gpvel(DEF_VECT,idime,igaus,itime)
+            end do
+         end do
+         do inode = 1,pnode
+            fact1(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) ! ( f + rho*u^n/dt , v )
+            fact3(DEF_VECT) = gpvol(DEF_VECT,igaus) * agrau(DEF_VECT,inode,igaus) ! ( rho * a.grad(v) , P1' ) 
+            do idime = 1,ndime
+               elrbu(DEF_VECT,idime,inode) = elrbu(DEF_VECT,idime,inode) + fact1(DEF_VECT) * gprhs(DEF_VECT,idime,igaus) &amp;
+               &amp;                                                    + fact3(DEF_VECT) * gpvep(DEF_VECT,idime,igaus)              
+            end do
+            elrbp(DEF_VECT,inode) = elrbp(DEF_VECT,inode) + gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) * gprhc(DEF_VECT,igaus) ! ( rhs, q )
+            do idime = 1,ndime
+               elrbp(DEF_VECT,inode) = elrbp(DEF_VECT,inode) + gpvol(DEF_VECT,igaus) * gpcar(DEF_VECT,idime,inode,igaus) * gpgrp(DEF_VECT,idime,igaus) ! ( P2' , grad(q) ) 
+            end do
+         end do
+      end do
+
+!--------------------------------------------------------------------
+!
+! Pressure bubble
+!
+!--------------------------------------------------------------------
+
+      if( maxval(pbubl) == 1 ) then
+         if( kfl_stabi_nsi /= -1 ) then
+            write(6,*) 'BUBBLE NOT CODED FOR SPLIT OSS'
+            stop
+         end if
+!
+! Initialization
+!
+         elauq = 0.0_rp
+         elapq = 0.0_rp
+         elaqu = 0.0_rp
+         elaqp = 0.0_rp
+         elaqq = 0.0_rp
+         elrbq = 0.0_rp
+!
+! Auq and Aqu
+!
+         if( kfl_press_nsi == 1 ) then
+            do igaus = 1,pgaus
+               fact1(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpsha_bub(DEF_VECT,igaus)
+               do inode = 1,pnode
+                  do idime = 1,ndime
+                     idofv = (inode-1)*ndime + idime
+                     elauq(DEF_VECT,idofv,1) = elauq(DEF_VECT,idofv,1) - fact1(DEF_VECT) * gpcar(DEF_VECT,idime,inode,igaus)
+                     elaqu(DEF_VECT,1,idofv) = elaqu(DEF_VECT,1,idofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,idime,inode,igaus) 
+                  end do
+               end do
+            end do
+         else
+            do igaus = 1,pgaus
+               fact1(DEF_VECT) = gpvol(DEF_VECT,igaus) * gpsha_bub(DEF_VECT,igaus)
+               do inode = 1,pnode
+                  do idime = 1,ndime
+                     idofv = (inode-1)*ndime + idime
+                     elauq(DEF_VECT,idofv,1) = elauq(DEF_VECT,idofv,1) + gpvol(DEF_VECT,igaus) * gpsha(DEF_VECT,inode,igaus) * gpcar_bub(DEF_VECT,idime,igaus)
+                     elaqu(DEF_VECT,1,idofv) = elaqu(DEF_VECT,1,idofv) + fact1(DEF_VECT) * gpcar(DEF_VECT,idime,inode,igaus) 
+                  end do
+               end do
+            end do
+         end if
+!
+! Penalization and others
+!
+         do igaus = 1,pgaus
+            elaqq(DEF_VECT,1,1) = elaqq(DEF_VECT,1,1) + gpvol(DEF_VECT,igaus) * gpsha_bub(DEF_VECT,igaus) * penal_nsi
+            elrbq(DEF_VECT,1)   = elrbq(DEF_VECT,1)   + gpvol(DEF_VECT,igaus) * gpsha_bub(DEF_VECT,igaus) * penal_nsi * elbub(DEF_VECT) 
+            elrbq(DEF_VECT,1)   = elrbq(DEF_VECT,1)   + gpvol(DEF_VECT,igaus) * gpsha_bub(DEF_VECT,igaus) * gprhc(DEF_VECT,igaus) 
+         end do
+
+      end if
+
+      end subroutine nsi_element_assembly_split_oss
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Using BOAST</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Here our objective is twofold, we do not only want to generate a
+kernel with BOAST that can be easily optimized and specialized but
+we also want generate to the exact same kernel than the reference
+version and to run it using BOAST, in order to compare the results
+in term of correctness and performances. For the reference
+implementation we simply need to keep the FORTRAN code and wrap it
+with BOAST. For the BOAST implementation we use the BOAST dedicated
+language and the meta-programming style.
+The kernel <code>nsi_element_assembly_split_oss</code> contains 11 loop nests
+that we isolated to eases the porting. This gave us the possibility
+to test and bench them separately and extract them into different
+subroutine that can be either pasted in the main kernel procedure,
+either inlined or simply called as normal function. 
+</p>
+</div>
+<div id="outline-container-sec-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> BOAST preparation</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+For the both implementations we need to tell to BOAST what are the
+parameters of the kernel.
+</p>
+</div>
+<div id="outline-container-sec-3-1-1" class="outline-4">
+<h4 id="sec-3-1-1"><span class="section-number-4">3.1.1</span> Parameters definition&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></h4>
+<div class="outline-text-4" id="text-3-1-1">
+<p>
+As the different implementations (reference and BOAST) of the
+kernel and the different loop nests encapsulated into subroutines
+share common variable definition, the definition of all the
+variables used by <code>nsi_element_assembly_split_oss</code> (including local
+variables) are centralized in the following module. When a
+variable is needed by the main routine (the kernel), it can be
+used as it is. However when needed by a subroutine, it must be
+asked by the <code>copy</code> function. Indeed a subroutine may need a
+variable but with a different direction than originally
+defined. For instance the <code>agrau</code> variable is defined as <code>:out</code> by the
+kernel but a subroutine may need to read only this variable and
+only the <code>:in</code> direction is necessary. Thus <code>copy</code> returns either
+directly the variable if there is no need to change the original
+direction or a copy in a different direction than the original one
+direction is asked. The reason why a copy is needed when changing
+the original direction of a parameter is that otherwise it will
+impact the declaration of all the procedures using this parameter. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">require 'BOAST'
+include BOAST
+
+module Arguments
+  $ndime         = Int("ndime", :dir =&gt; :in )
+  $kfl_lumped    = Int("kfl_lumped",    :dir =&gt; :in)
+  $mnode         = Int("mnode",         :dir =&gt; :in)
+  $ntens         = Int("ntens",         :dir =&gt; :in)
+  $kfl_duatss    = Int("kfl_duatss",    :dir =&gt; :in)
+  $fact_duatss   = Int("fact_duatss",   :dir =&gt; :in)
+  $kfl_stabi_nsi = Int("kfl_stabi_nsi", :dir =&gt; :in)
+  $fvins_nsi     = Real("fvins_nsi",    :dir =&gt; :in)
+  $fcons_nsi     = Real("fcons_nsi",    :dir =&gt; :in)
+  $bemol_nsi     = Real("bemol_nsi",    :dir =&gt; :in)
+  $kfl_regim_nsi = Int("kfl_regim_nsi", :dir =&gt; :in)
+  $fvela_nsi     = Real("fvela_nsi",    :dir =&gt; :in, :dim =&gt; [Dim(3)])
+  $kfl_rmom2_nsi = Int("kfl_rmom2_nsi", :dir =&gt; :in)
+  $kfl_press_nsi = Int("kfl_press_nsi", :dir =&gt; :in)
+  $kfl_p1ve2_nsi = Int("kfl_p1ve2_nsi", :dir =&gt; :in)
+  $kfl_linea_nsi = Int("kfl_linea_nsi", :dir =&gt; :in)
+  $kfl_confi_nsi = Int("kfl_confi_nsi", :dir =&gt; :in)
+  $nbdfp_nsi     = Int("nbdfp_nsi",     :dir =&gt; :in)
+  $kfl_sgsti_nsi = Int("kfl_sgsti_nsi", :dir =&gt; :in)
+  $kfl_nota1_nsi = Int("kfl_nota1_nsi", :dir =&gt; :in)
+  $kfl_limit_nsi = Int("kfl_limit_nsi", :dir =&gt; :in)
+  $kfl_penal_nsi = Int("kfl_penal_nsi", :dir =&gt; :in)
+  $penal_nsi     = Real("penal_nsi",    :dir =&gt; :in)
+  $kfl_bubbl_nsi = Int("kfl_bubbl_nsi", :dir =&gt; :in)
+
+  $pnode     = Int("pnode",             :dir =&gt; :in)
+  $pgaus     = Int("pgaus",             :dir =&gt; :in)
+
+  $inode     = Int("inode")
+  $jnode     = Int("jnode")
+  $jdime     = Int("jdime")
+  $idofv     = Int("idofv")
+  $ivect     = Int("ivect")
+  $igaus     = Int("igaus")
+  $idime     = Int("idime")
+  $jdofv     = Int("jdofv")
+  $itime     = Int("itime")
+
+  def self.initialize(vector_length)
+    allocate = get_lang == C ? true : false
+
+    $gpden     = Real("gpden",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpvis     = Real("gpvis",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])              
+    $gppor     = Real("gppor",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpsp1     = Real("gpsp1",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpsp2     = Real("gpsp2",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpvol     = Real("gpvol",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpsha     = Real("gpsha",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim($pgaus)])
+    $gpcar     = Real("gpcar",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($mnode),Dim($pgaus)])
+    $gpadv     = Real("gpadv",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus)])
+    $gpvep     = Real("gpvep",            :dir =&gt; :inout , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus)])
+    $gpgrp     = Real("gpgrp",            :dir =&gt; :inout , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus)])
+    $gprhs     = Real("gprhs",            :dir =&gt; :inout , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus)])
+    $gprhc     = Real("gprhc",            :dir =&gt; :inout , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpvel     = Real("gpvel",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus),Dim()])
+    $gpsgs     = Real("gpsgs",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus),Dim()])
+    $elvel     = Real("elvel",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pnode),Dim()])
+    $elpre     = Real("elpre",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim()])
+    $elbub     = Real("elbub",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)])
+
+    $wgrgr     = Real("wgrgr",            :dir =&gt; :out   ,:vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim($pnode),Dim($pgaus)])
+    $agrau     = Real("agrau",            :dir =&gt; :out   ,:vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim($pgaus)])
+
+    # Matrices
+    $elauu     = Real("elauu",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode*$ndime),Dim($pnode*$ndime)])
+    $elaup     = Real("elaup",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode*$ndime),Dim($pnode)])
+    $elapp     = Real("elapp",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim($pnode)])
+    $elapu     = Real("elapu",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim($pnode*$ndime)])
+    $elrbu     = Real("elrbu",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pnode)])
+    $elrbp     = Real("elrbp",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode)])
+    # Others
+    $dtinv_loc = Real("dtinv_loc",        :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)])
+    $dtsgs     = Real("dtsgs",            :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)])
+    $pbubl     = Int("pbubl",             :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)])
+    $gpsha_bub = Real("gpsha_bub",        :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)])
+    $gpcar_bub = Real("gpcar_bub",        :dir =&gt; :in    , :vector_length =&gt; vector_length, :dim =&gt; [Dim($ndime),Dim($pgaus)])
+    # Enrichement Element matrices
+    $elauq     = Real("elauq",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode*$ndime),Dim(1)])
+    $elapq     = Real("elapq",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim($pnode),Dim(1)])
+    $elaqu     = Real("elaqu",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1),Dim($pnode*$ndime)])
+    $elaqp     = Real("elaqp",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1),Dim($pnode)])
+    $elaqq     = Real("elaqq",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1),Dim(1)])
+    $elrbq     = Real("elrbq",            :dir =&gt; :out   , :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)])
+
+    # Locals
+    $gpsp1_p   = Real("gpsp1_p",   :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)], :allocate =&gt; allocate)
+    $gpsp1_v   = Real("gpsp1_v",   :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)], :allocate =&gt; allocate)
+    $gpsp2_v   = Real("gpsp2_v",   :vector_length =&gt; vector_length, :dim =&gt; [Dim($pgaus)], :allocate =&gt; allocate)
+    $c1        = Real("c1",        :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $c2        = Real("c2",        :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $c3        = Real("c3",        :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $c4        = Real("c4",        :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $alpha     = Real("alpha",     :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $beta      = Real("beta",      :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+
+    $gpveo     = Real("gpveo",     :vector_length =&gt; vector_length, :dim =&gt; [Dim(3)], :allocate =&gt; allocate)
+    $fact1_p   = Real("fact1_p",   :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $dtinv_mod = Real("dtinv_mod", :vector_length =&gt; vector_length, :dim =&gt; [Dim(1)], :allocate =&gt; allocate)
+    $fact = Real('fact',           :vector_length =&gt; vector_length, :dim =&gt; [Dim(9)], :allocate =&gt; allocate)
+
+    $idof = Int("idof", :dim =&gt; [Dim(3)], :allocate =&gt; allocate)
+    $jdof = Int("jdof", :dim =&gt; [Dim(3)], :allocate =&gt; allocate)
+  end
+
+  def self.copy(arg, direction = nil)
+    if direction == arg.direction or direction.nil? then
+      return arg
+    else
+      (copy = arg.clone).direction = direction
+      return copy
+    end
+  end
+end
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-1-2" class="outline-4">
+<h4 id="sec-3-1-2"><span class="section-number-4">3.1.2</span> BOAST Kernel declaration</h4>
+<div class="outline-text-4" id="text-3-1-2">
+<p>
+For each implementation we need to declare the prototype of the
+function <code>nsi_element_assembly_split_oss</code> with BOAST. 
+</p>
+</div>
+<ol class="org-ol"><li><a id="sec-3-1-2-1" name="sec-3-1-2-1"></a>Declaring the parameters<br  /><div class="outline-text-5" id="text-3-1-2-1">
+<p>
+First we declare the parameters of the kernel with BOAST using
+the module <code>Argument.</code>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="common-declare-parameters">Arguments.initialize(@opts[:vector_length])
+@args = []
+@args.push @ndime         = $ndime
+@args.push @kfl_lumped    = $kfl_lumped
+@args.push @mnode         = $mnode
+@args.push @ntens         = $ntens
+@args.push @kfl_duatss    = $kfl_duatss
+@args.push @fact_duatss   = $fact_duatss
+@args.push @kfl_stabi_nsi = $kfl_stabi_nsi
+@args.push @fvins_nsi     = $fvins_nsi
+@args.push @fcons_nsi     = $fcons_nsi
+@args.push @bemol_nsi     = $bemol_nsi
+@args.push @kfl_regim_nsi = $kfl_regim_nsi
+@args.push @fvela_nsi     = $fvela_nsi
+@args.push @kfl_rmom2_nsi = $kfl_rmom2_nsi
+@args.push @kfl_press_nsi = $kfl_press_nsi
+@args.push @kfl_p1ve2_nsi = $kfl_p1ve2_nsi
+@args.push @kfl_linea_nsi = $kfl_linea_nsi
+@args.push @kfl_confi_nsi = $kfl_confi_nsi
+@args.push @nbdfp_nsi     = $nbdfp_nsi
+@args.push @kfl_sgsti_nsi = $kfl_sgsti_nsi
+@args.push @kfl_nota1_nsi = $kfl_nota1_nsi
+@args.push @kfl_limit_nsi = $kfl_limit_nsi
+@args.push @kfl_penal_nsi = $kfl_penal_nsi
+@args.push @penal_nsi     = $penal_nsi
+@args.push @kfl_bubbl_nsi = $kfl_bubbl_nsi
+
+@args.push @pnode     = $pnode
+@args.push @pgaus     = $pgaus
+@args.push @gpden     = $gpden
+@args.push @gpvis     = $gpvis
+@args.push @gppor     = $gppor
+@args.push @gpsp1     = $gpsp1
+@args.push @gpsp2     = $gpsp2
+@args.push @gpvol     = $gpvol
+@args.push @gpsha     = $gpsha
+@args.push @gpcar     = $gpcar
+@args.push @gpadv     = $gpadv
+@args.push @gpvep     = $gpvep
+@args.push @gpgrp     = $gpgrp
+@args.push @gprhs     = $gprhs
+@args.push @gprhc     = $gprhc
+@args.push @gpvel     = $gpvel
+@args.push @gpsgs     = $gpsgs
+@args.push @elvel     = $elvel
+@args.push @elpre     = $elpre
+@args.push @elbub     = $elbub
+
+@args.push @wgrgr     = $wgrgr
+@args.push @agrau     = $agrau
+
+# Matrices
+@args.push @elauu     = $elauu
+@args.push @elaup     = $elaup
+@args.push @elapp     = $elapp
+@args.push @elapu     = $elapu
+@args.push @elrbu     = $elrbu
+@args.push @elrbp     = $elrbp
+# Others
+@args.push @dtinv_loc = $dtinv_loc
+@args.push @dtsgs     = $dtsgs
+@args.push @pbubl     = $pbubl
+@args.push @gpsha_bub = $gpsha_bub
+@args.push @gpcar_bub = $gpcar_bub
+# Enrichement Element matrices
+@args.push @elauq     = $elauq
+@args.push @elapq     = $elapq
+@args.push @elaqu     = $elaqu
+@args.push @elaqp     = $elaqp
+@args.push @elaqq     = $elaqq
+@args.push @elrbq     = $elrbq
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-1-2-2" name="sec-3-1-2-2"></a>Generate procedure header<br  /><div class="outline-text-5" id="text-3-1-2-2">
+<p>
+Then we create the <code>Procedure</code> <code>nsi_element_assembly_split_oss</code> using
+the parameters defined previously and specifying the functions
+that will be used by the kernel.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="common-declare-procedure">def declare_procedure(functions = nil)
+  return Procedure("nsi_element_assembly_split_oss", @args, :functions =&gt; functions)
+end
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-1-2-3" name="sec-3-1-2-3"></a>Kernel wrapper&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-5" id="text-3-1-2-3">
+<p>
+The previous operations are common for the reference and BOAST
+implementation, thus, the following class is used to encapsulate
+the different implementation of the kernel by gathering the
+parameters declaration and the generation of the procedure header.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">require_relative './arguments.rb'
+class KSplitOss
+  include Arguments
+  attr_reader :kernel
+
+  def initialize(options)
+    @opts = {:vector_length =&gt; 1, :preprocessor =&gt; false, :nests =&gt; (1..10).to_a, :unroll =&gt; false, :inline =&gt; :included}
+    @opts.update(options)
+
+    &lt;&lt;common-declare-parameters&gt;&gt;
+  end
+
+    &lt;&lt;common-declare-procedure&gt;&gt;
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</div>
+</div>
+<div id="outline-container-sec-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Generate reference implementation</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+Here we simply reuse the FORTRAN code that we simply manipulate as
+string. For convenience purpose we replaced the macro <code>VECTOR_LENGTH</code>
+and <code>DEF_VECT</code> by ruby variable <code>$p_vector_length</code> and <code>$p_def_vect</code> that
+will either use <code>DEF_VECT</code> and <code>VECTOR_LENGTH</code> or either paste directly
+the corresponding values depending to the options passed to the
+kernel.
+</p>
+</div>
+<div id="outline-container-sec-3-2-1" class="outline-4">
+<h4 id="sec-3-2-1"><span class="section-number-4">3.2.1</span> Mocks&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></h4>
+<div class="outline-text-4" id="text-3-2-1">
+<p>
+Some variables/functions are not available so we need to fake
+them like it is the case with <code>pabdf_nsi</code> :
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-mocks">def generate_mocks
+  mocks = &lt;&lt;EOF
+  function pabdf_nsi(x) result(y)
+    integer,intent(in) :: x 
+    real :: y
+    y = 1.0
+  end function pabdf_nsi
+EOF
+return mocks  
+end
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-2-2" class="outline-4">
+<h4 id="sec-3-2-2"><span class="section-number-4">3.2.2</span> Def parameters</h4>
+<div class="outline-text-4" id="text-3-2-2">
+<p>
+Here is the code extracted from <code>def_parameters.f90</code>.
+We can get rid of <code>ndime</code> and <code>vector_size</code> because we can easily
+modify these parameters with BOAST.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="def-parameters">def gen_def_parameters
+  parameters =&lt;&lt;EOF
+  integer,     parameter  :: ip    = 4               ! 4-byte integer
+  integer,     parameter  :: rp    = 8               ! Double precision 
+
+  real(rp),    parameter  :: zeror = epsilon(1.0_rp) ! Almost zero
+  integer(ip), parameter  :: TET04 = 30              ! 3D 
+  integer(ip), parameter  :: TET10 = 31              ! 3D 
+  integer(ip), parameter  :: PYR05 = 32              ! 3D 
+  integer(ip), parameter  :: PYR14 = 33              ! 3D 
+  integer(ip), parameter  :: PEN06 = 34              ! 3D  
+  integer(ip), parameter  :: PEN15 = 35              ! 3D 
+  integer(ip), parameter  :: PEN18 = 36              ! 3D 
+  integer(ip), parameter  :: HEX08 = 37              ! 3D 
+  integer(ip), parameter  :: HEX20 = 38              ! 3D 
+  integer(ip), parameter  :: HEX27 = 39              ! 3D 
+  integer(ip), parameter  :: HEX64 = 40              ! 3D 
+  integer(ip), parameter  :: SHELL = 51              ! 3D shell element
+  integer(ip), parameter  :: BAR3D = 52              ! 3D bar element
+EOF
+  return parameters
+end
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-2-3" class="outline-4">
+<h4 id="sec-3-2-3"><span class="section-number-4">3.2.3</span> Function declaration</h4>
+<div class="outline-text-4" id="text-3-2-3">
+<p>
+Here by calling <code>gen_def_parameters</code> we just paste the code of
+<code>def_parameters</code> just between the function header and the
+parameters declaration. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="generate-ref-declaration">def generate_ref_declaration
+     decl_ref =&lt;&lt;EOF
+     subroutine nsi_element_assembly_split_oss(ndime,&amp;
+     kfl_lumped,mnode,ntens,kfl_duatss,fact_duatss,&amp;
+     kfl_stabi_nsi,fvins_nsi,fcons_nsi,bemol_nsi,&amp;
+     kfl_regim_nsi,fvela_nsi,kfl_rmom2_nsi,kfl_press_nsi,&amp;
+     kfl_p1ve2_nsi,kfl_linea_nsi,kfl_confi_nsi,nbdfp_nsi,&amp;
+     kfl_sgsti_nsi,kfl_nota1_nsi,kfl_limit_nsi,kfl_penal_nsi,&amp;
+     penal_nsi,kfl_bubbl_nsi,pnode,pgaus,gpden,gpvis,gppor,&amp;
+     gpsp1,gpsp2,gpvol,gpsha,gpcar,gpadv,gpvep,gpgrp,gprhs,&amp;
+     gprhc,gpvel,gpsgs,elvel,elpre,elbub,wgrgr,agrau,elauu,&amp;
+     elaup,elapp,elapu,elrbu,elrbp,dtinv_loc,dtsgs,pbubl,&amp;
+     gpsha_bub,gpcar_bub,elauq,elapq,elaqu,elaqp,elaqq,elrbq)
+
+     #{gen_def_parameters}
+
+     integer(ip), intent(in)    :: ndime 
+     integer(ip), intent(in)    :: kfl_lumped
+     integer(ip), intent(in)    :: mnode
+     integer(ip), intent(in)    :: ntens
+     integer(ip), intent(in)    :: kfl_duatss
+     integer(ip), intent(in)    :: fact_duatss
+     integer(ip), intent(in)    :: kfl_stabi_nsi
+     real(rp),    intent(in)    :: fvins_nsi
+     real(rp),    intent(in)    :: fcons_nsi
+     real(rp),    intent(in)    :: bemol_nsi
+     integer(ip), intent(in)    :: kfl_regim_nsi
+     real(rp),    intent(in)    :: fvela_nsi(3)
+     integer(ip), intent(in)    :: kfl_rmom2_nsi
+     integer(ip), intent(in)    :: kfl_press_nsi
+     integer(ip), intent(in)    :: kfl_p1ve2_nsi
+     integer(ip), intent(in)    :: kfl_linea_nsi
+     integer(ip), intent(in)    :: kfl_confi_nsi
+     integer(ip), intent(in)    :: nbdfp_nsi
+     integer(ip), intent(in)    :: kfl_sgsti_nsi
+     integer(ip), intent(in)    :: kfl_nota1_nsi
+     integer(ip), intent(in)    :: kfl_limit_nsi
+     integer(ip), intent(in)    :: kfl_penal_nsi
+     real(rp),    intent(in)    :: penal_nsi
+     integer(ip), intent(in)    :: kfl_bubbl_nsi
+
+     integer(ip), intent(in)    :: pnode,pgaus
+     real(rp),    intent(in)    :: gpden(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpvis(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gppor(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpsp1(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpsp2(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpvol(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpsha(#{$p_vector_length},pnode,pgaus)
+     real(rp),    intent(in)    :: gpcar(#{$p_vector_length},ndime,mnode,pgaus)
+     real(rp),    intent(in)    :: gpadv(#{$p_vector_length},ndime,pgaus)
+     real(rp),    intent(inout) :: gpvep(#{$p_vector_length},ndime,pgaus)
+     real(rp),    intent(inout) :: gpgrp(#{$p_vector_length},ndime,pgaus)
+     real(rp),    intent(inout) :: gprhs(#{$p_vector_length},ndime,pgaus)
+     real(rp),    intent(inout) :: gprhc(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpvel(#{$p_vector_length},ndime,pgaus,*)
+     real(rp),    intent(in)    :: gpsgs(#{$p_vector_length},ndime,pgaus,*)
+     real(rp),    intent(in)    :: elvel(#{$p_vector_length},ndime,pnode,*)
+     real(rp),    intent(in)    :: elpre(#{$p_vector_length},pnode,*)
+     real(rp),    intent(in)    :: elbub(#{$p_vector_length})
+
+     real(rp),    intent(out)   :: wgrgr(#{$p_vector_length},pnode,pnode,pgaus)
+     real(rp),    intent(out)   :: agrau(#{$p_vector_length},pnode,pgaus)
+
+     ! Matrices
+     real(rp),    intent(out)   :: elauu(#{$p_vector_length},pnode*ndime,pnode*ndime)
+     real(rp),    intent(out)   :: elaup(#{$p_vector_length},pnode*ndime,pnode)
+     real(rp),    intent(out)   :: elapp(#{$p_vector_length},pnode,pnode)
+     real(rp),    intent(out)   :: elapu(#{$p_vector_length},pnode,pnode*ndime)
+     real(rp),    intent(out)   :: elrbu(#{$p_vector_length},ndime,pnode)
+     real(rp),    intent(out)   :: elrbp(#{$p_vector_length},pnode)
+     ! Others
+     real(rp),    intent(in)    :: dtinv_loc(#{$p_vector_length})
+     real(rp),    intent(in)    :: dtsgs(#{$p_vector_length})
+     integer(ip), intent(in)    :: pbubl(#{$p_vector_length})
+     real(rp),    intent(in)    :: gpsha_bub(#{$p_vector_length},pgaus)
+     real(rp),    intent(in)    :: gpcar_bub(#{$p_vector_length},ndime,pgaus)
+     ! Enrichement Element matrices
+     real(rp),    intent(out)   :: elauq(#{$p_vector_length},pnode*ndime,1)
+     real(rp),    intent(out)   :: elapq(#{$p_vector_length},pnode,1)
+     real(rp),    intent(out)   :: elaqu(#{$p_vector_length},1,pnode*ndime)
+     real(rp),    intent(out)   :: elaqp(#{$p_vector_length},1,pnode)
+     real(rp),    intent(out)   :: elaqq(#{$p_vector_length},1,1)
+     real(rp),    intent(out)   :: elrbq(#{$p_vector_length},1)
+     ! Local arrays
+     real(rp)                   :: gpsp1_p(#{$p_vector_length},pgaus)
+     real(rp)                   :: gpsp1_v(#{$p_vector_length},pgaus)
+     real(rp)                   :: gpsp2_v(#{$p_vector_length},pgaus)
+     real(rp)                   :: c1(#{$p_vector_length})
+     real(rp)                   :: c2(#{$p_vector_length})
+     real(rp)                   :: c3(#{$p_vector_length})
+     real(rp)                   :: c4(#{$p_vector_length})
+     real(rp)                   :: alpha(#{$p_vector_length})
+     real(rp)                   :: beta(#{$p_vector_length})
+     real(rp)                   :: fact0(#{$p_vector_length})
+     real(rp)                   :: fact1(#{$p_vector_length})
+     real(rp)                   :: fact2(#{$p_vector_length})
+     real(rp)                   :: fact3(#{$p_vector_length})
+     real(rp)                   :: fact4(#{$p_vector_length})
+     real(rp)                   :: fact5(#{$p_vector_length})
+     real(rp)                   :: fact6(#{$p_vector_length})
+     real(rp)                   :: fact7(#{$p_vector_length})
+     real(rp)                   :: fact8(#{$p_vector_length})
+     real(rp)                   :: gpveo(#{$p_vector_length},3)
+     real(rp)                   :: fact1_p(#{$p_vector_length})
+     real(rp)                   :: dtinv_mod(#{$p_vector_length})
+     integer(ip)                :: inode,jnode,jdime
+     integer(ip)                :: idofv,jdof2,jdof3,ivect
+     integer(ip)                :: idof1,idof3,idof2,igaus
+     integer(ip)                :: idime,jdof1,jdofv,itime
+EOF
+  if @opts[:preprocessor] then
+    decl_ref = decl_ref + &lt;&lt;EOF
+    #ifdef OPENACC
+    #define DEF_VECT ivect
+    #else
+    #define DEF_VECT 1:#{$p_vector_length}
+    #endif
+EOF
+  end
+  return decl_ref 
+end
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-2-4" class="outline-4">
+<h4 id="sec-3-2-4"><span class="section-number-4">3.2.4</span> Initialization</h4>
+<div class="outline-text-4" id="text-3-2-4">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-init">def generate_ref_initialization
+init = &lt;&lt;EOF
+   dtinv_mod = dtinv_loc
+
+   gpsp1_p = gpsp1
+   gpsp1_v = gpsp1
+   gpsp2_v = gpsp2
+
+   if( kfl_nota1_nsi == 1 ) gpsp1_v = 0.0_rp 
+
+   elrbp = 0.0_rp
+   elrbu = 0.0_rp
+   elapp = 0.0_rp
+   elauu = 0.0_rp
+   elaup = 0.0_rp
+   elapu = 0.0_rp
+EOF
+  return init
+end
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-2-5" class="outline-4">
+<h4 id="sec-3-2-5"><span class="section-number-4">3.2.5</span> V2</h4>
+<div class="outline-text-4" id="text-3-2-5">
+</div><ol class="org-ol"><li><a id="sec-3-2-5-1" name="sec-3-2-5-1"></a>First nest<br  /><div class="outline-text-5" id="text-3-2-5-1">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest1-v2">agrau(#{$p_def_vect},:,:)   = 0.0_rp
+    wgrgr(#{$p_def_vect},:,:,:) = 0.0_rp 
+    do igaus = 1,pgaus
+       do inode = 1,pnode
+          do idime = 1,ndime
+             agrau(#{$p_def_vect},inode,igaus) =  agrau(#{$p_def_vect},inode,igaus) + &amp;
+                                           gpadv(#{$p_def_vect},idime,igaus) * gpcar(#{$p_def_vect},idime,inode,igaus)
+          end do
+          agrau(#{$p_def_vect},inode,igaus) =  gpden(#{$p_def_vect},igaus) * agrau(#{$p_def_vect},inode,igaus) 
+          do jnode = 1,pnode
+             do idime = 1,ndime
+                wgrgr(#{$p_def_vect},inode,jnode,igaus) = wgrgr(#{$p_def_vect},inode,jnode,igaus) + &amp;
+                                                   gpcar(#{$p_def_vect},idime,inode,igaus)*gpcar(#{$p_def_vect},idime,jnode,igaus)
+             end do
+          end do
+       end do
+    end do
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-2" name="sec-3-2-5-2"></a>Second nest<br  /><div class="outline-text-5" id="text-3-2-5-2">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest2-v2">do igaus = 1,pgaus
+
+   fact0(#{$p_def_vect}) = gpsp2_v(#{$p_def_vect},igaus) * gpvol(#{$p_def_vect},igaus)
+   fact6(#{$p_def_vect}) = gpvis(#{$p_def_vect},igaus)   * gpvol(#{$p_def_vect},igaus)
+   fact7(#{$p_def_vect}) = gpsp1_v(#{$p_def_vect},igaus) * gpvol(#{$p_def_vect},igaus)
+   fact8(#{$p_def_vect}) = pabdf_nsi(1) * gpden(#{$p_def_vect},igaus) * dtinv_mod(#{$p_def_vect}) + gppor(#{$p_def_vect},igaus)
+
+   do inode = 1,pnode
+      do idime = 1,ndime
+
+         idofv           = (inode-1)*ndime+idime
+         fact1(#{$p_def_vect}) = fact0(#{$p_def_vect}) * gpcar(#{$p_def_vect},idime,inode,igaus)      
+
+         do jnode = 1,pnode    
+            do jdime = 1,ndime                   
+               jdofv                       = (jnode-1)*ndime+jdime
+               elauu(#{$p_def_vect},idofv,jdofv) = elauu(#{$p_def_vect},idofv,jdofv) + fact1(#{$p_def_vect}) * gpcar(#{$p_def_vect},jdime,jnode,igaus)                   
+            end do
+
+            jdofv           = (jnode-1)*ndime+idime
+            fact4(#{$p_def_vect}) = gpsha(#{$p_def_vect},inode,igaus) * gpvol(#{$p_def_vect},igaus)
+            fact5(#{$p_def_vect}) = fact4(#{$p_def_vect}) * ( agrau(#{$p_def_vect},jnode,igaus) + fact8(#{$p_def_vect}) * gpsha(#{$p_def_vect},jnode,igaus) ) + fact6(#{$p_def_vect}) *   wgrgr(#{$p_def_vect},inode,jnode,igaus) + fact7(#{$p_def_vect}) *   agrau(#{$p_def_vect},jnode,igaus) * agrau(#{$p_def_vect},inode,igaus)   
+            elauu(#{$p_def_vect},idofv,jdofv) = elauu(#{$p_def_vect},idofv,jdofv) + fact5(#{$p_def_vect})
+
+         end do
+      end do
+   end do
+end do
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-3" name="sec-3-2-5-3"></a>Thrid nest<br  /><div class="outline-text-5" id="text-3-2-5-3">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest3-v2">if( fvins_nsi &gt; 0.9_rp ) then
+   do igaus = 1,pgaus
+      do inode = 1,pnode
+         do idime = 1,ndime
+            idofv = (inode-1)*ndime + idime
+            do jnode = 1,pnode
+               fact1(#{$p_def_vect}) = gpvis(#{$p_def_vect},igaus) * gpvol(#{$p_def_vect},igaus) * gpcar(#{$p_def_vect},idime,jnode,igaus)     
+               do jdime = 1,ndime
+                  jdofv                       = (jnode-1)*ndime + jdime
+                  elauu(#{$p_def_vect},idofv,jdofv) = elauu(#{$p_def_vect},idofv,jdofv) + fact1(#{$p_def_vect}) * gpcar(#{$p_def_vect},jdime,inode,igaus)
+               end do
+            end do
+            if( fvins_nsi == 2.0_rp ) then
+               fact1(#{$p_def_vect}) = -2.0_rp / 3.0_rp * gpvis(#{$p_def_vect},igaus) * gpvol(#{$p_def_vect},igaus) * gpcar(#{$p_def_vect},idime,inode,igaus)
+               do jnode = 1,pnode
+                  do jdime = 1,ndime
+                     jdofv                       = (jnode-1)*ndime + jdime
+                     elauu(#{$p_def_vect},idofv,jdofv) = elauu(#{$p_def_vect},idofv,jdofv) + fact1(#{$p_def_vect}) * gpcar(#{$p_def_vect},jdime,jnode,igaus)
+                  end do
+               end do
+            end if
+         end do
+      end do
+   end do
+end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-4" name="sec-3-2-5-4"></a>Fourth nest<br  /><div class="outline-text-5" id="text-3-2-5-4">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest4-v2">if( kfl_lumped == 1 ) then 
+   if( ndime == 2 ) then
+      stop
+   else
+      do igaus = 1,pgaus
+         gpveo(#{$p_def_vect},1:3) = 0.0_rp
+         do inode = 1,pnode
+            do idime = 1,ndime
+               gpveo(#{$p_def_vect},idime) = gpveo(#{$p_def_vect},idime) + elvel(#{$p_def_vect},idime,inode,2) * gpsha(#{$p_def_vect},inode,igaus)
+            end do
+         end do
+         do inode = 1,pnode
+            idof1                       = 3*inode-2
+            idof2                       = 3*inode-1
+            idof3                       = 3*inode
+            fact0(#{$p_def_vect})             = gpvol(#{$p_def_vect},igaus) * gpden(#{$p_def_vect},igaus) * gpsha(#{$p_def_vect},inode,igaus) * dtinv_mod(#{$p_def_vect})
+            elauu(#{$p_def_vect},idof1,idof1) = elauu(#{$p_def_vect},idof1,idof1) + fact0(#{$p_def_vect})
+            elauu(#{$p_def_vect},idof2,idof2) = elauu(#{$p_def_vect},idof2,idof2) + fact0(#{$p_def_vect})
+            elauu(#{$p_def_vect},idof3,idof3) = elauu(#{$p_def_vect},idof3,idof3) + fact0(#{$p_def_vect})
+            do idime = 1,ndime
+               elrbu(#{$p_def_vect},idime,inode) = elrbu(#{$p_def_vect},idime,inode) - fact0(#{$p_def_vect}) * gpveo(#{$p_def_vect},idime)
+               elrbu(#{$p_def_vect},idime,inode) = elrbu(#{$p_def_vect},idime,inode) + fact0(#{$p_def_vect}) * elvel(#{$p_def_vect},idime,inode,2)
+            end do
+            do jnode = 1,pnode 
+               jdof1                       = 3*jnode-2
+               jdof2                       = 3*jnode-1
+               jdof3                       = 3*jnode
+               elauu(#{$p_def_vect},idof1,jdof1) = elauu(#{$p_def_vect},idof1,jdof1) - fact0(#{$p_def_vect}) * gpsha(#{$p_def_vect},jnode,igaus) 
+               elauu(#{$p_def_vect},idof2,jdof2) = elauu(#{$p_def_vect},idof2,jdof2) - fact0(#{$p_def_vect}) * gpsha(#{$p_def_vect},jnode,igaus) 
+               elauu(#{$p_def_vect},idof3,jdof3) = elauu(#{$p_def_vect},idof3,jdof3) - fact0(#{$p_def_vect}) * gpsha(#{$p_def_vect},jnode,igaus) 
+            end do
+         end do
+      end do
+   end if
+
+else if( kfl_lumped == 2 ) then 
+   do igaus = 1,pgaus
+      fact0(#{$p_def_vect}) = gpvol(#{$p_def_vect},igaus) * gpden(#{$p_def_vect},igaus) * dtinv_mod(#{$p_def_vect})
+      do inode = 1, pnode
+         fact1(#{$p_def_vect}) = fact0(#{$p_def_vect}) * gpsha(#{$p_def_vect},inode,igaus)
+         do idime = 1,ndime
+            idof1                       = (inode-1) * ndime + idime
+            elauu(#{$p_def_vect},idof1,idof1) = elauu(#{$p_def_vect},idof1,idof1) + fact1(#{$p_def_vect})
+            elrbu(#{$p_def_vect},idime,inode) = elrbu(#{$p_def_vect},idime,inode) + fact1(#{$p_def_vect}) * elvel(#{$p_def_vect},idime,inode,2)
+         end do
+      end do
+   end do
+end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-5" name="sec-3-2-5-5"></a>Fifth nest<br  /><div class="outline-text-5" id="text-3-2-5-5">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest5-v2">if( ndime == 2 ) then
+   do igaus = 1,pgaus
+      do inode = 1,pnode
+         idof1 = 2*inode-1
+         idof2 = 2*inode
+         do jnode = 1,pnode
+            fact0(#{$p_def_vect})             = gpvol(#{$p_def_vect},igaus)       * gpsha(#{$p_def_vect},jnode,igaus) 
+            fact1(#{$p_def_vect})             = fact0(#{$p_def_vect})             * gpcar(#{$p_def_vect},1,inode,igaus)
+            fact2(#{$p_def_vect})             = fact0(#{$p_def_vect})             * gpcar(#{$p_def_vect},2,inode,igaus)
+            elapu(#{$p_def_vect},jnode,idof1) = elapu(#{$p_def_vect},jnode,idof1) + fact1(#{$p_def_vect})
+            elapu(#{$p_def_vect},jnode,idof2) = elapu(#{$p_def_vect},jnode,idof2) + fact2(#{$p_def_vect})
+            elaup(#{$p_def_vect},idof1,jnode) = elaup(#{$p_def_vect},idof1,jnode) - fact1(#{$p_def_vect})
+            elaup(#{$p_def_vect},idof2,jnode) = elaup(#{$p_def_vect},idof2,jnode) - fact2(#{$p_def_vect})
+         end do
+      end do
+   end do
+else
+   do igaus = 1,pgaus
+      do inode = 1,pnode
+         idof1 = 3*inode-2
+         idof2 = 3*inode-1
+         idof3 = 3*inode
+         do jnode = 1,pnode
+            fact0(#{$p_def_vect})             = gpvol(#{$p_def_vect},igaus)       * gpsha(#{$p_def_vect},jnode,igaus) 
+            fact1(#{$p_def_vect})             = fact0(#{$p_def_vect})             * gpcar(#{$p_def_vect},1,inode,igaus)
+            fact2(#{$p_def_vect})             = fact0(#{$p_def_vect})             * gpcar(#{$p_def_vect},2,inode,igaus)
+            fact3(#{$p_def_vect})             = fact0(#{$p_def_vect})             * gpcar(#{$p_def_vect},3,inode,igaus)
+            elapu(#{$p_def_vect},jnode,idof1) = elapu(#{$p_def_vect},jnode,idof1) + fact1(#{$p_def_vect})
+            elapu(#{$p_def_vect},jnode,idof2) = elapu(#{$p_def_vect},jnode,idof2) + fact2(#{$p_def_vect})
+            elapu(#{$p_def_vect},jnode,idof3) = elapu(#{$p_def_vect},jnode,idof3) + fact3(#{$p_def_vect}) 
+            elaup(#{$p_def_vect},idof1,jnode) = elaup(#{$p_def_vect},idof1,jnode) - fact1(#{$p_def_vect})
+            elaup(#{$p_def_vect},idof2,jnode) = elaup(#{$p_def_vect},idof2,jnode) - fact2(#{$p_def_vect})
+            elaup(#{$p_def_vect},idof3,jnode) = elaup(#{$p_def_vect},idof3,jnode) - fact3(#{$p_def_vect})
+         end do
+      end do
+   end do
+end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-6" name="sec-3-2-5-6"></a>Sixth nest<br  /><div class="outline-text-5" id="text-3-2-5-6">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest6-v2">if( kfl_stabi_nsi /= -1 ) then
+   do igaus = 1,pgaus
+      do inode = 1,pnode
+         do jnode = inode+1,pnode
+            fact1(#{$p_def_vect})             = gpsp1_p(#{$p_def_vect},igaus) * wgrgr(#{$p_def_vect},jnode,inode,igaus) * gpvol(#{$p_def_vect},igaus)
+            elapp(#{$p_def_vect},jnode,inode) = elapp(#{$p_def_vect},jnode,inode) + fact1(#{$p_def_vect})
+            elapp(#{$p_def_vect},inode,jnode) = elapp(#{$p_def_vect},inode,jnode) + fact1(#{$p_def_vect})
+         end do
+         fact1(#{$p_def_vect})             = gpsp1_p(#{$p_def_vect},igaus) * wgrgr(#{$p_def_vect},inode,inode,igaus) * gpvol(#{$p_def_vect},igaus)
+         elapp(#{$p_def_vect},inode,inode) = elapp(#{$p_def_vect},inode,inode) + fact1(#{$p_def_vect})
+      end do
+   end do
+ end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-7" name="sec-3-2-5-7"></a>Seventh nest<br  /><div class="outline-text-5" id="text-3-2-5-7">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest7-v2">do igaus = 1,pgaus
+  fact1(#{$p_def_vect}) = penal_nsi * gpvol(#{$p_def_vect},igaus)
+  do inode = 1,pnode
+    elapp(#{$p_def_vect},inode,inode) = elapp(#{$p_def_vect},inode,inode) + fact1(#{$p_def_vect}) * gpsha(#{$p_def_vect},inode,igaus)
+    elrbp(#{$p_def_vect},inode)       = elrbp(#{$p_def_vect},inode)       + fact1(#{$p_def_vect}) * gpsha(#{$p_def_vect},inode,igaus) * elpre(#{$p_def_vect},inode,1) 
+  end do
+end do
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-8" name="sec-3-2-5-8"></a>Eighth nest<br  /><div class="outline-text-5" id="text-3-2-5-8">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest8-v2">if( kfl_stabi_nsi == -1 ) then
+   gpvep(#{$p_def_vect},:,:) = 0.0_rp 
+else if( kfl_limit_nsi == -1 ) then
+   gpvep(#{$p_def_vect},:,:) = 0.0_rp
+else if( kfl_limit_nsi &gt; 0 ) then
+   do igaus = 1,pgaus
+      c1(#{$p_def_vect}) = 0.0_rp
+      c2(#{$p_def_vect}) = 0.0_rp
+      c3(#{$p_def_vect}) = 0.0_rp
+      do idime = 1,ndime
+         c4(#{$p_def_vect}) = 0.0_rp
+         do inode = 1,pnode
+            c4(#{$p_def_vect}) = c4(#{$p_def_vect}) + agrau(#{$p_def_vect},inode,igaus) * elvel(#{$p_def_vect},idime,inode,1)
+         end do
+         c4(#{$p_def_vect}) = gpsp1(#{$p_def_vect},igaus) * c4(#{$p_def_vect})
+         c1(#{$p_def_vect}) = c1(#{$p_def_vect}) + ( gpvep(#{$p_def_vect},idime,igaus) - c4(#{$p_def_vect}) )**2
+         c3(#{$p_def_vect}) = c3(#{$p_def_vect}) + gpvep(#{$p_def_vect},idime,igaus) * gpvep(#{$p_def_vect},idime,igaus)
+         c2(#{$p_def_vect}) = c2(#{$p_def_vect}) + c4(#{$p_def_vect}) * c4(#{$p_def_vect})
+      end do
+      c3(#{$p_def_vect})   = sqrt( c2(#{$p_def_vect}) ) + sqrt( c3(#{$p_def_vect}) )
+      c1(#{$p_def_vect})   = sqrt( c1(#{$p_def_vect}) )
+      beta(#{$p_def_vect}) = c1(#{$p_def_vect}) / ( c3(#{$p_def_vect}) + epsilon(1.0_rp) )
+      if( kfl_limit_nsi == 1 ) then
+         alpha(#{$p_def_vect}) = min(1.0_rp,2.0_rp*(1.0_rp-beta(#{$p_def_vect})))
+      else if( kfl_limit_nsi == 2 ) then
+         alpha(#{$p_def_vect}) = 0.5_rp*(tanh(20.0_rp*(beta(#{$p_def_vect})-0.8_rp))+1.0_rp)
+      end if
+      do idime = 1,ndime
+         gpvep(#{$p_def_vect},idime,igaus) = alpha(#{$p_def_vect}) * gpvep(#{$p_def_vect},idime,igaus)
+      end do
+   end do
+end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-9" name="sec-3-2-5-9"></a>Nineth nest<br  /><div class="outline-text-5" id="text-3-2-5-9">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest9-v2">if( kfl_stabi_nsi == -1 ) then
+   gpgrp(#{$p_def_vect},:,:) = 0.0_rp
+else
+   do igaus = 1,pgaus
+      do idime = 1,ndime
+         gpgrp(#{$p_def_vect},idime,igaus) = gpgrp(#{$p_def_vect},idime,igaus) + gpsp1_p(#{$p_def_vect},igaus) * gprhs(#{$p_def_vect},idime,igaus)
+      end do
+   end do
+   if( kfl_sgsti_nsi == 1 ) then
+      do igaus = 1,pgaus 
+         fact1(#{$p_def_vect})    = gpden(#{$p_def_vect},igaus) * dtsgs(#{$p_def_vect}) * gpsp1_v(#{$p_def_vect},igaus)
+         fact1_p (#{$p_def_vect}) = gpden(#{$p_def_vect},igaus) * dtsgs(#{$p_def_vect}) * gpsp1_p(#{$p_def_vect},igaus)
+         do idime = 1,ndime
+            gpvep(#{$p_def_vect},idime,igaus) = gpvep(#{$p_def_vect},idime,igaus) + fact1(#{$p_def_vect})   * gpsgs(#{$p_def_vect},idime,igaus,2)
+            gpgrp(#{$p_def_vect},idime,igaus) = gpgrp(#{$p_def_vect},idime,igaus) + fact1_p(#{$p_def_vect}) * gpsgs(#{$p_def_vect},idime,igaus,2)
+         end do
+      end do
+   end if
+end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-10" name="sec-3-2-5-10"></a>Tenth nest<br  /><div class="outline-text-5" id="text-3-2-5-10">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest10-v2">do igaus = 1,pgaus
+   fact4(#{$p_def_vect}) = gpden(#{$p_def_vect},igaus) * dtinv_mod(#{$p_def_vect})
+   do itime = 2,nbdfp_nsi
+      do idime = 1,ndime
+         gprhs(#{$p_def_vect},idime,igaus) = gprhs(#{$p_def_vect},idime,igaus) - pabdf_nsi(itime) * fact4(#{$p_def_vect}) * gpvel(#{$p_def_vect},idime,igaus,itime)
+      end do
+   end do
+   do inode = 1,pnode
+      fact1(#{$p_def_vect}) = gpvol(#{$p_def_vect},igaus) * gpsha(#{$p_def_vect},inode,igaus)  ! ( f + rho*u^n/dt , v )
+      fact3(#{$p_def_vect}) = gpvol(#{$p_def_vect},igaus) * agrau(#{$p_def_vect},inode,igaus)  ! ( rho * a.grad(v) , P1' ) 
+      do idime = 1,ndime
+         elrbu(#{$p_def_vect},idime,inode) = elrbu(#{$p_def_vect},idime,inode) + fact1(#{$p_def_vect}) * gprhs(#{$p_def_vect},idime,igaus) &amp;
+              &amp;                                                    + fact3(#{$p_def_vect}) * gpvep(#{$p_def_vect},idime,igaus)              
+      end do
+      elrbp(#{$p_def_vect},inode) = elrbp(#{$p_def_vect},inode) + gpvol(#{$p_def_vect},igaus) * gpsha(#{$p_def_vect},inode,igaus) * gprhc(#{$p_def_vect},igaus)                ! ( rhs, q )
+      do idime = 1,ndime
+         elrbp(#{$p_def_vect},inode) = elrbp(#{$p_def_vect},inode) + gpvol(#{$p_def_vect},igaus) * gpcar(#{$p_def_vect},idime,inode,igaus) * gpgrp(#{$p_def_vect},idime,igaus) ! ( P2' , grad(q) ) 
+      end do
+   end do
+end do
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-11" name="sec-3-2-5-11"></a>Eleventh nest<br  /><div class="outline-text-5" id="text-3-2-5-11">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="ref-nest11-v2">if( maxval(pbubl) == 1 ) then
+   if( kfl_stabi_nsi /= -1 ) then
+      write(6,*) 'BUBBLE NOT CODED FOR SPLIT OSS'
+      stop
+   end if
+
+   elauq = 0.0_rp
+   elapq = 0.0_rp
+   elaqu = 0.0_rp
+   elaqp = 0.0_rp
+   elaqq = 0.0_rp
+   elrbq = 0.0_rp
+
+   if( kfl_press_nsi == 1 ) then
+      do igaus = 1,pgaus
+         fact1(#{$p_def_vect}) = gpvol(#{$p_def_vect},igaus) * gpsha_bub(#{$p_def_vect},igaus)
+         do inode = 1,pnode
+            do idime = 1,ndime
+               idofv = (inode-1)*ndime + idime
+               elauq(#{$p_def_vect},idofv,1) = elauq(#{$p_def_vect},idofv,1) - fact1(#{$p_def_vect}) * gpcar(#{$p_def_vect},idime,inode,igaus)
+               elaqu(#{$p_def_vect},1,idofv) = elaqu(#{$p_def_vect},1,idofv) + fact1(#{$p_def_vect}) * gpcar(#{$p_def_vect},idime,inode,igaus) 
+            end do
+         end do
+      end do
+   else
+      do igaus = 1,pgaus
+         fact1(#{$p_def_vect}) = gpvol(#{$p_def_vect},igaus) * gpsha_bub(#{$p_def_vect},igaus)
+         do inode = 1,pnode
+            do idime = 1,ndime
+               idofv = (inode-1)*ndime + idime
+               elauq(#{$p_def_vect},idofv,1) = elauq(#{$p_def_vect},idofv,1) + gpvol(#{$p_def_vect},igaus) * gpsha(#{$p_def_vect},inode,igaus) * gpcar_bub(#{$p_def_vect},idime,igaus)
+               elaqu(#{$p_def_vect},1,idofv) = elaqu(#{$p_def_vect},1,idofv) + fact1(#{$p_def_vect}) * gpcar(#{$p_def_vect},idime,inode,igaus) 
+            end do
+         end do
+      end do
+   end if
+
+   do igaus = 1,pgaus
+      elaqq(#{$p_def_vect},1,1) = elaqq(#{$p_def_vect},1,1) + gpvol(#{$p_def_vect},igaus) * gpsha_bub(#{$p_def_vect},igaus) * penal_nsi
+      elrbq(#{$p_def_vect},1)   = elrbq(#{$p_def_vect},1)   + gpvol(#{$p_def_vect},igaus) * gpsha_bub(#{$p_def_vect},igaus) * penal_nsi * elbub(#{$p_def_vect}) 
+      elrbq(#{$p_def_vect},1)   = elrbq(#{$p_def_vect},1)   + gpvol(#{$p_def_vect},igaus) * gpsha_bub(#{$p_def_vect},igaus) * gprhc(#{$p_def_vect},igaus) 
+   end do
+
+end if
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-2-5-12" name="sec-3-2-5-12"></a>Frame to generate the kernel&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-5" id="text-3-2-5-12">
+<p>
+Finally this class assembles everything to generate the
+reference implementation: 
+</p>
+<ul class="org-ul">
+<li>the mocks, 
+</li>
+<li>the variables declaration, 
+</li>
+<li>the initialization, 
+</li>
+<li>the different loop nests
+</li>
+</ul>
+
+<p>
+The FORTRAN code is then simply printed in the body of the main
+procedure using <code>get_output.print</code>.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-ruby">require_relative './KSplitOss.rb'
+
+&lt;&lt;ref-mocks&gt;&gt;
+&lt;&lt;generate-ref-declaration&gt;&gt;
+&lt;&lt;def-parameters&gt;&gt;
+&lt;&lt;ref-init&gt;&gt;
+
+class KSplitOssRef_v2 &lt; KSplitOss
+ def generate
+   # opts = {:vector_length =&gt; 1, :preprocessor =&gt; false, :nests =&gt; (1..10).to_a}
+   # opts.update(options)
+   macros = ""
+
+   if @opts[:preprocessor] then
+     $p_vector_length = "VECTOR_SIZE"
+     $p_def_vect = "DEF_VECT"
+     macros = &lt;&lt;EOF
+     #define VECTOR_SIZE #{@opts[:vector_length]}
+EOF
+   else
+     $p_vector_length = "#{@opts[:vector_length]}"
+     $p_def_vect = "1:#{@opts[:vector_length]}"
+   end
+
+   nests = []
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest1-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest2-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest3-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest4-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest5-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest6-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest7-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest8-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest9-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest10-v2&gt;&gt;
+EOF
+   nests.push &lt;&lt;EOF
+   &lt;&lt;ref-nest11-v2&gt;&gt;
+EOF
+   set_lang(FORTRAN)
+   @kernel = CKernel::new(:includes =&gt; "immintrin.h")
+   @kernel.procedure = declare_procedure
+   get_output.print macros
+   get_output.print generate_mocks
+   get_output.print generate_ref_declaration
+   get_output.print generate_ref_initialization
+
+   @opts[:nests].each{|n|
+     get_output.print nests[n-1]
+   }
+
+   get_output.print "end subroutine nsi_element_assembly_split_oss"
+   return @kernel
+ end  
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</div>
+</div>
+<div id="outline-container-sec-3-3" class="outline-3">
+<h3 id="sec-3-3"><span class="section-number-3">3.3</span> BOAST implementation</h3>
+<div class="outline-text-3" id="text-3-3">
+<p>
+For the BOAST implementation we followed the same logic as
+previous. We need to declare the kernel header (which is done by
+the class <code>KSPlitOss</code>) and the local variables, initialize the
+variables, create mocks and split the kernel according to the
+different nests.
+</p>
+</div>
+<div id="outline-container-sec-3-3-1" class="outline-4">
+<h4 id="sec-3-3-1"><span class="section-number-4">3.3.1</span> Local variable declaration</h4>
+<div class="outline-text-4" id="text-3-3-1">
+<p>
+The local variable declaration is simply done using the parameters
+defined in the module Arguments. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-local-vars"># Local arrays
+@gpsp1_p   = $gpsp1_p
+@gpsp1_v   = $gpsp1_v
+@gpsp2_v   = $gpsp2_v
+@c1        = $c1
+@c2        = $c2
+@c3        = $c3
+@c4        = $c4
+@alpha     = $alpha
+@beta      = $beta
+
+@gpveo     = $gpveo
+@fact1_p   = $fact1_p
+@dtinv_mod = $dtinv_mod
+@inode     = $inode
+@jnode     = $jnode
+@jdime     = $jdime
+@idofv     = $idofv
+@ivect     = $ivect
+@igaus     = $igaus
+@idime     = $idime
+@jdofv     = $jdofv
+@itime     = $itime
+
+@fact = $fact
+
+@idof = $idof
+@jdof = $jdof
+
+decl @gpsp1_p,@gpsp1_v,@gpsp2_v,@c1,@c2,@c3,@c4,@alpha,@beta,
+     @gpveo,@fact1_p,@dtinv_mod,@inode,@jnode,@jdime,@idofv,
+     @ivect,@igaus,@idime,@jdofv,@itime,@fact,@idof,@jdof
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-3-2" class="outline-4">
+<h4 id="sec-3-3-2"><span class="section-number-4">3.3.2</span> Initialization</h4>
+<div class="outline-text-4" id="text-3-3-2">
+<p>
+Writing the initialization of the arrays for FORTRAN with BOAST is
+straight forward but in C we need to use C code to the set the
+arrays efficiently. These instruction are stored as <code>strings</code> and
+included into the kernel with <code>get_output.print</code>.
+<a id="boast-initialization" name="boast-initialization"></a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-initialization">if get_lang == FORTRAN
+  pr @dtinv_mod === @dtinv_loc
+  pr @gpsp1_p === @gpsp1
+  pr @gpsp1_v === @gpsp1
+  pr @gpsp2_v === @gpsp2
+
+  pr If( @kfl_nota1_nsi == 1 =&gt; lambda{ pr @gpsp1_v === 0.0 } )
+
+  pr @elrbp === 0.0
+  pr @elrbu === 0.0
+  pr @elapp === 0.0
+  pr @elauu === 0.0
+  pr @elaup === 0.0
+  pr @elapu === 0.0
+elsif get_lang == C
+  code =&lt;&lt;EOF
+  memcpy(dtinv_mod, dtinv_loc, sizeof(dtinv_mod));
+  memcpy(gpsp1_p, gpsp1, sizeof(gpsp1_p));
+  memcpy(gpsp1_v, gpsp1, sizeof(gpsp1_v));
+  memcpy(gpsp2_v, gpsp2, sizeof(gpsp2_v));
+
+  if (kfl_nota1_nsi == 1) memset(gpsp1_v, 0, sizeof(gpsp1_v));
+
+  memset(elrbp, 0, sizeof(#{@elrbp.type.decl}) * pnode);
+  memset(elrbu, 0, sizeof(#{@elrbu.type.decl}) * ndime * pnode);
+  memset(elapp, 0, sizeof(#{@elapp.type.decl}) * pnode * pnode);
+  memset(elauu, 0, sizeof(#{@elauu.type.decl}) * pnode * ndime * pnode * ndime);
+  memset(elaup, 0, sizeof(#{@elaup.type.decl}) * pnode * ndime * pnode);
+  memset(elapu, 0, sizeof(#{@elapu.type.decl}) * pnode * pnode * ndime);
+EOF
+  get_output.print code
+end
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-3-3" class="outline-4">
+<h4 id="sec-3-3-3"><span class="section-number-4">3.3.3</span> Subroutines</h4>
+<div class="outline-text-4" id="text-3-3-3">
+<p>
+Like in the reference implementation we split the kernel according
+to the different loop nests. This gave us the possibility to
+either wrap the nests into subroutines. We can either inline them
+manually, rely on the compiler to do it or just use a simple 
+function call. Subroutines are wrapped into classes for more
+convenience. Like it is the case for the kernel, for each
+subroutine, the parameters (with their direction <code>:in</code>, <code>:out</code>,
+<code>:inout</code>) and variables used have to be defined. 
+</p>
+</div>
+
+<ol class="org-ol"><li><a id="sec-3-3-3-1" name="sec-3-3-3-1"></a>Class wrapper&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-5" id="text-3-3-3-1">
+<p>
+The goal of the class <code>Subroutine</code> is to wrap the different loop
+nests into subroutines which can either be inlined manually, by
+the compiler or used as simple subroutine. The properties of a
+subroutine (such as the vector length) are registered but also the
+parameters and the variables used by the subroutine which are created
+dynamically. The usage of a subroutine can either be <code>:included</code>,
+<code>:call</code>, <code>:inline</code>. Depending on the usage, the function <code>construct</code> will
+either only return the code of the subroutine to paste it in the
+kernel or generate a <code>Procedure</code> that can be inlined or not. 
+The function <code>call</code> is here only just avoid to have to specify the
+arguments when calling the subroutine effectively.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">require_relative './arguments.rb'
+class Subroutine
+  include Arguments
+  attr_accessor :code
+  def initialize(name,options,functions)
+    opts = {:vector_length =&gt; 1, :unroll =&gt; false, :inline =&gt; :included}
+    opts.update(options)
+    @name = name
+    @functions = functions
+    @args = []
+    @code = nil
+    @vector_length = options[:vector_length]
+    @usage = opts[:inline]
+    @unroll = opts[:unroll]
+    @dimensions = @unroll ? [2,3] : [$ndime]
+    @nb_original_param = instance_variables.length + 1
+  end
+  def construct(block)
+    if @usage == :included then
+      @code = block
+    else
+      functions = @functions.nil? ? nil : @functions.values
+      inlined = @usage == :inlined ? true : false
+      @code = Procedure(@name, @args, :inline =&gt; inlined, :functions =&gt; functions, &amp;block)
+    end
+  end
+  def call
+    if @usage == :included then
+      @code.call
+    else
+      eval "pr @code.call( #{instance_variables[@nb_original_param...instance_variables.length].join(',')} )"
+    end
+  end
+end
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-2" name="sec-3-3-3-2"></a>First loop<br  /><ol class="org-ol"><li><a id="sec-3-3-3-2-1" name="sec-3-3-3-2-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-2-1">
+<p>
+The values of <code>ndime</code> can be either 2 or 3 and here we unroll the
+computation of <code>agrau</code> and <code>wgrgr</code> according to this. For this, we
+build 2 expressions <code>exp1</code> and <code>exp2</code> which are unrolled 2 and 3 times.
+Then these expressions are pasted into the formulas that compute
+<code>agrau</code> and <code>wgrgr</code>. Next with these formulas, we build 2 loop nests
+(for each possibility to unroll the computation of <code>agrau</code> and
+<code>wgrgr</code>, here 2 and 3) that we stack into <code>for1</code>, and finally we wrap
+these loops in a if statement.
+<a id="boast-nest1-body" name="boast-nest1-body"></a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest1-body">for1 = []
+
+[2,3].each{|dim|
+  exp1 = ""
+  exp2 = ""
+  dim.times{|i|
+    exp1 += "@gpadv[#{i+1},igaus]*@gpcar[#{i+1},inode,igaus]"
+    exp2 += "@gpcar[#{i+1},inode,igaus]*@gpcar[#{i+1},jnode,igaus]"
+    exp1 +=  " + " if i+1 &lt; dim
+    exp2 +=  " + " if i+1 &lt; dim
+  }
+
+  form_agrau = "pr @agrau[inode,igaus] === @gpden[igaus] * (#{exp1})"
+  form_wgrgr = "pr @wgrgr[inode,jnode,igaus] === #{exp2}"
+
+  for1.push For(igaus,1,@pgaus){
+    pr For(inode,1,@pnode){
+      eval form_agrau
+      pr For(jnode,1,@pnode){                    
+        eval form_wgrgr
+      }
+    }
+  }
+}
+
+pr If(@ndime == 2 =&gt; lambda{
+        pr for1[0]
+      }, else: lambda{
+        pr for1[1]
+      })
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-2-2" name="sec-3-3-3-2-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-2-2">
+<p>
+<a id="boast-nest1-class" name="boast-nest1-class"></a>
+The nest 1 is encapsulated into the class <code>Nest1</code>. First,
+parameters and local variables are defined. Then the <code>block</code> that
+contains the nest1 is built by declaring the local variables if
+the inline is done manually (otherwise they will conflict with
+the kernel ones) and using the previous descriptions of the
+nest1 <a href="#boast-nest1-body">&lt;&lt;boast-nest1-body&gt;&gt;</a>.  
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">require_relative './subroutine.rb'
+require_relative './KSplitOss.rb'
+
+class Nest1 &lt; Subroutine
+  def initialize(options,functions = nil)
+    super("nest1",options,functions)
+    # ins
+    @ndime = Arguments.copy($ndime,:in) 
+    @mnode = Arguments.copy($mnode,:in)
+    @pnode = Arguments.copy($pnode,:in)
+    @pgaus = Arguments.copy($pgaus,:in)
+    @gpden = Arguments.copy($gpden,:in)
+    @gpcar = Arguments.copy($gpcar,:in)
+    @gpadv = Arguments.copy($gpadv,:in)
+
+    # inouts
+    @wgrgr = Arguments.copy($wgrgr,:inout)
+    @agrau = Arguments.copy($agrau,:inout)
+
+    @args.push @ndime,@mnode,@pnode,@pgaus,@gpden,@gpcar,@gpadv,@wgrgr,@agrau
+  end
+
+  def generate
+    # locals
+    inode = $inode
+    jnode = $jnode
+    igaus = $igaus
+
+    block = lambda{
+      decl inode,jnode,igaus unless @usage == :included
+
+      &lt;&lt;boast-nest1-body&gt;&gt;
+    }
+
+    construct(block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-3" name="sec-3-3-3-3"></a>Second loop<br  /><ol class="org-ol"><li><a id="sec-3-3-3-3-1" name="sec-3-3-3-3-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-3-1">
+<p>
+Same principle as before, the code is unrolled according to
+<code>ndime</code> or not unrolled at all, then the different version of the
+nest loop are stacked into array, and wrap into an if
+statement. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest2-body">for1 = []
+@dimensions.each{|dim|
+  for1.push For(igaus,1,@pgaus){ 
+    pr fact[1] === @gpsp2[igaus] * @gpvol[igaus]
+    pr fact[7] === @gpvis[igaus] * @gpvol[igaus]
+    pr fact[8] === @gpsp1_v[igaus] * @gpvol[igaus]
+    pr fact[9] ===  @gpden[igaus] * @functions[:pabdf_nsi].call(1) * @dtinv_loc[1] + @gppor[igaus]
+
+    pr For(inode,1,@pnode){
+      pr For(idime,1,dim){
+        pr idof[1] === (inode-1)*@ndime+idime
+        pr fact[2] === fact[1] * @gpcar[idime,inode,igaus]      
+        pr For(jnode,1,@pnode){
+          pr For(jdime,1,dim){
+            pr jdof[jdime]              === (jnode-1)*@ndime+jdime
+            pr @elauu[idof[1],jdof[jdime]] === @elauu[idof[1],jdof[jdime]] + fact[2] * @gpcar[jdime,jnode,igaus]                   
+          }.unroll(@unroll)
+
+          pr jdof[1]              === (jnode-1)*@ndime+idime
+          pr fact[5]              === @gpsha[inode,igaus] * @gpvol[igaus]
+          pr fact[6]              === fact[5] * ( @agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] *   @agrau[jnode,igaus] * @agrau[inode,igaus]
+          pr @elauu[idof[1],jdof[1]] === @elauu[idof[1],jdof[1]] + fact[6]
+
+        }
+      }
+    }
+  }
+}
+
+main_block = lambda{
+  decl fact,igaus,inode,jnode,idof,jdof,idime,jdime unless @usage == :included
+  if @unroll then
+    pr If(@ndime == 2 =&gt; lambda{
+            pr for1[0]
+          }, else: lambda{
+            pr for1[1]
+          })
+  else
+    pr for1[0]
+  end
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-3-2" name="sec-3-3-3-3-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-3-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest2 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest2",options,functions)
+
+    # ins
+    @ndime = Arguments.copy($ndime,:in)
+    @mnode = Arguments.copy($mnode,:in)
+    @pnode = Arguments.copy($pnode,:in)
+    @pgaus = Arguments.copy($pgaus,:in)
+    @gpden = Arguments.copy($gpden,:in)
+    @gpcar = Arguments.copy($gpcar,:in)
+    @gpsp2 = Arguments.copy($gpsp2,:in)
+    @gpvol = Arguments.copy($gpvol,:in)
+    @gpvis = Arguments.copy($gpvis,:in)
+    @dtinv_loc = Arguments.copy($dtinv_loc,:in)
+    @gppor = Arguments.copy($gppor,:in)
+    @gpsha = Arguments.copy($gpsha,:in)
+    @gpsp1_v = Arguments.copy($gpsp1_v,:in)
+    @wgrgr = Arguments.copy($wgrgr,:in)
+    @agrau = Arguments.copy($agrau,:in)
+
+    #inouts
+    @elauu = Arguments.copy($elauu,:inout)
+
+    @args.push @ndime,@mnode,@pnode,@pgaus,@gpden,@gpcar,@gpsp2,@gpvol,@gpvis,@dtinv_loc,
+                @gppor,@gpsha,@gpsp1_v,@wgrgr,@agrau,@elauu
+  end
+  def generate
+    # locals
+    fact = Arguments.copy($fact)
+    igaus = Arguments.copy($igaus)
+    inode = Arguments.copy($inode)
+    jnode = Arguments.copy($jnode)
+    idof = Arguments.copy($idof)
+    jdof = Arguments.copy($jdof)
+    idime = Arguments.copy($idime)
+    jdime = Arguments.copy($jdime)
+
+    &lt;&lt;boast-nest2-body&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-4" name="sec-3-3-3-4"></a>Third nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-4-1" name="sec-3-3-3-4-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-4-1">
+<p>
+In this nest every expressions and group of expression have been
+stored into variables, same for the loops as we envision the
+possibility to reorder the loops as we think it could be
+beneficial. This way loops and expressions can be reused and
+eases the reordering. However this feature is not implemented
+yet and the order follows the reference implementation one. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest3-body-expressions">for_inode = For(inode,1,@pnode)
+for_jnode = For(jnode,1,@pnode)
+for_idime = For(idime,1,@ndime)
+for_jdime = lambda{ |dim| return For(jdime,1,dim) }
+
+exp_fact1 = fact[2] === @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,jnode,igaus]
+exp_idofv = idofv === (inode-1)*@ndime + idime
+
+block_elauu_1 = lambda{
+  pr jdofv === (jnode-1)*@ndime + jdime
+  pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,inode,igaus]
+}
+
+exp_fact1_2 = fact[2] === -2.0.to_var / 3.0.to_var * @gpvis[igaus] * @gpvol[igaus] * @gpcar[idime,inode,igaus]
+
+block_elauu_2 = lambda{
+  pr jdofv === (jnode-1)*@ndime + jdime
+  pr @elauu[idofv,jdofv] === @elauu[idofv,jdofv] + fact[2] * @gpcar[jdime,jnode,igaus]
+}
+</pre>
+</div>
+
+<p>
+Same principle is in <a href="#boast-nest1-body">&lt;&lt;boast-nest1-body&gt;&gt;</a> the code can be
+unrolled for values <code>ndime</code> 2 and 3 or not. We previously defined
+empty loops, their content can be simply filled by opening it with <code>opn</code>,
+print expression as usual end closing it with <code>close</code>.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest3-body-loops">main_block = lambda{ 
+  decl igaus,idime,jdime,inode,jnode,fact,idofv,jdofv unless @usage == :included
+
+  pr If(@fvins_nsi &gt; 0.9){
+    for1 = []
+    @dimensions.each{|dim|
+      for1.push For(igaus,1,@pgaus){ 
+
+        opn for_inode
+          opn for_idime
+            pr exp_idofv
+            opn for_jnode
+              pr exp_fact1
+                pr for_jdime.call(dim).unroll(@unroll), &amp;block_elauu_1
+            close for_jnode
+            pr If(@fvins_nsi == 2.0){
+              pr exp_fact1_2
+              opn for_jnode
+                pr for_jdime.call(dim).unroll(@unroll), &amp;block_elauu_2
+              close for_jnode
+            }
+          close for_idime
+        close for_inode
+      }
+    }
+
+    if @unroll then
+      pr If(@ndime == 2 =&gt; lambda{
+              pr for1[0]
+            }, else: lambda{
+              pr for1[1]
+            })  
+    else
+      pr for1[0]
+    end
+  }
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-4-2" name="sec-3-3-3-4-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-4-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">  class Nest3 &lt; Subroutine
+    def initialize(options, functions = nil)
+      super("nest3",options,functions)
+
+      # ins
+      @pgaus = Arguments.copy($pgaus,:in)
+      @pnode = Arguments.copy($pnode,:in)
+      @mnode = Arguments.copy($mnode,:in)
+      @ndime = Arguments.copy($ndime,:in)
+      @gpvis = Arguments.copy($gpvis,:in)
+      @gpvol = Arguments.copy($gpvol,:in)
+      @gpcar = Arguments.copy($gpcar,:in)
+      @fvins_nsi = Arguments.copy($fvins_nsi,:in)
+
+      # inouts
+      @elauu = Arguments.copy($elauu,:inout)
+
+      @args.push @pgaus,@pnode,@mnode,@ndime,@gpvis,@gpvol,@gpcar,@fvins_nsi,@elauu
+    end
+  def generate
+    # locals
+    igaus = $igaus
+    idime = $idime
+    jdime = $jdime
+    inode = $inode
+    jnode = $jnode
+    fact = $fact
+    idofv = $idofv
+    jdofv = $jdofv
+
+    &lt;&lt;boast-nest3-body-expressions&gt;&gt;
+
+    &lt;&lt;boast-nest3-body-loops&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-5" name="sec-3-3-3-5"></a>Fourth nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-5-1" name="sec-3-3-3-5-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-5-1">
+<p>
+Some expressions have been stored into variables as they are used
+several time in this nest.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest4-body-expressions">exp_fact0 = fact[1] === @gpvol[igaus] * @gpden[igaus] * @dtinv_mod[1]            
+exp_fact1 = fact[2] === fact[1] * @gpsha[inode,igaus]
+exp_elrbu = @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @elvel[idime,inode,2]
+</pre>
+</div>
+
+<p>
+Here we build the loops that compute <code>elauu</code> and <code>elrbu</code>. The 2
+first (<code>for_elauu1</code> and <code>for_elrbu2</code>) can be unrolled for <code>ndime</code>
+equals 2 and 3 or not unrolled at all. The 2 other (<code>for_elauu2</code>
+and <code>for_elrbu1</code>) can only be unrolled for <code>ndime</code> equals 3 or not. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest4-body-build-loops">for_elauu1 = []           
+for_elrbu2 = []
+@dimensions.each{|dim|
+  for_elauu1.push For(idime,1,dim){
+    pr idof[idime] === (inode-1)*dim+idime
+    pr @elauu[idof[idime],idof[idime]] === @elauu[idof[idime],idof[idime]] + fact[2]
+  }
+  for_elrbu2.push For(idime,1,dim){
+    pr exp_elrbu
+  }
+}
+
+for_elauu2 = For(jdime,1,3){
+  pr jdof[jdime] === (jnode-1)*@ndime+jdime
+  pr @elauu[idof[jdime],jdof[jdime]] === @elauu[idof[jdime],jdof[jdime]] - fact[2] * @gpsha[jnode,igaus]
+}
+
+for_elrbu1 = For(idime,1,3){
+  pr @elrbu[idime,inode] ===  @elrbu[idime,inode] - fact[2] * @gpveo[idime]
+  pr exp_elrbu
+}
+</pre>
+</div>
+
+<p>
+Then we built the different blocks for the different values that
+can take <code>kfl_lumped</code>. Here we create the block for <code>kfl_lumped</code>
+equals 1. This time again, we need to use C code to
+initialize <code>gpveo</code>. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest4-body-kfl-lumped">        block_kfl_lumped_1 = lambda{
+          pr For(igaus,1,@pgaus){
+            if get_lang == FORTRAN then
+              pr @gpveo === 0.0.to_var
+            elsif get_lang == C
+              code =&lt;&lt;EOF
+              memset(gpveo,0,sizeof(#{@gpveo.type.decl}) * #{@gpveo.dimension[0]});
+EOF
+              get_output.print code
+            end
+            pr For(inode,1,@pnode){
+              pr For(idime,1,3){
+                pr @gpveo[idime] === @gpveo[idime] + @elvel[idime,inode,2] * @gpsha[inode,igaus] 
+              }.unroll(@unroll)
+
+            }
+            pr exp_fact0
+            pr For(inode,1,@pnode){
+              pr exp_fact1
+              if @unroll then
+                pr for_elauu1[1].unroll
+                pr for_elrbu1.unroll
+              else
+                pr for_elauu1[0]
+                pr for_elrbu1
+              end
+              pr For(jnode,1,@pnode){
+                pr for_elauu2.unroll(@unroll)
+              }
+            }
+          }
+        }
+</pre>
+</div>
+
+<p>
+<a id="boast-nest4-body-unroll-kfl-lumped" name="boast-nest4-body-unroll-kfl-lumped"></a>
+The following block is for <code>kfl_lumped equals</code> 2. However the
+loops have been built earlier we actually unroll them here. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest4-body-unroll-kfl-lumped">block_kfl_lumped_2 = []
+@dimensions.length.times{|i|
+  block_kfl_lumped_2[i] = lambda{
+    pr For(igaus,1,@pgaus){
+      pr exp_fact0
+      pr For(inode,1,@pnode){
+        pr exp_fact1
+        pr for_elauu1[i].unroll(@unroll)
+        pr for_elrbu2[i].unroll(@unroll)
+      }
+    }
+  }
+}
+</pre>
+</div>
+
+<p>
+Finally, we position the different blocks in <code>if</code> statements.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest4-body-ifs">if_kfl_lumped_1 = lambda{ pr If(@ndime == 2 =&gt; lambda{}, :else =&gt; block_kfl_lumped_1) }      
+if @unroll then
+  if_kfl_lumped_2 = lambda{ pr If(@ndime == 2 =&gt; block_kfl_lumped_2[0] , :else =&gt; block_kfl_lumped_2[1])}
+else
+  if_kfl_lumped_2 = block_kfl_lumped_2[0]
+end
+
+main_block = lambda{ 
+  decl idime,jdime,igaus,inode,jnode,fact,idof,jdof unless @usage == :included
+  pr If(@kfl_lumped == 1 =&gt; if_kfl_lumped_1, @kfl_lumped == 2 =&gt; if_kfl_lumped_2) 
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-5-2" name="sec-3-3-3-5-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-5-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest4 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest4",options,functions)
+
+    # ins
+    @ndime = Arguments.copy($ndime,:in)
+    @pgaus = Arguments.copy($pgaus,:in)
+    @pnode = Arguments.copy($pnode,:in)
+    @gpvol = Arguments.copy($gpvol,:in)
+    @gpden = Arguments.copy($gpden,:in)
+    @dtinv_mod = Arguments.copy($dtinv_mod,:in)
+    @gpsha = Arguments.copy($gpsha,:in)
+    @elvel = Arguments.copy($elvel,:in)
+    @kfl_lumped = Arguments.copy($kfl_lumped,:in)
+
+    # inouts
+    @gpveo = Arguments.copy($gpveo,:inout)
+    @elrbu = Arguments.copy($elrbu,:inout)
+    @elauu = Arguments.copy($elauu,:inout)
+
+    @args.push @ndime,@pgaus,@pnode,@gpvol,@gpden,@dtinv_mod,@gpsha,@elvel,@kfl_lumped,@gpveo,@elrbu,@elauu
+  end
+  def generate
+    # locals 
+    idime = $idime
+    jdime = $jdime
+    igaus = $igaus
+    inode = $inode 
+    jnode = $jnode
+    fact = $fact
+    idof = $idof
+    jdof = $jdof
+
+    &lt;&lt;boast-nest4-body-expressions&gt;&gt;
+    &lt;&lt;boast-nest4-body-build-loops&gt;&gt;
+&lt;&lt;boast-nest4-body-kfl-lumped&gt;&gt;
+    &lt;&lt;boast-nest4-body-unroll-kfl-lumped&gt;&gt;
+    &lt;&lt;boast-nest4-body-ifs&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-6" name="sec-3-3-3-6"></a>Fifth nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-6-1" name="sec-3-3-3-6-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-6-1">
+<p>
+Same principle as in <a href="#boast-nest4-body-unroll-kfl-lumped">&lt;&lt;boast-nest4-body-unroll-kfl-lumped&gt;&gt;</a>, we unroll
+according to the values that can take <code>ndime</code> or not. And we place the
+block in <code>if</code> statement.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest5-body">for1 = []
+@dimensions.each{|dim|
+  for1.push For(igaus,1,@pgaus){
+    pr For(inode,1,@pnode){
+      pr For(idime,1,dim){
+        pr idof[idime] === (inode-1)*dim + idime
+      }.unroll(@unroll)
+
+      pr For(jnode,1,@pnode){
+        pr fact[1] === @gpvol[igaus] * @gpsha[jnode,igaus]
+        pr For(jdime,1,dim){
+          pr fact[jdime+1] === fact[1] * @gpcar[jdime,inode,igaus]
+          pr @elapu[jnode,idof[jdime]] === @elapu[jnode,idof[jdime]] + fact[jdime+1]
+        }.unroll(@unroll)
+
+        pr For(jdime,1,dim){
+          pr @elaup[idof[jdime],jnode] === @elaup[idof[jdime],jnode] - fact[jdime+1]
+        }.unroll(@unroll)
+      }
+    }
+  }
+}
+
+main_block = lambda{
+  decl igaus,inode,jnode,idime,jdime,idof,fact unless @usage == :included
+  if @unroll then
+    pr If(@ndime == 2 =&gt; lambda{
+            pr for1[0]
+          }, else: lambda{
+            pr for1[1]
+          })  
+  else
+    pr for1[0]
+  end
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-6-2" name="sec-3-3-3-6-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-6-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest5 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest5",options,functions)
+
+    # ins
+    @ndime = Arguments.copy($ndime,:in)
+    @mnode = Arguments.copy($mnode,:in)
+    @pgaus = Arguments.copy($pgaus,:in)
+    @pnode = Arguments.copy($pnode,:in)
+    @gpvol = Arguments.copy($gpvol,:in)
+    @gpsha = Arguments.copy($gpsha,:in)
+    @gpcar = Arguments.copy($gpcar,:in)
+
+    # inouts
+    @elapu = Arguments.copy($elapu,:inout)
+    @elaup = Arguments.copy($elaup,:inout)
+
+    @args.push @ndime,@mnode,@pgaus,@pnode,@gpvol,@gpsha,@gpcar,@elapu,@elaup
+  end
+
+  def generate
+    # locals  
+    igaus = $igaus
+    inode = $inode
+    jnode = $jnode
+    idime = $idime
+    jdime = $jdime
+    idof = $idof
+    fact = $fact
+
+    &lt;&lt;boast-nest5-body&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-7" name="sec-3-3-3-7"></a>Sixth nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-7-1" name="sec-3-3-3-7-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-7-1">
+<p>
+Same principle as in <a href="#boast-nest1-body">&lt;&lt;boast-nest1-body&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest6-body">main_block = lambda{
+  decl igaus,inode,jnode,fact unless @usage == :included
+  pr If(@kfl_stabi_nsi != -1){
+    pr For(igaus,1,@pgaus){
+      pr For(inode,1,@pnode){
+        pr For(jnode,inode+1,@pnode){
+          pr fact[2]             === @gpsp1_p[igaus] * @wgrgr[jnode,inode,igaus] * @gpvol[igaus]
+          pr @elapp[jnode,inode] === @elapp[jnode,inode] + fact[2]
+          pr @elapp[inode,jnode] === @elapp[inode,jnode] + fact[2]
+        }
+        pr fact[2]             === @gpsp1_p[igaus] * @wgrgr[inode,inode,igaus] * @gpvol[igaus]
+        pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2]
+      }
+    }
+  }
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-7-2" name="sec-3-3-3-7-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-7-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest6 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest6",options,functions)
+
+    # ins
+    @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+    @pgaus = Arguments.copy($pgaus)
+    @pnode = Arguments.copy($pnode)
+    @gpsp1_p = Arguments.copy($gpsp1_p)
+    @wgrgr = Arguments.copy($wgrgr)
+    @gpvol = Arguments.copy($gpvol)
+
+    # inouts
+    @elapp = Arguments.copy($elapp)
+
+    @args.push @kfl_stabi_nsi,@pgaus,@pnode,@gpsp1_p,@wgrgr,@gpvol,@elapp
+  end
+  def generate
+    # locals
+    igaus = $igaus
+    inode = $inode
+    jnode = $jnode
+    fact = $fact
+
+    &lt;&lt;boast-nest6-body&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-8" name="sec-3-3-3-8"></a>Seventh nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-8-1" name="sec-3-3-3-8-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-8-1">
+<p>
+Same principle as in <a href="#boast-nest1-body">&lt;&lt;boast-nest1-body&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest7-body">main_block = lambda {
+  decl fact,igaus,inode unless @usage == :included
+  pr For(igaus,1,@pgaus){
+    pr fact[2] === @penal_nsi * @gpvol[igaus]
+    pr For(inode,1,@pnode){
+      pr @elapp[inode,inode] === @elapp[inode,inode] + fact[2] * @gpsha[inode,igaus]
+      pr @elrbp[inode]       === @elrbp[inode]       + fact[2] * @gpsha[inode,igaus] * @elpre[inode,1]
+    }
+  }
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-8-2" name="sec-3-3-3-8-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-8-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest7 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest7",options,functions)
+
+    # ins
+    @pnode = Arguments.copy($pnode)
+    @pgaus = Arguments.copy($pgaus)
+    @penal_nsi = Arguments.copy($penal_nsi)
+    @gpvol = Arguments.copy($gpvol)
+    @gpsha = Arguments.copy($gpsha)
+    @elpre = Arguments.copy($elpre)
+
+    # inouts
+    @elapp = Arguments.copy($elapp)
+    @elrbp = Arguments.copy($elrbp)
+
+    @args.push @pnode,@pgaus,@penal_nsi,@gpvol,@gpsha,@elpre,@elapp,@elrbp
+  end  
+  def generate
+    # locals
+    fact = $fact
+    igaus = $igaus
+    inode = $inode
+
+    &lt;&lt;boast-nest7-body&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-9" name="sec-3-3-3-9"></a>Eighth nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-9-1" name="sec-3-3-3-9-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-9-1">
+<p>
+First, this nest uses the function <code>epsilon</code> for which a C macro
+equivalent exists. For the FORTRAN version we can call directly
+this function with BOAST by telling it this is an external
+function with <code>register_funccall</code>. 
+Second, the FORTRAN functions <code>tanh</code> and <code>min</code> can work with either
+vector or scalar variables. Intrinsics exist for these
+functions and BOAST provides support for them (<code>Tanh</code> and <code>Min</code>) by
+calling the corresponding instruction whether working on scalar
+or vector variables. However these Intrinsics only work with ICC
+and we wrote scalar equivalent, they can be found later in this
+tutorial. For more convenience the call to either our scalar
+versions or the BOAST versions have been encapsulated into the
+lambdas <code>tanh</code> and <code>min</code>.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-functions">register_funccall("epsilon") if get_lang == FORTRAN
+
+tanh = lambda{|x|
+  if get_lang == FORTRAN or @vector_length &lt; 2 then
+    return Tanh(x)
+  else
+    return @functions[:tanh].call(x)
+  end
+}
+
+min = lambda{|x,y|
+  if get_lang == FORTRAN then 
+    return Min( x, y )
+  else
+    if @vector_length &gt; 1 then
+      return @functions[:min].call(x,y)
+    else
+      return Ternary(x &lt; y, x, y)
+    end
+  end
+}
+</pre>
+</div>
+
+<p>
+As in <a href="#boast-initialization">&lt;&lt;boast-initialization&gt;&gt;</a> we used directly C code to initialize
+the arrays: 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-init">              for_igaus = For(igaus,1,@pgaus){
+                if get_lang == FORTRAN then
+                  pr c1[1] === 0.0.to_var 
+                  pr c2[1] === 0.0.to_var 
+                  pr c3[1] === 0.0.to_var 
+                elsif get_lang == C
+                  code =&lt;&lt;EOF
+                  memset(c1,0,sizeof(c1));
+                  memset(c2,0,sizeof(c2));
+                  memset(c3,0,sizeof(c3));
+EOF
+                  get_output.print code
+                end
+                pr For(idime,1,@ndime){
+                  if get_lang == FORTRAN then
+                    pr c4[1] === 0.0.to_var
+                  elsif get_lang == C
+                    code =&lt;&lt;EOF
+                    memset(c4,0,sizeof(c4));
+EOF
+                    get_output.print code
+                  end
+</pre>
+</div>
+
+<p>
+Like for <code>tanh</code> and <code>min</code> the Intrinsic for the exponential is only
+available for the ICC so here we just replaced it with a
+multiplication:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-pow">  pr For(inode,1,@pnode){
+    pr c4[1] === c4[1] + @agrau[inode,igaus] * @elvel[idime,inode,1]
+  }
+  pr c4[1] === @gpsp1[igaus] * c4[1]
+  # Exponential intrinsics only works with ICC
+  # pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] )**2
+  pr c1[1] === c1[1] + ( @gpvep[idime,igaus] - c4[1] ) * ( @gpvep[idime,igaus] - c4[1] )
+  pr c3[1] === c3[1] + @gpvep[idime,igaus] * @gpvep[idime,igaus]
+  pr c2[1] === c2[1] + c4[1] * c4[1]
+}
+</pre>
+</div>
+
+<p>
+For square root no need to use scalar function when working on
+vectors, unlike with <code>tanh</code> and <code>min</code> the corresponding intrinsics
+are not ICC exclusive: 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-sqrt">pr c3[1]   === Sqrt( c2[1] ) + Sqrt( c3[1] )  
+pr c1[1]   === Sqrt( c1[1] )
+</pre>
+</div>
+
+<p>
+For the C version, we just need to use the C macro that gives
+the epsilon: 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-epsilon">                if get_lang == FORTRAN then
+                  pr beta[1] === c1[1] / ( c3[1] + epsilon(1.0.to_var) )
+                elsif get_lang == C
+                  code =&lt;&lt;EOF
+                  beta[0] = c1[0] / ( c3[0] + DBL_EPSILON );
+EOF
+                  get_output.print code
+                end
+</pre>
+</div>
+
+<p>
+For the call to <code>min</code> we need to use <code>Set</code>, for the 1.0 value, to
+convert it as a vector if working on vectors. For tanh there is
+no need because done implicitly by <code>Tanh</code>:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-c-calls">pr If(@kfl_limit_nsi == 1 =&gt; lambda{
+        pr alpha[1] === min.call( Set(1.0.to_var, alpha), 2.0.to_var * ( 1.0.to_var  - beta[1] ) )
+      }, @kfl_limit_nsi == 2 =&gt; lambda{
+        pr alpha[1] === 0.5.to_var * ( tanh.call( 20.0.to_var * ( beta[1] - 0.8.to_var ) ) + 1.0.to_var )
+      })
+</pre>
+</div>
+
+<p>
+The following is as previously, we close the for loop opened at
+the beginning and we build the subroutine: 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest8-body-end">                pr For(idime,1,@ndime){
+                  pr @gpvep[idime,igaus] === alpha[1] * @gpvep[idime,igaus]
+                }
+              }
+
+              if get_lang == C then
+                code =&lt;&lt;EOF
+                memset(gpvep,0,sizeof(#{@gpvep.type.decl}) * ndime * pgaus);
+EOF
+              end
+
+              main_block = lambda{
+                decl igaus,idime,inode,c1,c2,c3,c4,beta,alpha unless @usage == :included
+
+                pr If( @kfl_stabi_nsi == -1 =&gt; lambda{
+                         if get_lang == FORTRAN then
+                           pr @gpvep === 0.0
+                         elsif get_lang == C
+                           get_output.print code
+                         end           
+                       }, @kfl_limit_nsi == -1 =&gt; lambda{
+                         if get_lang == FORTRAN then
+                           pr @gpvep === 0.0
+                         elsif get_lang == C
+                           get_output.print code
+                         end           
+                       }, @kfl_limit_nsi &gt; 0 =&gt; lambda{ pr for_igaus } )
+              }
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-9-2" name="sec-3-3-3-9-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-9-2">
+<p>
+Same principle as in <a href="#boast-nest1-class">&lt;&lt;boast-nest1-class&gt;&gt;</a>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest8 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest8",options,functions)
+
+    # ins
+    @pgaus = Arguments.copy($pgaus)
+    @ndime = Arguments.copy($ndime)
+    @pnode = Arguments.copy($pnode)
+    @elvel = Arguments.copy($elvel)
+    @agrau = Arguments.copy($agrau)
+    @gpsp1 = Arguments.copy($gpsp1)
+    @kfl_limit_nsi = Arguments.copy($kfl_limit_nsi)
+    @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+
+    # inouts
+    @gpvep = Arguments.copy($gpvep)
+
+    @args.push @pgaus,@ndime,@pnode,@elvel,@agrau,@gpsp1,@kfl_limit_nsi,@kfl_stabi_nsi,@gpvep
+  end
+  def generate
+    # local
+    igaus = $igaus
+    idime = $idime
+    inode = $inode
+    c1 = $c1
+    c2 = $c2
+    c3 = $c3
+    c4 = $c4
+    beta = $beta
+    alpha = $alpha
+
+    &lt;&lt;boast-nest8-body-functions&gt;&gt;
+&lt;&lt;boast-nest8-body-init&gt;&gt;
+    &lt;&lt;boast-nest8-body-pow&gt;&gt;
+    &lt;&lt;boast-nest8-body-sqrt&gt;&gt;
+&lt;&lt;boast-nest8-body-epsilon&gt;&gt;
+    &lt;&lt;boast-nest8-body-c-calls&gt;&gt;
+&lt;&lt;boast-nest8-body-end&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-10" name="sec-3-3-3-10"></a>Nineth nest<br  /><ol class="org-ol"><li><a id="sec-3-3-3-10-1" name="sec-3-3-3-10-1"></a>Body<br  /><div class="outline-text-6" id="text-3-3-3-10-1">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-nest9-body">              for_igaus = []
+              for_igaus[0] = []
+              for_igaus[1] = []
+
+              @dimensions.each{|dim|
+
+                for_igaus[0].push For(igaus,1,@pgaus){
+                  pr For(idime,1,dim){
+                    pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + @gpsp1_p[igaus] * @gprhs[idime,igaus]
+                  }.unroll(@unroll)
+                }
+
+                for_igaus[1].push For(igaus,1,@pgaus){
+                  pr fact[2]     === @gpden[igaus] * @dtsgs[1] * @gpsp1_v[igaus]
+                  pr fact1_p[1]  === @gpden[igaus] * @dtsgs[1] * @gpsp1_p[igaus]
+                  pr For(idime,1,dim){
+                    pr @gpvep[idime,igaus] === @gpvep[idime,igaus] + fact[2]    * @gpsgs[idime,igaus,2]
+                    pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + fact1_p[1] * @gpsgs[idime,igaus,2]
+                  }.unroll(@unroll)
+                }
+              }
+
+              if_ndime = []
+              2.times{|i|
+                if @unroll then
+                  if_ndime[i] = If(@ndime == 2 =&gt; lambda{
+                                     pr for_igaus[i][0]
+                                   }, :else =&gt; lambda{
+                                     pr for_igaus[i][1]
+                                   })
+                else
+                  if_ndime[i] = for_igaus[i][0]
+                end
+              }
+
+              block = lambda{
+                pr if_ndime[0]
+                pr If(@kfl_sgsti_nsi == 1){
+                  pr if_ndime[1]
+                }
+              }
+
+              main_block = lambda{
+                decl igaus,idime,fact,fact1_p unless @usage == :included
+                pr If(@kfl_stabi_nsi == -1 =&gt; lambda{ 
+                        if get_lang == FORTRAN then
+                          pr @gpgrp === 0.0 
+                        elsif get_lang == C
+                          code =&lt;&lt;EOF
+                          memset(gpgrp,0,sizeof(#{@gpgrp.type.decl}) * ndime * pgaus);
+EOF
+                        end
+                        get_output.print code
+                      }, :else =&gt; block)
+              }
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-10-2" name="sec-3-3-3-10-2"></a>Class&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span><br  /><div class="outline-text-6" id="text-3-3-3-10-2">
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest9 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest9",options,functions)
+
+    # ins
+    @ndime = Arguments.copy($ndime)
+    @pgaus = Arguments.copy($pgaus)
+    @gpsp1_p = Arguments.copy($gpsp1_p)
+    @gprhs = Arguments.copy($gprhs)
+    @gpden = Arguments.copy($gpden)
+    @dtsgs = Arguments.copy($dtsgs)
+    @gpsp1_v = Arguments.copy($gpsp1_v)
+    @gpsgs = Arguments.copy($gpsgs)
+    @kfl_sgsti_nsi = Arguments.copy($kfl_sgsti_nsi)
+    @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+
+    # inouts
+    @gpgrp = Arguments.copy($gpgrp)
+    @gpvep = Arguments.copy($gpvep)
+
+    @args.push @ndime,@pgaus,@gpsp1_p,@gprhs,@gpden,@dtsgs,@gpsp1_v,@gpsgs,@kfl_sgsti_nsi,@kfl_stabi_nsi,@gpgrp,@gpvep
+  end
+  def generate
+    # local
+    igaus = $igaus
+    idime = $idime
+    fact = $fact
+    fact1_p = $fact1_p
+
+&lt;&lt;boast-nest9-body&gt;&gt;
+
+    construct(main_block)
+  end
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</li>
+<li><a id="sec-3-3-3-11" name="sec-3-3-3-11"></a>Tenth nest<br  /><div class="outline-text-5" id="text-3-3-3-11">
+<div class="org-src-container">
+
+<pre class="src src-ruby">class Nest10 &lt; Subroutine
+  def initialize(options, functions = nil)
+    super("nest10",options,functions)
+
+    # ins
+    @mnode = Arguments.copy($mnode)
+    @ndime = Arguments.copy($ndime)
+    @pgaus = Arguments.copy($pgaus)
+    @gpden = Arguments.copy($gpden)
+    @dtinv_mod = Arguments.copy($dtinv_mod)
+    @nbdfp_nsi = Arguments.copy($nbdfp_nsi)
+    @gpvel = Arguments.copy($gpvel)
+    @pnode = Arguments.copy($pnode)
+    @gpvol = Arguments.copy($gpvol)
+    @gpsha = Arguments.copy($gpsha)
+    @agrau = Arguments.copy($agrau)
+    @gprhc = Arguments.copy($gprhc)
+    @gpcar = Arguments.copy($gpcar)
+    @gpvep = Arguments.copy($gpvep)
+    @gpgrp = Arguments.copy($gpgrp)
+
+    # inouts
+    @gprhs = Arguments.copy($gprhs)
+    @elrbu = Arguments.copy($elrbu)
+    @elrbp = Arguments.copy($elrbp)
+
+    @args.push @mnode,@ndime,@pgaus,@gpden,@dtinv_mod,@nbdfp_nsi,@gpvel,@pnode,@gpvol,@gpsha,@agrau,@gprhc,@gpcar,@gpvep,@gpgrp,@gprhs,@elrbu,@elrbp
+  end
+
+  def generate
+    # locals
+    igaus = $igaus
+    fact = $fact
+    idime = $idime
+    itime = $itime
+    inode = $inode
+
+    for_igaus = []
+    @dimensions.each{|dim|
+      for_igaus.push For(igaus,1,@pgaus){
+        pr fact[5] === @gpden[igaus] * @dtinv_mod[1]
+        pr For(itime,2,@nbdfp_nsi){
+          pr For(idime,1,dim){
+            pr @gprhs[idime,igaus] === @gprhs[idime,igaus] - @functions[:pabdf_nsi].call(itime) * fact[5] * @gpvel[idime,igaus,itime]
+          }.unroll(@unroll)
+        }
+        pr For(inode,1,@pnode){
+          pr fact[2] === @gpvol[igaus] * @gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
+          pr fact[4] === @gpvol[igaus] * @agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
+          pr For(idime,1,dim){
+            pr @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @gprhs[idime,igaus] + fact[4] * @gpvep[idime,igaus]
+          }.unroll(@unroll)
+          pr @elrbp[inode] === @elrbp[inode] + @gpvol[igaus] * @gpsha[inode,igaus] * @gprhc[igaus]  # ( rhs, q )
+          pr For(idime,1,dim){
+            pr @elrbp[inode] === @elrbp[inode] + @gpvol[igaus] * @gpcar[idime,inode,igaus] * @gpgrp[idime,igaus] # ( P2' , grad(q) ) 
+          }.unroll(@unroll)
+        }
+      }
+    }
+
+    main_block = lambda{
+      decl igaus,fact,idime,itime,inode unless @usage == :included
+      if @unroll then
+        pr If(@ndime == 2 =&gt; lambda{ pr for_igaus[0] }, :else =&gt; lambda{ pr for_igaus[1] })
+      else
+        pr for_igaus[0]
+      end
+    }
+
+    construct(main_block)
+    end
+end
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-3-12" name="sec-3-3-3-12"></a>Eleventh nest<br  /><div class="outline-text-5" id="text-3-3-3-12">
+<div class="org-src-container">
+
+<pre class="src src-ruby">          class Nest11 &lt; Subroutine
+            def initialize(options, functions = nil)
+              super("nest11",options,functions)
+
+              # ins
+              @mnode = Arguments.copy($mnode)
+              @pgaus = Arguments.copy($pgaus)
+              @pnode = Arguments.copy($pnode)
+              @ndime = Arguments.copy($ndime)
+              @gpcar = Arguments.copy($gpcar)
+              @gpvol = Arguments.copy($gpvol)
+              @gpsha = Arguments.copy($gpsha)
+              @gpcar_bub = Arguments.copy($gpcar_bub)
+              @pbubl = Arguments.copy($pbubl)
+              @kfl_stabi_nsi = Arguments.copy($kfl_stabi_nsi)
+              @kfl_press_nsi = Arguments.copy($kfl_press_nsi)
+              @penal_nsi = Arguments.copy($penal_nsi)
+              @elbub = Arguments.copy($elbub)
+              @gprhc = Arguments.copy($gprhc)
+              @gpsha_bub = Arguments.copy($gpsha_bub)
+
+              # inouts
+              @elauq = Arguments.copy($elauq)
+              @elaqu = Arguments.copy($elaqu)
+              @elapq = Arguments.copy($elapq)
+              @elaqp = Arguments.copy($elaqp)
+              @elaqq = Arguments.copy($elaqq)
+              @elrbq = Arguments.copy($elrbq)
+
+              @args.push @mnode,@pgaus,@pnode,@ndime,@gpcar,@gpvol,@gpsha,@gpcar_bub,@pbubl,@kfl_stabi_nsi,@kfl_press_nsi,@penal_nsi,@elbub,@gprhc,@gpsha_bub,@elauq,@elaqu,@elapq,@elaqp,@elaqq,@elrbq
+            end
+
+            def generate
+              # locals
+              fact = $fact
+              igaus  = $igaus
+              idof = $idof
+              idime = $idime
+              inode = $inode
+
+              register_funccall("stop") if get_lang == FORTRAN
+              register_funccall("maxval") if get_lang == FORTRAN
+
+              exp_elauq = []
+              exp_elauq[0] = "@elauq[idof[dim],1] === @elauq[idof[dim],1] - fact[2] * @gpcar[idime,inode,igaus]"
+              exp_elauq[1] = "@elauq[idof[dim],1] === @elauq[idof[dim],1] + @gpvol[igaus] * @gpsha[inode,igaus] * @gpcar_bub[idime,igaus]"
+
+              block_igaus = lambda{|dim,exp|
+                return For(igaus,1,@pgaus){
+                  pr fact[2] === @gpvol[igaus] * @gpsha_bub[igaus]
+                  pr For(inode,1,@pnode){
+                    pr For(idime,1,dim){
+                      pr idof[dim] === (inode-1)*dim + idime
+                      pr eval exp
+                      pr @elaqu[1,idof[dim]] === @elaqu[1,idof[dim]] + fact[2] * @gpcar[idime,inode,igaus]
+                    }.unroll(@unroll)
+                  }
+                }
+              }
+
+              if @unroll then
+                if_kfl_press_nsi_1 = If(@ndime == 2 =&gt; lambda{ pr block_igaus.call(@dimensions[0],exp_elauq[0]) }, :else =&gt; lambda{ pr block_igaus.call(@dimensions[1],exp_elauq[0]) })
+                if_kfl_press_nsi_else = If(@ndime == 2 =&gt; lambda{ pr block_igaus.call(@dimensions[0],exp_elauq[1]) }, :else =&gt; lambda{ pr block_igaus.call(@dimensions[1],exp_elauq[1]) })
+              else
+                if_kfl_press_nsi_1 = block_igaus.call(@dimensions[0],exp_elauq[0])
+                if_kfl_press_nsi_else = block_igaus.call(@dimensions[0],exp_elauq[1])
+              end
+
+              call_maxval = lambda{|x|
+                if get_lang == FORTRAN
+                  return maxval(x)
+                else
+                  return @functions[:maxval].call(x)
+                end
+              }
+
+              main_block = lambda{
+                decl fact,igaus,idof,idime,inode unless @usage == :included
+                pr If(call_maxval.call(@pbubl) == 1){
+                  pr If(@kfl_stabi_nsi != -1){
+                    if get_lang == FORTRAN then
+                      stop
+                    end
+                  }
+
+                  if get_lang == FORTRAN then
+                    pr @elauq === 0.0
+                    pr @elapq === 0.0
+                    pr @elaqu === 0.0
+                    pr @elaqp === 0.0
+                    pr @elaqq === 0.0
+                    pr @elrbq === 0.0
+                  elsif get_lang == C
+                    code =&lt;&lt;EOF
+                    memset(elauq, 0, sizeof(#{@elauq.type.decl}) * pnode * ndime);
+                    memset(elapq, 0, sizeof(#{@elapq.type.decl}) * pnode);
+                    memset(elaqu, 0, sizeof(#{@elaqu.type.decl}) * pnode * ndime);
+                    memset(elaqp, 0, sizeof(#{@elaqp.type.decl}) * pnode);
+                    memset(elaqq, 0, sizeof(#{@elaqq.type.decl}));
+                    memset(elrbq, 0, sizeof(#{@elrbq.type.decl}));
+EOF
+                    get_output.print code
+                  end
+                  pr If(@kfl_press_nsi == 1 =&gt; lambda{ pr if_kfl_press_nsi_1}, :else =&gt; lambda{ pr if_kfl_press_nsi_else })
+
+                  pr For(igaus,1,@pgaus){
+                    pr @elaqq[1,1] === @elaqq[1,1] + @gpvol[igaus] * @gpsha_bub[igaus] * @penal_nsi
+                    pr @elrbq[1]   === @elrbq[1]   + @gpvol[igaus] * @gpsha_bub[igaus] * @penal_nsi * @elbub[1]
+                    pr @elrbq[1]   === @elrbq[1]   + @gpvol[igaus] * @gpsha_bub[igaus] * @gprhc[igaus]
+                  }
+                }
+              }
+
+              construct(main_block)
+            end
+          end
+</pre>
+</div>
+</div>
+</li></ol>
+</div>
+<div id="outline-container-sec-3-3-4" class="outline-4">
+<h4 id="sec-3-3-4"><span class="section-number-4">3.3.4</span> Mocks&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></h4>
+<div class="outline-text-4" id="text-3-3-4">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-mocks">x1 = Int("x", :dir =&gt; :in)
+y1 = Real("y")
+@pabdf_nsi = Procedure("pabdf_nsi",[x1], :return =&gt; y1){
+  pr y1 === 1.0
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-3-5" class="outline-4">
+<h4 id="sec-3-3-5"><span class="section-number-4">3.3.5</span> C equivalents functions&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></h4>
+<div class="outline-text-4" id="text-3-3-5">
+<p>
+Because in C there are no equivalent of the following functions,
+or intrinsics we need to write them.
+<a id="boast-c-functions" name="boast-c-functions"></a>
+</p>
+</div>
+<ol class="org-ol"><li><a id="sec-3-3-5-1" name="sec-3-3-5-1"></a>Maxval<br  /><div class="outline-text-5" id="text-3-3-5-1">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-generate-maxval">unless get_lang == FORTRAN then
+  x2 = Int("x", :dir =&gt; :in, :vector_length =&gt; @opts[:vector_length], :dim =&gt; [Dim(1)])
+  y2 = Int("y")
+  @p_maxval = Procedure("maxval",[x2], :return =&gt; y2){
+    if @opts[:vector_length] &gt; 1 then
+      decl i = Int("i")
+      decl a = Int("a", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+
+      pr a[1] === x2.dereference
+      pr y2 === a[1]
+
+      pr For(i,2,@opts[:vector_length]){
+        pr If(a[i] &gt; y2){
+          pr y2 === a[i]
+        }
+      }
+    else
+      pr y2 === x2[1]
+    end
+  }            
+end
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-5-2" name="sec-3-3-5-2"></a>Tanh<br  /><div class="outline-text-5" id="text-3-3-5-2">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-generate-tanh">unless get_lang == FORTRAN then
+  x3 = Real("x", :dir =&gt; :in, :vector_length =&gt; @opts[:vector_length])
+  y3 = Real("y", :vector_length =&gt; @opts[:vector_length])
+
+  @p_tanh = Procedure("Tanh", [x3], :return =&gt; y3){
+    decl i = Int("i")
+    decl tmp1 = Real("tmp1", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+    decl tmp2 = Real("tmp2", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+
+    pr tmp1[1] === x3
+
+    pr For(i,1,@opts[:vector_length]){
+      pr tmp2[i] === Tanh(tmp1[i])
+    }
+    pr y3 === tmp2[1] 
+  }
+end
+</pre>
+</div>
+</div>
+</li>
+<li><a id="sec-3-3-5-3" name="sec-3-3-5-3"></a>Sqrt<br  /><div class="outline-text-5" id="text-3-3-5-3">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-generate-sqrt">unless get_lang == FORTRAN then
+  x4 = Real("x", :dir =&gt; :in, :vector_length =&gt; @opts[:vector_length])
+  y4 = Real("y", :vector_length =&gt; @opts[:vector_length])
+
+  @p_sqrt = Procedure("Sqrt", [x4], :return =&gt; y4){
+    decl i = Int("i")
+    decl tmp1 = Real("tmp1", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+    decl tmp2 = Real("tmp2", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+
+    pr tmp1[1] === x4
+
+    pr For(i,1,@opts[:vector_length]){
+      pr tmp2[i] === Sqrt(tmp1[i])
+    }
+    pr y4 === tmp2[1] 
+  }
+end
+</pre>
+</div>
+</div>
+</li>
+
+<li><a id="sec-3-3-5-4" name="sec-3-3-5-4"></a>Min<br  /><div class="outline-text-5" id="text-3-3-5-4">
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-generate-min">unless get_lang == FORTRAN then
+  x5 = Real("x", :dir =&gt; :in, :vector_length =&gt; @opts[:vector_length])
+  y5 = Real("y", :dir =&gt; :in, :vector_length =&gt; @opts[:vector_length])
+  z5 = Real("z", :vector_length =&gt; @opts[:vector_length])
+
+  @p_min = Procedure("Min", [x5,y5], :return =&gt; z5){
+    decl i = Int("i")
+    decl tmp1 = Real("tmp1", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+    decl tmp2 = Real("tmp2", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+    decl tmp3 = Real("tmp3", :dim =&gt; [Dim(@opts[:vector_length])], :allocate =&gt; true)
+
+    pr tmp1[1] === x5
+    pr tmp2[1] === y5
+
+    pr For(i,1,@opts[:vector_length]){
+      pr tmp3[i] === Ternary(tmp1[i] &lt; tmp2[i], tmp1[i], tmp2[i])
+    }
+    pr z5 === tmp3[1] 
+  }
+end
+</pre>
+</div>
+</div>
+</li></ol>
+</div>
+<div id="outline-container-sec-3-3-6" class="outline-4">
+<h4 id="sec-3-3-6"><span class="section-number-4">3.3.6</span> Subroutine instanciation&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></h4>
+<div class="outline-text-4" id="text-3-3-6">
+<p>
+The subroutines are created by simply creating instances and
+generating the procedure. When a user defined functions is used by
+a subroutine it need to be referenced by the Procedure like it is
+the case for the nest 2,8,10 and 11:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby" id="boast-subroutines-instanciate">nests = {}
+@opts[:nests].each{|i|
+  case i
+  when 2,10
+    functions = {:pabdf_nsi =&gt; @pabdf_nsi}
+  when 8
+    functions = get_lang == FORTRAN ? nil :{:tanh =&gt; @p_tanh, :min =&gt; @p_min}
+  when 11
+    functions = get_lang == FORTRAN ? nil : {:maxval =&gt; @p_maxval}
+  else
+    functions = nil
+  end
+  eval "nests[:nest#{i}] = Nest#{i}::new(@opts,functions)"
+  eval "nests[:nest#{i}].generate"
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-3-3-7" class="outline-4">
+<h4 id="sec-3-3-7"><span class="section-number-4">3.3.7</span> Frame to generate the kernel&#xa0;&#xa0;&#xa0;<span class="tag"><span class="Technical">Technical</span></span></h4>
+<div class="outline-text-4" id="text-3-3-7">
+<p>
+However the subroutines have been previously generated the code has
+not been printed yet into the kernel, this is done using the
+method <code>call</code> of the subroutines. 
+</p>
+<div class="org-src-container">
+
+<pre class="src src-ruby">class KSplitBoast &lt; KSplitOss
+  def generate
+    if @opts[:unroll] then
+      @dimensions = [2,3]
+    else
+      @dimensions = [@ndime]
+    end
+
+    register_funccall("maxval") if get_lang == FORTRAN
+    register_funccall("epsilon") if get_lang == FORTRAN
+    register_funccall("stop") if get_lang == FORTRAN
+
+    &lt;&lt;boast-mocks&gt;&gt;
+
+    &lt;&lt;boast-generate-maxval&gt;&gt;
+    &lt;&lt;boast-generate-tanh&gt;&gt;
+    &lt;&lt;boast-generate-sqrt&gt;&gt;
+    &lt;&lt;boast-generate-min&gt;&gt;              
+
+    &lt;&lt;boast-subroutines-instanciate&gt;&gt;
+
+    includes = ["immintrin.h"]
+    includes.push("string.h", "math.h", "float.h") if get_lang == C
+    @kernel = CKernel::new( :includes =&gt; includes )
+    functions = [@pabdf_nsi]
+    functions.push @p_maxval unless get_lang == FORTRAN
+    @kernel.procedure = declare_procedure(functions.flatten)
+
+    # Printing subroutines           
+    pr @pabdf_nsi
+    unless get_lang == FORTRAN then
+      pr @p_maxval
+      pr @p_min
+      pr @p_tanh
+    end
+    nests.values.each{|n| pr n.code } unless @opts[:inline] == :included
+
+    # Main procedure body
+    opn @kernel.procedure
+      # Local arrays
+      &lt;&lt;boast-local-vars&gt;&gt;
+
+&lt;&lt;boast-initialization&gt;&gt;
+
+      # Either call subroutine or paste their code
+      nests.values.each{|n| n.call} 
+
+    close @kernel.procedure
+  end        
+end
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Steven QUINITO MASNADA</p>
+<p class="date">Created: 2016-12-06 mar. 16:22</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10)</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
