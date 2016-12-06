@@ -2734,15 +2734,11 @@
                 pr idof[1] === (inode-1)*@ndime+idime
                 pr fact[2] === fact[1] * @gpcar[idime,inode,igaus]      
                 pr For(jnode,1,@pnode){
-                  for2 = For(jdime,1,dim){
+                  pr For(jdime,1,dim){
                     pr jdof[jdime]              === (jnode-1)*@ndime+jdime
                     pr @elauu[idof[1],jdof[jdime]] === @elauu[idof[1],jdof[jdime]] + fact[2] * @gpcar[jdime,jnode,igaus]                   
-                  }
-                  if @unroll then
-                    pr for2.unroll
-                  else
-                    pr for2
-                  end
+                  }.unroll(@unroll)
+
                   pr jdof[1]              === (jnode-1)*@ndime+idime
                   pr fact[5]              === @gpsha[inode,igaus] * @gpvol[igaus]
                   pr fact[6]              === fact[5] * ( @agrau[jnode,igaus] + fact[9] * @gpsha[jnode,igaus] ) + fact[7] * @wgrgr[inode,jnode,igaus] + fact[8] *   @agrau[jnode,igaus] * @agrau[inode,igaus]
@@ -2865,20 +2861,12 @@
                     pr exp_idofv
                     opn for_jnode
                       pr exp_fact1
-                      if@unroll then
-                        pr for_jdime.call(dim).unroll, &block_elauu_1
-                      else
-                        pr for_jdime.call(dim), &block_elauu_1
-                      end
+                        pr for_jdime.call(dim).unroll(@unroll), &block_elauu_1
                     close for_jnode
                     pr If(@fvins_nsi == 2.0){
                       pr exp_fact1_2
                       opn for_jnode
-                        if @unroll then
-                          pr for_jdime.call(dim).unroll, &block_elauu_2
-                        else
-                          pr for_jdime.call(dim), &block_elauu_2
-                        end
+                        pr for_jdime.call(dim).unroll(@unroll), &block_elauu_2
                       close for_jnode
                     }
                   close for_idime
@@ -2996,14 +2984,10 @@ EOF
               get_output.print code
             end
             pr For(inode,1,@pnode){
-              for1 = For(idime,1,3){
+              pr For(idime,1,3){
                 pr @gpveo[idime] === @gpveo[idime] + @elvel[idime,inode,2] * @gpsha[inode,igaus] 
-              }
-              if @unroll then
-                pr for1.unroll
-              else
-                pr for1
-              end
+              }.unroll(@unroll)
+
             }
             pr exp_fact0
             pr For(inode,1,@pnode){
@@ -3016,11 +3000,7 @@ EOF
                 pr for_elrbu1
               end
               pr For(jnode,1,@pnode){
-                if @unroll then
-                  pr for_elauu2.unroll
-                else
-                  pr for_elauu2
-                end
+                pr for_elauu2.unroll(@unroll)
               }
             }
           }
@@ -3039,13 +3019,8 @@ EOF
               pr exp_fact0
               pr For(inode,1,@pnode){
                 pr exp_fact1
-                if @unroll then
-                  pr for_elauu1[i].unroll
-                  pr for_elrbu2[i].unroll
-                else
-                  pr for_elauu1[i]
-                  pr for_elrbu2[i]
-                end
+                pr for_elauu1[i].unroll(@unroll)
+                pr for_elrbu2[i].unroll(@unroll)
               }
             }
           }
@@ -3124,33 +3099,20 @@ EOF
         @dimensions.each{|dim|
           for1[for1.length] = For(igaus,1,@pgaus){
             pr For(inode,1,@pnode){
-              for2 = For(idime,1,dim){
+              pr For(idime,1,dim){
                 pr idof[idime] === (inode-1)*dim + idime
-              }
-              if @unroll then 
-                pr for2.unroll 
-              else
-                pr for2
-              end
+              }.unroll(@unroll)
+
               pr For(jnode,1,@pnode){
                 pr fact[1] === @gpvol[igaus] * @gpsha[jnode,igaus]
-                for2 = For(jdime,1,dim){
+                pr For(jdime,1,dim){
                   pr fact[jdime+1] === fact[1] * @gpcar[jdime,inode,igaus]
                   pr @elapu[jnode,idof[jdime]] === @elapu[jnode,idof[jdime]] + fact[jdime+1]
-                }
-                if @unroll then
-                  pr for2.unroll
-                else
-                  pr for2
-                end
-                for2 = For(jdime,1,dim){
+                }.unroll(@unroll)
+
+                pr For(jdime,1,dim){
                   pr @elaup[idof[jdime],jnode] === @elaup[idof[jdime],jnode] - fact[jdime+1]
-                }
-                if @unroll then
-                  pr for2.unroll
-                else
-                  pr for2
-                end
+                }.unroll(@unroll)
               }
             }
           }
@@ -3523,28 +3485,18 @@ EOF
               @dimensions.each{|dim|
 
                 for_igaus[0][for_igaus[0].length] = For(igaus,1,@pgaus){
-                  for1 = For(idime,1,dim){
+                  pr For(idime,1,dim){
                     pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + @gpsp1_p[igaus] * @gprhs[idime,igaus]
-                  }
-                  if @unroll then
-                    pr for1.unroll
-                  else
-                    pr for1
-                  end
+                  }.unroll(@unroll)
                 }
                 
                 for_igaus[1][for_igaus[1].length] = For(igaus,1,@pgaus){
                   pr fact[2]     === @gpden[igaus] * @dtsgs[1] * @gpsp1_v[igaus]
                   pr fact1_p[1]  === @gpden[igaus] * @dtsgs[1] * @gpsp1_p[igaus]
-                  for1 = For(idime,1,dim){
+                  pr For(idime,1,dim){
                     pr @gpvep[idime,igaus] === @gpvep[idime,igaus] + fact[2]    * @gpsgs[idime,igaus,2]
                     pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + fact1_p[1] * @gpsgs[idime,igaus,2]
-                  }
-                  if @unroll then
-                    pr for1.unroll
-                  else
-                    pr for1
-                  end
+                  }.unroll(@unroll)
                 }
               }
 
@@ -3664,35 +3616,20 @@ EOF
                 for_igaus[for_igaus.length] = For(igaus,1,@pgaus){
                   pr fact[5] === @gpden[igaus] * @dtinv_mod[1]
                   pr For(itime,2,@nbdfp_nsi){
-                    for_idime = For(idime,1,dim){
+                    pr For(idime,1,dim){
                       pr @gprhs[idime,igaus] === @gprhs[idime,igaus] - @functions[:pabdf_nsi].call(itime) * fact[5] * @gpvel[idime,igaus,itime]
-                    }
-                    if @unroll then
-                      pr for_idime.unroll
-                    else
-                      pr for_idime
-                    end
+                    }.unroll(@unroll)
                   }
                   pr For(inode,1,@pnode){
                     pr fact[2] === @gpvol[igaus] * @gpsha[inode,igaus]  # ( f + rho*u^n/dt , v )
                     pr fact[4] === @gpvol[igaus] * @agrau[inode,igaus]  # ( rho * a.grad(v) , P1' ) 
-                    for_idime = For(idime,1,dim){
+                    pr For(idime,1,dim){
                       pr @elrbu[idime,inode] === @elrbu[idime,inode] + fact[2] * @gprhs[idime,igaus] + fact[4] * @gpvep[idime,igaus]
-                    }
-                    if @unroll then
-                      pr for_idime.unroll
-                    else
-                      pr for_idime
-                    end
+                    }.unroll(@unroll)
                     pr @elrbp[inode] === @elrbp[inode] + @gpvol[igaus] * @gpsha[inode,igaus] * @gprhc[igaus]  # ( rhs, q )
-                    for_idime = For(idime,1,dim){
+                    pr For(idime,1,dim){
                       pr @elrbp[inode] === @elrbp[inode] + @gpvol[igaus] * @gpcar[idime,inode,igaus] * @gpgrp[idime,igaus] # ( P2' , grad(q) ) 
-                    }
-                    if @unroll then
-                      pr for_idime.unroll
-                    else
-                      pr for_idime
-                    end
+                    }.unroll(@unroll)
                   }
                 }
               }
@@ -3763,16 +3700,11 @@ EOF
                 return For(igaus,1,@pgaus){
                   pr fact[2] === @gpvol[igaus] * @gpsha_bub[igaus]
                   pr For(inode,1,@pnode){
-                    for_idime = For(idime,1,dim){
+                    pr For(idime,1,dim){
                       pr idof[dim] === (inode-1)*dim + idime
                       pr eval exp
                       pr @elaqu[1,idof[dim]] === @elaqu[1,idof[dim]] + fact[2] * @gpcar[idime,inode,igaus]
-                    }
-                    if @unroll then
-                      pr for_idime.unroll
-                    else
-                      pr for_idime
-                    end
+                    }.unroll(@unroll)
                   }
                 }
               }
