@@ -2854,7 +2854,7 @@
           pr If(@fvins_nsi > 0.9){
             for1 = []
             @dimensions.each{|dim|
-              for1[for1.length] = For(igaus,1,@pgaus){ 
+              for1.push For(igaus,1,@pgaus){ 
 
                 opn for_inode
                   opn for_idime
@@ -2947,11 +2947,11 @@
         for_elauu1 = []           
         for_elrbu2 = []
         @dimensions.each{|dim|
-          for_elauu1[for_elauu1.length] = For(idime,1,dim){
+          for_elauu1.push For(idime,1,dim){
             pr idof[idime] === (inode-1)*dim+idime
             pr @elauu[idof[idime],idof[idime]] === @elauu[idof[idime],idof[idime]] + fact[2]
           }
-          for_elrbu2[for_elrbu2.length] = For(idime,1,dim){
+          for_elrbu2.push For(idime,1,dim){
             pr exp_elrbu
           }
         }
@@ -3097,7 +3097,7 @@ EOF
       #+BEGIN_SRC ruby
         for1 = []
         @dimensions.each{|dim|
-          for1[for1.length] = For(igaus,1,@pgaus){
+          for1.push For(igaus,1,@pgaus){
             pr For(inode,1,@pnode){
               pr For(idime,1,dim){
                 pr idof[idime] === (inode-1)*dim + idime
@@ -3484,13 +3484,13 @@ EOF
               
               @dimensions.each{|dim|
 
-                for_igaus[0][for_igaus[0].length] = For(igaus,1,@pgaus){
+                for_igaus[0].push For(igaus,1,@pgaus){
                   pr For(idime,1,dim){
                     pr @gpgrp[idime,igaus] === @gpgrp[idime,igaus] + @gpsp1_p[igaus] * @gprhs[idime,igaus]
                   }.unroll(@unroll)
                 }
                 
-                for_igaus[1][for_igaus[1].length] = For(igaus,1,@pgaus){
+                for_igaus[1].push For(igaus,1,@pgaus){
                   pr fact[2]     === @gpden[igaus] * @dtsgs[1] * @gpsp1_v[igaus]
                   pr fact1_p[1]  === @gpden[igaus] * @dtsgs[1] * @gpsp1_p[igaus]
                   pr For(idime,1,dim){
@@ -3613,7 +3613,7 @@ EOF
 
               for_igaus = []
               @dimensions.each{|dim|
-                for_igaus[for_igaus.length] = For(igaus,1,@pgaus){
+                for_igaus.push For(igaus,1,@pgaus){
                   pr fact[5] === @gpden[igaus] * @dtinv_mod[1]
                   pr For(itime,2,@nbdfp_nsi){
                     pr For(idime,1,dim){
