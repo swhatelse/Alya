@@ -263,7 +263,7 @@ contains
     else
        taupr(DEF_VECT,1:pgaus) = 1.0_rp / max(gpst1(DEF_VECT,1:pgaus),zeror)
     end if
-
+    ! Nest1
     !----------------------------------------------------------------------
     !
     ! Test functions
@@ -307,6 +307,7 @@ contains
 
        end do
     end do
+    ! Nest2
     !
     ! P1VE2: Off-diagonal test function
     !
@@ -346,6 +347,7 @@ contains
        end if
     end if
 
+    ! Nest3
     !----------------------------------------------------------------------
     !
     ! Auu
@@ -477,7 +479,7 @@ contains
        end do
 
     end if
-
+    ! Nest4
     if( fvins_nsi > 0.9_rp ) then
 
        if( ndime == 2 ) then
@@ -622,6 +624,7 @@ contains
        end if
     end if
 
+    ! Nest5
     if( fcons_nsi > 0.1_rp ) then   
        if( ndime == 2 ) then
           do igaus = 1,pgaus
@@ -665,6 +668,7 @@ contains
        end if
     end if
 
+    ! Nest6
     !----------------------------------------------------------------------
     !
     ! Auu: Off-diagonal terms
@@ -759,6 +763,7 @@ contains
           end if
        end if
     end if
+    ! Nest7
     !
     ! Bemol:
     ! - b * ( v , rho * (a.grad) u ) - b * ( u , rho * (a.grad) v ) - b ( rho*div(a) u , v )
@@ -814,6 +819,7 @@ contains
        end if
 
     end if
+    ! Nest8
     !
     ! Newton-Raphson
     !
@@ -857,6 +863,7 @@ contains
           end do
        end if
     end if
+    ! Nest9
     !
     ! Lumped evolution matrix (only backward euler)
     !
@@ -916,6 +923,7 @@ contains
           end do
        end do
     end if
+    ! Nest10
     !
     ! Dual time step preconditioner
     !
@@ -929,6 +937,7 @@ contains
        end do
     end if
 
+    ! Nest11
     !yor! elauu final matrix assembly
     if( ndime == 2 ) then  
        do jnode = 1,pnode
@@ -954,6 +963,7 @@ contains
           end do
        end do
     end if
+    ! Nest12
     !----------------------------------------------------------------------
     !
     ! Aup
@@ -991,6 +1001,8 @@ contains
           end do
        end do
     end if
+    
+    ! Nest13
     if( kfl_p1ve2_nsi /= 0 ) then
        do igaus = 1,pgaus
           do jnode = 1,pnode
@@ -1008,6 +1020,7 @@ contains
        end do
     end if
 
+    ! Nest14
     !----------------------------------------------------------------------
     !
     ! Apu
@@ -1033,6 +1046,7 @@ contains
        end do
     end if
 
+    ! Nest15
 #ifdef matiaslma
 
     if (ndime==2) then
@@ -1093,6 +1107,7 @@ contains
     end do
 
 #endif
+    ! Nest16
     !yor! optim [originally loop on line 985] reordered inner loops 
     if( kfl_rmom2_nsi /= 0 ) then
        do igaus = 1,pgaus
@@ -1109,6 +1124,7 @@ contains
        end do
     end if
 
+    ! Nest17
     !----------------------------------------------------------------------
     !
     ! App
@@ -1131,6 +1147,7 @@ contains
     !     elauq(1,:,:),elapq(1,:,:),elaqu(1,:,:),elaqp(1,:,:),elaqq(1,:,:),elrbq(1,:))
     !stop
 
+    ! Nest18
     !
     ! Penalization
     !
@@ -1142,6 +1159,7 @@ contains
        end do
     end do
 
+    ! Nest19
     !----------------------------------------------------------------------
     !
     ! bu and bp
@@ -1182,6 +1200,8 @@ contains
           end do
        end do
     end if
+
+    ! Nest20
     if( kfl_p1ve2_nsi /= 0 ) then
        do igaus = 1,pgaus
           do inode = 1,pnode
@@ -1194,6 +1214,8 @@ contains
           end do
        end do
     end if
+
+    ! Nest21
     !
     ! low Mach regime: we add to the right hand side the residue of the continuity eq
     !
@@ -1207,6 +1229,8 @@ contains
           elrbp(DEF_VECT,inode) = elrbp(DEF_VECT,inode) + fact0(DEF_VECT) * gpsha(DEF_VECT,inode,igaus)                             ! ( rhs , q)
        end do
     end do
+
+    ! Nest22
     !
     ! Newton-Raphson
     !
@@ -1238,6 +1262,8 @@ contains
           end do
        end if
     end if
+
+    ! Nest23
     !
     ! Projection: ( L*(v) , P )
     !
@@ -1310,6 +1336,7 @@ contains
              end do
           end do
        end if
+
        if( kfl_p1ve2_nsi /= 0 ) then
           do igaus = 1,pgaus
              do inode = 1,pnode
