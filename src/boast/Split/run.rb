@@ -7,7 +7,7 @@ require 'yaml'
 require 'pp'
 require 'csv'
 require 'optparse'
-require_relative './LogInfo.rb'
+require_relative '../Tools/LogInfo.rb'
 
 class Experiment
   include Params
