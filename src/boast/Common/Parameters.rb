@@ -42,34 +42,35 @@ module Parameters
   $jdofv     = Int("jdofv")
   $itime     = Int("itime")
   
-  def self.initialize(vector_length)
+  def self.initialize(vector_length, ndime = nil)
     allocate = get_lang == C ? true : false
+    ndime_var  = ndime.nil? ? $ndime : ndime
 
     $gpden     = Real("gpden",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $gpvis     = Real("gpvis",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])              
     $gppor     = Real("gppor",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
-    $gpgvi     = Real("gpgvi",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+    $gpgvi     = Real("gpgvi",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
     $gptt1     = Real("gptt1",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $gptt2     = Real("gptt2",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $gplap     = Real("gplap",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
     $gphes     = Real("gphes",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ntens),Dim($mnode),Dim($pgaus)])
-    $gprhs_sgs = Real("gprhs_sgs", :dir => :inout,  :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+    $gprhs_sgs = Real("gprhs_sgs", :dir => :inout,  :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
     $gprh2     = Real("gprh2",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $rmomu     = Real("rmomu",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
-    $rcont     = Real("rcont",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim($pgaus)])
+    $rcont     = Real("rcont",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pnode),Dim($pgaus)])
     $gpsp1     = Real("gpsp1",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $gpsp2     = Real("gpsp2",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $gpvol     = Real("gpvol",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pgaus)])
     $gpsha     = Real("gpsha",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
-    $gpcar     = Real("gpcar",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($mnode),Dim($pgaus)])
-    $gpadv     = Real("gpadv",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-    $gpvep     = Real("gpvep",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-    $gpgrp     = Real("gpgrp",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
-    $gprhs     = Real("gprhs",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+    $gpcar     = Real("gpcar",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($mnode),Dim($pgaus)])
+    $gpadv     = Real("gpadv",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
+    $gpvep     = Real("gpvep",     :dir => :inout , :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
+    $gpgrp     = Real("gpgrp",     :dir => :inout , :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
+    $gprhs     = Real("gprhs",     :dir => :inout , :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
     $gprhc     = Real("gprhc",     :dir => :inout , :vector_length => vector_length, :dim => [Dim($pgaus)])
-    $gpvel     = Real("gpvel",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus),Dim()])
-    $gpsgs     = Real("gpsgs",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus),Dim()])
-    $elvel     = Real("elvel",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim()])
+    $gpvel     = Real("gpvel",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus),Dim()])
+    $gpsgs     = Real("gpsgs",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus),Dim()])
+    $elvel     = Real("elvel",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pnode),Dim()])
     $elpre     = Real("elpre",     :dir => :in,     :vector_length => vector_length, :dim => [Dim($pnode),Dim()])
     $elbub     = Real("elbub",     :dir => :in,     :vector_length => vector_length, :dim => [Dim(1)])
 
@@ -77,15 +78,15 @@ module Parameters
     $agrau     = Real("agrau",     :dir => :out,    :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)])
 
     # Matrices
-    $elauu = Real("elauu", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim($pnode*$ndime)])
-    $elaup = Real("elaup", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim($pnode)])
+    $elauu = Real("elauu", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*ndime_var),Dim($pnode*ndime_var)])
+    $elaup = Real("elaup", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*ndime_var),Dim($pnode)])
     $elapp = Real("elapp", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode)])
-    $elapu = Real("elapu", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode*$ndime)])
-    $elrbu = Real("elrbu", :dir => :out, :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode)])
+    $elapu = Real("elapu", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim($pnode*ndime_var)])
+    $elrbu = Real("elrbu", :dir => :out, :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pnode)])
     $elrbp = Real("elrbp", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode)])
-    $rmom2 = Real("rmom2", :dir => :in,  :vector_length => vector_length, :dim => [Dim($ndime),Dim($ndime),Dim($pnode),Dim($pgaus)])
+    $rmom2 = Real("rmom2", :dir => :in,  :vector_length => vector_length, :dim => [Dim(ndime_var),Dim(ndime_var),Dim($pnode),Dim($pgaus)])
     $gpst1 = Real("gpst1", :dir => :in,  :vector_length => vector_length, :dim => [Dim($pgaus)])
-    $gpgve = Real("gpgve", :dir => :in,  :vector_length => vector_length, :dim => [Dim($ndime),Dim($ndime),Dim($pgaus)])
+    $gpgve = Real("gpgve", :dir => :in,  :vector_length => vector_length, :dim => [Dim(ndime_var),Dim(ndime_var),Dim($pgaus)])
     $ellum = Real("ellum", :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode)])
     $gppre = Real("gppre", :dir => :in,  :vector_length => vector_length, :dim => [Dim($pgaus)]) 
 
@@ -94,12 +95,12 @@ module Parameters
     $dtsgs     = Real("dtsgs",     :dir => :in, :vector_length => vector_length, :dim => [Dim(1)])
     $pbubl     = Int("pbubl",      :dir => :in, :vector_length => vector_length, :dim => [Dim(1)])
     $gpsha_bub = Real("gpsha_bub", :dir => :in, :vector_length => vector_length, :dim => [Dim($pgaus)])
-    $gpcar_bub = Real("gpcar_bub", :dir => :in, :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)])
+    $gpcar_bub = Real("gpcar_bub", :dir => :in, :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)])
 
     # Enrichement Element matrices
-    $elauq     = Real("elauq",     :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*$ndime),Dim(1)])
+    $elauq     = Real("elauq",     :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode*ndime_var),Dim(1)])
     $elapq     = Real("elapq",     :dir => :out, :vector_length => vector_length, :dim => [Dim($pnode),Dim(1)])
-    $elaqu     = Real("elaqu",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim($pnode*$ndime)])
+    $elaqu     = Real("elaqu",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim($pnode*ndime_var)])
     $elaqp     = Real("elaqp",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim($pnode)])
     $elaqq     = Real("elaqq",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1),Dim(1)])
     $elrbq     = Real("elrbq",     :dir => :out, :vector_length => vector_length, :dim => [Dim(1)])
@@ -110,9 +111,9 @@ module Parameters
     $xvis2  = Real("xvis2")
     $xvisc  = Real("xvisc")
     $one_rp = Real("one_rp")
-    $p1ve2  = Real("p1ve2",        :vector_length => vector_length, :dim => [Dim($ndime),Dim($ndime),Dim($pnode),Dim($pgaus)], :allocate => allocate)
+    $p1ve2  = Real("p1ve2",        :vector_length => vector_length, :dim => [Dim(ndime_var),Dim(ndime_var),Dim($pnode),Dim($pgaus)], :allocate => allocate)
     $p1vec  = Real("p1vec",        :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)], :allocate => allocate)
-    $p2vec  = Real("p2vec",        :vector_length => vector_length, :dim => [Dim($ndime),Dim($pnode),Dim($pgaus)], :allocate => allocate)
+    $p2vec  = Real("p2vec",        :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pnode),Dim($pgaus)], :allocate => allocate)
     $p2sca  = Real("p2sca",        :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)], :allocate => allocate)
     $wgrvi  = Real("wgrvi",        :vector_length => vector_length, :dim => [Dim($pnode),Dim($pgaus)], :allocate => allocate)
 
@@ -123,26 +124,23 @@ module Parameters
     $ugraN     = Real("ugraN",     :vector_length => vector_length)
     $gramugraN = Real("gramugraN", :vector_length => vector_length)
     $penal     = Real("penal",     :vector_length => vector_length)
-    $gprhh     = Real("gprhh",     :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)], :allocate => allocate)
+    $gprhh     = Real("gprhh",     :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)], :allocate => allocate)
     $taupr     = Real("taupr",     :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
-    $gpveo     = Real("gpveo",     :vector_length => vector_length, :dim => [Dim($ndime)], :allocate => allocate)
+    $gpveo     = Real("gpveo",     :vector_length => vector_length, :dim => [Dim(ndime_var)], :allocate => allocate)
     $gpcar1ji  = Real("gpcar1ji",  :vector_length => vector_length)
     $gpcar2ji  = Real("gpcar2ji",  :vector_length => vector_length)
     $gpcar3ji  = Real("gpcar3ji",  :vector_length => vector_length)
     $p2sca_bub = Real("p2sca_bub", :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)
-    $p2vec_bub = Real("p2vec_bub", :vector_length => vector_length, :dim => [Dim($ndime),Dim($pgaus)], :allocate => allocate)
+    $p2vec_bub = Real("p2vec_bub", :vector_length => vector_length, :dim => [Dim(ndime_var),Dim($pgaus)], :allocate => allocate)
 
-    $elauu_a = []
-    for i in 0...3 do
-      $elauu_a[i] = []
-      for j in 0...3 do 
-        $elauu_a[i][j] = eval 'Real("elauu#{i+1}#{j+1}", :vector_length => vector_length, :dim => [Dim(4.to_var*(($pnode+3)/4)), Dim($pnode)], :allocate => allocate)'
+    for i in 1..3 do
+      for j in 1..3 do 
+        eval '$elauu#{i}#{j} = Real("elauu#{i}#{j}", :vector_length => vector_length, :dim => [Dim(4*((pnode+3)/4)), Dim($pnode)], :allocate => allocate)'
       end
     end
 
-    $factvec = []
-    for i in 0...4 do
-      $factvec[i] = eval 'Real("factvec#{i+1}", :vector_length => vector_length, :dim=> [Dim(4.to_var*(($pnode+3)/4))], :allocate => allocate)'
+    for i in 1..4 do
+      eval '$factvec#{i} = Real("factvec#{i}", :vector_length => vector_length, :dim=> [Dim(4*((pnode+3)/4))], :allocate => allocate)'
     end
 
     $gpsp1_p   = Real("gpsp1_p",   :vector_length => vector_length, :dim => [Dim($pgaus)], :allocate => allocate)

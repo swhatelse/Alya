@@ -14,8 +14,8 @@ class TestFor < Minitest::Test
     set_fortran_line_length(100)
     nests = [1,2,3,4,5,6,7,8,9,10,11]
 
-    pgaus = 8
-    pnode = 8
+    pgaus = 4
+    pnode = 1
     ndime = 3
 
     kernels = {}
@@ -46,23 +46,30 @@ class TestFor < Minitest::Test
                   @@kfl_limit_nsi = kfl_limit_nsi
                   [FORTRAN].each{|lang|
                     set_lang(lang)
-                    kernels[:boast] = KSplitBoast::new(k_boast_params)
+                    kernels[:boast] = KSplitBoast::new(k_boast_params,dim)
                     kernels[:boast].generate
                     kernels[:boast].kernel.build
-                    i = 0
-                    kernels.values.each{|k|
-                      kernels[:ref].kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+                    kernels[:ref].kernel.run(dim,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                                                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                                                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                                                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
                                                @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
-                                               @@gpsha,@@gpcar,@@gpadv,@@gpvep[i],@@gpgrp[i],@@gprhs[i],@@gprhc[i],@@gpvel,
-                                               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[i],@@agrau[i],@@elauu[i],@@elaup[i],
-                                               @@elapp[i],@@elapu[i],@@elrbu[i],@@elrbp[i],@@dtinv_loc,@@dtsgs,@@pbubl,
-                                               @@gpsha_bub,@@gpcar_bub,@@elauq[i],@@elapq[i],@@elaqu[i],@@elaqp[i],
-                                               @@elaqq[i],@@elrbq[i])
-                      i += 1
-                    }
+                                               @@gpsha,@@gpcar,@@gpadv,@@gpvep[0],@@gpgrp[0],@@gprhs[0],@@gprhc[0],@@gpvel,
+                                               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[0],@@agrau[0],@@elauu[0],@@elaup[0],
+                                               @@elapp[0],@@elapu[0],@@elrbu[0],@@elrbp[0],@@dtinv_loc,@@dtsgs,@@pbubl,
+                                               @@gpsha_bub,@@gpcar_bub,@@elauq[0],@@elapq[0],@@elaqu[0],@@elaqp[0],
+                                               @@elaqq[0],@@elrbq[0])
+
+                    kernels[:boast].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+                                               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+                                               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+                                               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+                                               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+                                               @@gpsha,@@gpcar,@@gpadv,@@gpvep[1],@@gpgrp[1],@@gprhs[1],@@gprhc[1],@@gpvel,
+                                               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[1],@@agrau[1],@@elauu[1],@@elaup[1],
+                                               @@elapp[1],@@elapu[1],@@elrbu[1],@@elrbp[1],@@dtinv_loc,@@dtsgs,@@pbubl,
+                                               @@gpsha_bub,@@gpcar_bub,@@elauq[1],@@elapq[1],@@elaqu[1],@@elaqp[1],
+                                               @@elaqq[1],@@elrbq[1])
 
                     diff_agrau = (@@agrau[0] - @@agrau[1]).abs
                     diff_wgrgr = (@@wgrgr[0] - @@wgrgr[1]).abs
@@ -150,23 +157,30 @@ class TestFor < Minitest::Test
                   @@kfl_limit_nsi = kfl_limit_nsi
                   [C].each{|lang|
                     set_lang(lang)
-                    kernels[:boast] = KSplitBoast::new(k_boast_params)
+                    kernels[:boast] = KSplitBoast::new(k_boast_params,dim)
                     kernels[:boast].generate
                     kernels[:boast].kernel.build
-                    i = 0
-                    kernels.values.each{|k|
-                      k.kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
-                                               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
-                                               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
-                                               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
-                                               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
-                                               @@gpsha,@@gpcar,@@gpadv,@@gpvep[i],@@gpgrp[i],@@gprhs[i],@@gprhc[i],@@gpvel,
-                                               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[i],@@agrau[i],@@elauu[i],@@elaup[i],
-                                               @@elapp[i],@@elapu[i],@@elrbu[i],@@elrbp[i],@@dtinv_loc,@@dtsgs,@@pbubl,
-                                               @@gpsha_bub,@@gpcar_bub,@@elauq[i],@@elapq[i],@@elaqu[i],@@elaqp[i],
-                                               @@elaqq[i],@@elrbq[i])
-                      i += 1
-                    }
+                    kernels[:ref].kernel.run(dim,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+                                 @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+                                 @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+                                 @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+                                 @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+                                 @@gpsha,@@gpcar,@@gpadv,@@gpvep[0],@@gpgrp[0],@@gprhs[0],@@gprhc[0],@@gpvel,
+                                 @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[0],@@agrau[0],@@elauu[0],@@elaup[0],
+                                 @@elapp[0],@@elapu[0],@@elrbu[0],@@elrbp[0],@@dtinv_loc,@@dtsgs,@@pbubl,
+                                 @@gpsha_bub,@@gpcar_bub,@@elauq[0],@@elapq[0],@@elaqu[0],@@elaqp[0],
+                                 @@elaqq[0],@@elrbq[0])
+
+                    kernels[:boast].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+                                 @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+                                 @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+                                 @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+                                 @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+                                 @@gpsha,@@gpcar,@@gpadv,@@gpvep[1],@@gpgrp[1],@@gprhs[1],@@gprhc[1],@@gpvel,
+                                 @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[1],@@agrau[1],@@elauu[1],@@elaup[1],
+                                 @@elapp[1],@@elapu[1],@@elrbu[1],@@elrbp[1],@@dtinv_loc,@@dtsgs,@@pbubl,
+                                 @@gpsha_bub,@@gpcar_bub,@@elauq[1],@@elapq[1],@@elaqu[1],@@elaqp[1],
+                                 @@elaqq[1],@@elrbq[1])
 
                     diff_agrau = (@@agrau[0] - @@agrau[1]).abs
                     diff_wgrgr = (@@wgrgr[0] - @@wgrgr[1]).abs

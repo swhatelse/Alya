@@ -11,13 +11,13 @@ require_relative '../Tools/LogInfo.rb'
 
 class Experiment
   include Params
-  def self.run(output_info)
+  def self.run(output_info,dimension)
     nests = (1..11).to_a
     LogInfo.init(output_info)
     LogInfo.get_info
     vector_size=2
-    dimension=2
     seed = 10
+     
     epsilon = 10e-15
 
     stats = {}
@@ -32,14 +32,14 @@ class Experiment
       set_lang(C)
       set_fortran_line_length(100)
       # k[h_ref] = KSplitOssRef_v2::new(opts)
-      k[h_ref] = KSplitBoast::new(opts1)
+      k[h_ref] = KSplitBoast::new(opts1,dimension)
       k[h_ref].generate
       LogInfo.register_kernel_info(h_ref, k[h_ref].kernel.to_s)
       # k[h_ref].kernel.build(:FCFLAGS => "-O3")
       k[h_ref].kernel.build(:CFLAGS => "-O3")
 
       set_lang(C)
-      k[h_boast] = KSplitBoast::new(opts2)
+      k[h_boast] = KSplitBoast::new(opts2,dimension)
       k[h_boast].generate
       LogInfo.register_kernel_info(h_boast, k[h_boast].kernel.to_s)
       k[h_boast].kernel.build(:CFLAGS => "-O3")
@@ -52,7 +52,7 @@ class Experiment
       @@kfl_limit_nsi = 1 # 2
       @@kfl_stabi_nsi = 1 # -1
       100.times{|i|
-        k[h_ref].kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+        k[h_ref].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
@@ -63,7 +63,7 @@ class Experiment
                @@gpsha_bub,@@gpcar_bub,@@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,
                @@elaqq_ref,@@elrbq_ref)
 
-        k[h_boast].kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+        k[h_boast].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
@@ -81,7 +81,7 @@ class Experiment
         @@kfl_limit_nsi = 1 # 2
         @@kfl_stabi_nsi = 1 # -1
         
-        stats[h_ref][i] = k[h_ref].kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+        stats[h_ref][i] = k[h_ref].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
@@ -92,7 +92,7 @@ class Experiment
                @@gpsha_bub,@@gpcar_bub,@@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,
                @@elaqq_ref,@@elrbq_ref)[:duration]
 
-        stats[h_boast][i] = k[h_boast].kernel.run(@@ndime,@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+        stats[h_boast][i] = k[h_boast].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
@@ -163,13 +163,17 @@ opt_parser = OptionParser.new { |opts|
     options[:info_path] = n
   }
 
+  opts.on("--dimension=VAL", "Specify the path where to store the data") { |n|
+    options[:dimension] = n
+  }
+
   opts.on("-h", "--help", "Prints this help") {
     puts opts
     exit
   }
 }.parse!
 
-stats, infos = Experiment.run(options[:info_path])
+stats, infos = Experiment.run(options[:info_path],options[:dimension])
 
 if options[:data_path] then
   File::open( options[:data_path], "w") { |f|
