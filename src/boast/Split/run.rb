@@ -26,8 +26,8 @@ class Experiment
       nest_name = ":nest#{n}"
       opts1 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :included}
       opts2 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :inlined}
-      h_ref = {:kernel => :included, :nest => n}
-      h_boast = {:kernel => :inlined, :nest => n}
+      h_ref = {:usage => :included, :nest => n}
+      h_boast = {:usage => :inlined, :nest => n}
 
       set_lang(C)
       set_fortran_line_length(100)
@@ -44,8 +44,8 @@ class Experiment
       LogInfo.register_kernel_info(h_boast, k[h_boast].kernel.to_s)
       k[h_boast].kernel.build(:CFLAGS => "-O3")
       
-      stats[h_ref] = []
-      stats[h_boast] = []
+      stats[h_ref] = {:options => opts1.merge({:CFLAGS => "-O3"}), :time => []}
+      stats[h_boast] = {:options => opts2.merge({:CFLAGS => "-O3"}), :time => []}
 
       Params.init(vector_size,dimension,seed)
       @@kfl_lumped = 2 # 1
@@ -81,7 +81,7 @@ class Experiment
         @@kfl_limit_nsi = 1 # 2
         @@kfl_stabi_nsi = 1 # -1
         
-        stats[h_ref][i] = k[h_ref].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+        stats[h_ref][:time][i] = k[h_ref].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
@@ -92,7 +92,7 @@ class Experiment
                @@gpsha_bub,@@gpcar_bub,@@elauq_ref,@@elapq_ref,@@elaqu_ref,@@elaqp_ref,
                @@elaqq_ref,@@elrbq_ref)[:duration]
 
-        stats[h_boast][i] = k[h_boast].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+        stats[h_boast][:time][i] = k[h_boast].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
                @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
                @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
