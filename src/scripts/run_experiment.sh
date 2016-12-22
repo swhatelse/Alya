@@ -46,4 +46,4 @@ mkdir -p $DATA_FOLD_DAY
 mkdir -p $DATA_FOLD_HOST
 mkdir -p $DATA_FOLD_TIME
 
-ruby $SRC_DIR/boast/run.rb --data=$DATA_FILE --info=$INFO_FILE
+ruby $SRC_DIR/boast/Split/run.rb --data=$DATA_FILE --info=$INFO_FILE --dimension=3
