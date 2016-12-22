@@ -305,6 +305,246 @@
 
       2. Using BOAST
          
+** December
+   #+begin_src R :results output :session :exports both
+     df <- read.csv("../experiments/2016_12_14/titan/11_10_25/Data.csv",strip.white=T,header=T)
+     summary(df)
+   #+end_src
+
+   #+RESULTS:
+   #+begin_example
+    vector_length preprocessor       nest      unroll           usage      
+    Min.   :2     false:33000   Min.   : 1   false:33000   call    :11000  
+    1st Qu.:2                   1st Qu.: 3                 included:11000  
+    Median :2                   Median : 6                 inlined :11000  
+    Mean   :2                   Mean   : 6                                 
+    3rd Qu.:2                   3rd Qu.: 9                                 
+    Max.   :2                   Max.   :11                                 
+    CFLAGS          pgaus       pnode        time          
+    -O3:33000   Min.   :8   Min.   :8   Min.   :7.750e-07  
+                1st Qu.:8   1st Qu.:8   1st Qu.:1.259e-06  
+                Median :8   Median :8   Median :1.870e-06  
+                Mean   :8   Mean   :8   Mean   :3.175e-06  
+                3rd Qu.:8   3rd Qu.:8   3rd Qu.:3.694e-06  
+                Max.   :8   Max.   :8   Max.   :4.495e-05
+#+end_example
+
+   #+begin_src R :results output :session :exports both
+     library(ggplot2)
+
+     ggplot(df) +
+         geom_boxplot(aes(y=time,x=usage)) + 
+         facet_grid(.~nest)
+   #+end_src
+
+   #+RESULTS:
+==   
+   #+begin_src R :results output :session :exports both
+     library(plyr)
+
+     df2 <- ddply(df,c("nest","usage"), summarize,
+                    mean_time = mean(time), err = 2*sd(time)/sqrt(length(time)))
+     df2
+   #+end_src
+
+   #+RESULTS:
+   #+begin_example
+      nest    usage    mean_time          err
+   1     1     call 2.474244e-06 1.841987e-08
+   2     1 included 2.699382e-06 6.302113e-08
+   3     1  inlined 2.482535e-06 3.807654e-08
+   4     2     call 1.026710e-05 1.062389e-07
+   5     2 included 1.164780e-05 7.360896e-08
+   6     2  inlined 1.138434e-05 7.462466e-08
+   7     3     call 6.667437e-06 3.976109e-08
+   8     3 included 6.994290e-06 7.486344e-08
+   9     3  inlined 6.783851e-06 5.741337e-08
+   10    4     call 1.350236e-06 1.778802e-08
+   11    4 included 1.551193e-06 3.680854e-08
+   12    4  inlined 1.360117e-06 2.077624e-08
+   13    5     call 3.810911e-06 3.175630e-08
+   14    5 included 3.958444e-06 4.720225e-08
+   15    5  inlined 3.804648e-06 6.586009e-08
+   16    6     call 1.975047e-06 1.653148e-08
+   17    6 included 2.038506e-06 3.390503e-08
+   18    6  inlined 1.968739e-06 2.260067e-08
+   19    7     call 1.207450e-06 2.983152e-08
+   20    7 included 1.328301e-06 2.136909e-08
+   21    7  inlined 1.170763e-06 1.510029e-08
+   22    8     call 1.669961e-06 2.349304e-08
+   23    8 included 1.836766e-06 8.970438e-08
+   24    8  inlined 1.682019e-06 1.856098e-08
+   25    9     call 1.125895e-06 1.490004e-08
+   26    9 included 1.223195e-06 2.117639e-08
+   27    9  inlined 1.140272e-06 1.879465e-08
+   28   10     call 2.002260e-06 3.519500e-08
+   29   10 included 2.070220e-06 3.648207e-08
+   30   10  inlined 1.949579e-06 4.057231e-08
+   31   11     call 1.019903e-06 1.082997e-08
+   32   11 included 1.135548e-06 3.358170e-08
+   33   11  inlined 1.003762e-06 1.722017e-08
+#+end_example
+
+   #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session
+     dodge <- position_dodge(width=0.9)
+     ggplot(df2,aes(y=mean_time,x=factor(nest),colour=usage,fill=usage)) +
+         geom_bar( aes(), position=dodge, stat="identity") +
+         geom_errorbar(data=df2,aes(x=factor(nest),y=mean_time, ymin=mean_time-err, ymax=mean_time+err), position=dodge, width=0.5, colour="black")
+   #+end_src
+
+   #+RESULTS:
+   [[file:/tmp/babel-3450jyP/figure3450uGE.png]]
+
+   #+begin_src R :results output :session :exports both
+     included <- data.frame(usage = df2[df2$usage =="call",]$usage, nest=df2[df2$usage =="call",]$nest, speedup= df2[df2$usage == "included",]$mean_time / df2[df2$usage == "call",]$mean_time )
+     inline <- data.frame(usage = df2[df2$usage =="inlined",]$usage, nest=df2[df2$usage =="inlined",]$nest, speedup= df2[df2$usage == "included",]$mean_time / df2[df2$usage == "inlined",]$mean_time )
+
+     df_comp <- rbind(included,inline)
+
+     summary(included)
+     summary(inline)
+     summary(df_comp)
+   #+end_src
+
+   #+RESULTS:
+   #+begin_example
+         usage         nest         speedup     
+    call    :11   Min.   : 1.0   Min.   :1.032  
+    included: 0   1st Qu.: 3.5   1st Qu.:1.044  
+    inlined : 0   Median : 6.0   Median :1.091  
+                  Mean   : 6.0   Mean   :1.084  
+                  3rd Qu.: 8.5   3rd Qu.:1.107  
+                  Max.   :11.0   Max.   :1.149
+         usage         nest         speedup     
+    call    : 0   Min.   : 1.0   Min.   :1.023  
+    included: 0   1st Qu.: 3.5   1st Qu.:1.038  
+    inlined :11   Median : 6.0   Median :1.073  
+                  Mean   : 6.0   Mean   :1.077  
+                  3rd Qu.: 8.5   3rd Qu.:1.112  
+                  Max.   :11.0   Max.   :1.140
+         usage         nest          speedup     
+    call    :11   Min.   : 1.00   Min.   :1.023  
+    included: 0   1st Qu.: 3.25   1st Qu.:1.039  
+    inlined :11   Median : 6.00   Median :1.087  
+                  Mean   : 6.00   Mean   :1.081  
+                  3rd Qu.: 8.75   3rd Qu.:1.110  
+                  Max.   :11.00   Max.   :1.149
+#+end_example
+
+   #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session
+     df_comp$nest <- as.factor(df_comp$nest)
+     ggplot(df_comp) +         
+         geom_bar(aes(y=speedup,x=nest, colour=usage,fill=usage), stat="identity", position="dodge")+
+         geom_hline(yintercept=1,linetype=2)
+   #+end_src
+   
+   #+RESULTS:
+   [[file:/tmp/babel-3450jyP/figure34507Ci.png]]
+
+ With unroll true
+#+begin_src R :results output :session :exports both
+  library(ggplot2)
+  library(plyr)
+
+  df <- read.csv("../../../experiments/2016_12_14/titan/17_17_45/Data.csv",strip.white=T,header=T)
+  summary(df)
+
+  df2 <- ddply(df,c("nest","usage"), summarize,
+                 mean_time = mean(time), err = 2*sd(time)/sqrt(length(time)))
+  call <- data.frame(usage = df2[df2$usage =="call",]$usage, nest=df2[df2$usage =="call",]$nest, speedup= df2[df2$usage == "included",]$mean_time / df2[df2$usage == "call",]$mean_time )
+  inline <- data.frame(usage = df2[df2$usage =="inlined",]$usage, nest=df2[df2$usage =="inlined",]$nest, speedup= df2[df2$usage == "included",]$mean_time / df2[df2$usage == "inlined",]$mean_time )
+  df_comp <- rbind(call,inline)
+
+  df_comp$nest <- as.factor(df_comp$nest)
+
+  ggplot(df_comp) +         
+      geom_bar(aes(y=speedup,x=nest, colour=usage,fill=usage), stat="identity", position="dodge")+
+      geom_hline(yintercept=1,linetype=2)+
+      labs(title = "Speedup of call and inline versions compared to included", y="Speedup", x="Loop Nest") +
+      theme(axis.text=element_text(size=14,color="black"), axis.title=element_text(size=14,face="bold"), plot.title = element_text(size=14,face="bold"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ vector_length preprocessor       nest     unroll           usage      
+ Min.   :2     false:33000   Min.   : 1   true:33000   call    :11000  
+ 1st Qu.:2                   1st Qu.: 3                included:11000  
+ Median :2                   Median : 6                inlined :11000  
+ Mean   :2                   Mean   : 6                                
+ 3rd Qu.:2                   3rd Qu.: 9                                
+ Max.   :2                   Max.   :11                                
+ CFLAGS          pgaus       pnode        time          
+ -O3:33000   Min.   :8   Min.   :8   Min.   :7.990e-07  
+             1st Qu.:8   1st Qu.:8   1st Qu.:1.258e-06  
+             Median :8   Median :8   Median :1.886e-06  
+             Mean   :8   Mean   :8   Mean   :3.197e-06  
+             3rd Qu.:8   3rd Qu.:8   3rd Qu.:3.707e-06  
+             Max.   :8   Max.   :8   Max.   :4.767e-05
+#+end_example
+
+ #+begin_src R :results output :session :exports both
+ summary(call)
+ summary(inline)
+ #+end_src
+
+ #+RESULTS:
+ #+begin_example
+       usage         nest         speedup      
+  call    :11   Min.   : 1.0   Min.   :0.9979  
+  included: 0   1st Qu.: 3.5   1st Qu.:1.0585  
+  inlined : 0   Median : 6.0   Median :1.0819  
+                Mean   : 6.0   Mean   :1.0800  
+                3rd Qu.: 8.5   3rd Qu.:1.1071  
+                Max.   :11.0   Max.   :1.1409
+       usage         nest         speedup     
+  call    : 0   Min.   : 1.0   Min.   :1.013  
+  included: 0   1st Qu.: 3.5   1st Qu.:1.035  
+  inlined :11   Median : 6.0   Median :1.063  
+                Mean   : 6.0   Mean   :1.068  
+                3rd Qu.: 8.5   3rd Qu.:1.095  
+                Max.   :11.0   Max.   :1.129
+#+end_example
+
+#+begin_src R :results output :session :exports both
+  library(ggplot2)
+  library(plyr)
+
+  df <- read.csv("../../../experiments/2016_12_14/titan/17_17_45/Data.csv",strip.white=T,header=T)
+  summary(df)
+
+  df2 <- ddply(df,c("nest","usage"), summarize,
+                 mean_time = min(time), err = 2*sd(time)/sqrt(length(time)))
+  call <- data.frame(usage = df2[df2$usage =="call",]$usage, nest=df2[df2$usage =="call",]$nest, speedup= df2[df2$usage == "included",]$mean_time / df2[df2$usage == "call",]$mean_time )
+  inline <- data.frame(usage = df2[df2$usage =="inlined",]$usage, nest=df2[df2$usage =="inlined",]$nest, speedup= df2[df2$usage == "included",]$mean_time / df2[df2$usage == "inlined",]$mean_time )
+  df_comp <- rbind(call,inline)
+
+  df_comp$nest <- as.factor(df_comp$nest)
+
+  ggplot(df_comp) +         
+      geom_bar(aes(y=speedup,x=nest, colour=usage,fill=usage), stat="identity", position="dodge")+
+      geom_hline(yintercept=1,linetype=2)+
+      labs(title = "Speedup of call and inline versions compared to included", y="Speedup", x="Loop Nest") +
+      theme(axis.text=element_text(size=14,color="black"), axis.title=element_text(size=14,face="bold"), plot.title = element_text(size=14,face="bold"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ vector_length preprocessor       nest     unroll           usage      
+ Min.   :2     false:33000   Min.   : 1   true:33000   call    :11000  
+ 1st Qu.:2                   1st Qu.: 3                included:11000  
+ Median :2                   Median : 6                inlined :11000  
+ Mean   :2                   Mean   : 6                                
+ 3rd Qu.:2                   3rd Qu.: 9                                
+ Max.   :2                   Max.   :11                                
+ CFLAGS          pgaus       pnode        time          
+ -O3:33000   Min.   :8   Min.   :8   Min.   :7.990e-07  
+             1st Qu.:8   1st Qu.:8   1st Qu.:1.258e-06  
+             Median :8   Median :8   Median :1.886e-06  
+             Mean   :8   Mean   :8   Mean   :3.197e-06  
+             3rd Qu.:8   3rd Qu.:8   3rd Qu.:3.707e-06  
+             Max.   :8   Max.   :8   Max.   :4.767e-05
+#+end_example
+
 * Sandbox :noexport:
 ** Fortran
 *** Loop vectorization
