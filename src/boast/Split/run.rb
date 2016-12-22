@@ -1,8 +1,8 @@
-require './KSplitOssRef_v1.rb'
-require './KSplitOssRef_v2.rb'
-require './KSplitOssBoast.rb'
+require_relative './KSplitOssRef_v1.rb'
+require_relative './KSplitOssRef_v2.rb'
+require_relative './KSplitOssBoast.rb'
 require 'narray_ffi'
-require '../Common/CommonArgs.rb'
+require_relative '../Common/CommonArgs.rb'
 require 'yaml'
 require 'pp'
 require 'csv'
@@ -23,9 +23,9 @@ class Experiment
     stats = {}
     k = {}
     nests.each{|n|
-      opts1 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :included, :CFLAGS => "-O3"}
-      opts2 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :inlined, :CFLAGS => "-O3"}
-      opts3 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => false, :inline => :call, :CFLAGS => "-O3"}
+      opts1 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => true, :inline => :included, :CFLAGS => "-O3"}
+      opts2 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => true, :inline => :inlined, :CFLAGS => "-O3"}
+      opts3 = {:vector_length => vector_size, :preprocessor => false, :nests => [n], :unroll => true, :inline => :call, :CFLAGS => "-O3"}
 
       set_lang(C)
       set_fortran_line_length(100)
@@ -94,8 +94,8 @@ class Experiment
 
       }
       
-      10.times{|i|
-        CommonArgs.init(charac[:pgaus],charac[:pnode],dimension,vector_size,2,seed)
+      1000.times{|i|
+        CommonArgs.init(charac[:pgaus],charac[:pnode],dimension,vector_size,3,seed)
         @@kfl_lumped = 2 # 1
         @@kfl_limit_nsi = 1 # 2
         @@kfl_stabi_nsi = 1 # -1
@@ -121,6 +121,17 @@ class Experiment
                @@elapp[1],@@elapu[1],@@elrbu[1],@@elrbp[1],@@dtinv_loc,@@dtsgs,@@pbubl,
                @@gpsha_bub,@@gpcar_bub,@@elauq[1],@@elapq[1],@@elaqu[1],@@elaqp[1],
                @@elaqq[1],@@elrbq[1])[:duration]
+
+        stats[opts3][:time][i] = k[opts3].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
+               @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
+               @@kfl_press_nsi,@@kfl_p1ve2_nsi,@@kfl_linea_nsi,@@kfl_confi_nsi,@@nbdfp_nsi,
+               @@kfl_sgsti_nsi,@@kfl_nota1_nsi,@@kfl_limit_nsi,@@kfl_penal_nsi,@@penal_nsi,
+               @@kfl_bubbl_nsi,@@pnode,@@pgaus,@@gpden,@@gpvis,@@gppor,@@gpsp1,@@gpsp2,@@gpvol,
+               @@gpsha,@@gpcar,@@gpadv,@@gpvep[2],@@gpgrp[2],@@gprhs[2],@@gprhc[2],@@gpvel,
+               @@gpsgs,@@elvel,@@elpre,@@elbub,@@wgrgr[2],@@agrau[2],@@elauu[2],@@elaup[2],
+               @@elapp[2],@@elapu[2],@@elrbu[2],@@elrbp[2],@@dtinv_loc,@@dtsgs,@@pbubl,
+               @@gpsha_bub,@@gpcar_bub,@@elauq[2],@@elapq[2],@@elaqu[2],@@elaqp[2],
+               @@elaqq[2],@@elrbq[2])[:duration]
 
         diff_agrau = (@@agrau[0] - @@agrau[1]).abs
         diff_wgrgr = (@@wgrgr[0] - @@wgrgr[1]).abs
