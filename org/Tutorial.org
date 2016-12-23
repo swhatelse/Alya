@@ -2698,10 +2698,11 @@
       computation of =agrau= and =wgrgr= according to this. For this, we
       build 2 expressions =exp1= and =exp2= which are unrolled 2 and 3 times.
       Then these expressions are pasted into the formulas that compute
-      =agrau= and =wgrgr=. Next with these formulas, we build 2 loop nests
-      (for each possibility to unroll the computation of =agrau= and
-      =wgrgr=, here 2 and 3) that we stack into =for1=, and finally we wrap
-      these loops in a if statement.
+      =agrau= and =wgrgr=. Unlike in the reference implementation where
+      the two unrolled versions of the =ndime= loop and wrapped into an
+      if statement, we only generate the code for the corrected value
+      of ndime. At the upper level the correct kernel for the
+      corresponding value of =ndime= is chosen by a broker. 
       <<boast-nest1-body>>
       #+NAME: boast-nest1-body
       #+BEGIN_SRC ruby
@@ -2775,9 +2776,7 @@
 **** Second loop
 ***** Body
       Same principle as before, the code is unrolled according to
-      =ndime= or not unrolled at all, then the different version of the
-      nest loop are stacked into array, and wrap into an if
-      statement. 
+      =ndime= if =@unroll= is true.
       #+NAME: boast-nest2-body
       #+BEGIN_SRC ruby
         for1 = For(igaus,1,@pgaus){ 
@@ -3114,8 +3113,7 @@ EOF
 **** Fifth nest
 ***** Body
       Same principle as in [[boast-nest4-body-unroll-kfl-lumped][<<boast-nest4-body-unroll-kfl-lumped>>]], we unroll
-      according to the values that can take =ndime= or not. And we place the
-      block in =if= statement.
+      according to the values that can take =ndime= or not.
       #+NAME: boast-nest5-body
       #+BEGIN_SRC ruby
         for1 = For(igaus,1,@pgaus){
