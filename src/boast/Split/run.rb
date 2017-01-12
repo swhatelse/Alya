@@ -13,8 +13,11 @@ class Experiment
   include CommonArgs
   def self.run(output_info,dimension)
     nests = (1..11).to_a
+    
+    # Recording platform informations
     LogInfo.init(output_info)
     LogInfo.get_info
+
     vector_size=2
     seed = 10
     charac = {:pgaus => 8, :pnode => 8}
@@ -30,20 +33,26 @@ class Experiment
       set_lang(C)
       set_fortran_line_length(100)
       # k[h_ref] = KSplitOssRef_v2::new(opts)
+      # Creating kernel 1
       k[opts1] = KSplitBoast::new(opts1,dimension)
       k[opts1].generate
+      # Recording the generated kernel
       LogInfo.register_kernel_info(opts1, k[opts1].kernel.to_s)
       # k[opts1].kernel.build(:FCFLAGS => "-O3")
       k[opts1].kernel.build(:CFLAGS => opts1[:CFLAGS])
 
       set_lang(C)
+      # Creating kernel 2
       k[opts2] = KSplitBoast::new(opts2,dimension)
       k[opts2].generate
+      # Recording the generated kernel
       LogInfo.register_kernel_info(opts2, k[opts2].kernel.to_s)
       k[opts2].kernel.build(:CFLAGS => opts2[:CFLAGS])
 
+      # Creating kernel 3
       k[opts3] = KSplitBoast::new(opts3,dimension)
       k[opts3].generate
+      # Recording the generated kernel
       LogInfo.register_kernel_info(opts3, k[opts3].kernel.to_s)
       k[opts3].kernel.build(:CFLAGS => opts3[:CFLAGS])
       
@@ -54,10 +63,13 @@ class Experiment
       stats[opts2][:characteristics] = charac
       stats[opts3][:characteristics] = charac
 
+      # Setting the values of the arguments
       CommonArgs.init(charac[:pgaus],charac[:pnode],dimension,vector_size,3,seed)
+
       @@kfl_lumped = 2 # 1
       @@kfl_limit_nsi = 1 # 2
       @@kfl_stabi_nsi = 1 # -1
+      # Warm-up loop. Need to check if 100 is enough.
       100.times{|i|
         k[opts1].kernel.run(@@kfl_lumped,@@mnode,@@ntens,@@kfl_duatss,@@fact_duatss,@@kfl_stabi_nsi,
                @@fvins_nsi,@@fcons_nsi,@@bemol_nsi,@@kfl_regim_nsi,@@fvela_nsi,@@kfl_rmom2_nsi,
@@ -174,6 +186,8 @@ class Experiment
         raise "Error: residue too big for gpvep" if (diff_gpvep > epsilon).to_a.flatten.include? 1
       }
     }
+
+    # Dumping info into a file
     LogInfo.dump_info
     puts "Done"
     return stats,k

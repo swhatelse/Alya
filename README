@@ -1,0 +1,116 @@
+* Setup
+  Once the project has been cloned. To retrieve the BOAST submodule,
+  do:
+  #+begin_src sh :results output :exports both
+    git submodule init
+    git submodule update
+  #+end_src
+  When you want to retrieve boast update just do:
+  #+begin_src sh :results output :exports both
+    git submodule update --remote 
+  #+end_src
+  And commit it if you want to keep track of the version.
+  Useful informations about submodule are available here
+  https://git-scm.com/book/en/v2/Git-Tools-Submodules. 
+* Experiments Branches
+  In order for the experiments to be reproducible, the workflow is
+  based on what have been done by Luka Stanisic
+  https://hal.inria.fr/hal-01112795/file/SIGOPS_paper.pdf. The
+  experiments are done in separate branches which never integrate
+  changes done in the master branch. This way the experiment branches
+  remain in the same state as when the experiment was done and we can
+  know easily how the experiments have been done. Additionally the
+  BOAST version used is tracked by using git submodule and can be
+  retrieve using git submodule update.
+
+* Directories
+  - =experiments=
+    Result of experiments are stored in this directory.
+  - =org=
+    This directory contains a labbook, the tutorial and some presentations.
+  - =src=
+    - =boast=
+      - =ASGS=
+        Contains the ruby files to generate the
+        =nsi_element_assembly_asgs_oss= kernel. 
+      - =Common=
+        Contains the mechanisms shared by the two kernels. 
+      - =Split=
+        Contains the ruby files to generate the
+        =nsi_element_assembly_split_oss= kernel.
+      - =Tools=
+        Just contains a ruby file which records every information about
+        the platform. Generally =get_info= is run before running the
+        kernel. =register_kernel_info= is used to store the kernel
+        as a string.
+    - =kernel=
+      Contains the original kernel version.
+    - =scripts=
+      Contains scripts to convert data from yaml to csv and scripts to
+      launch an experiment.
+* Structure
+** Common
+  - =CommonArgs.rb=
+    In order to avoid to set several time and the same way the
+    arguments the kernel uses, the setting of the arguments is
+    centralized in this module. This module needs to be initialized
+    with a call to init before use. To compare the result between
+    kernels we check the values of each arguments, inout arguments
+    need to be set to the exact same values between
+    kernels. =nb_instances= allows to specify how many kernels will be
+    run to create the correct number of copy for inout arguments.
+  - =Parameters.rb=
+    The two main kernels and the subroutines (loop nests) share the
+    same parameters definition. To avoid defining a parameter
+    multiple time, this module centralizes all the parameters
+    definition. This way, when a kernel or a subroutine needs to
+    define a parameter we only need to use a reference to one of the
+    centralized parameters. Before use, this module need to be
+    initialize with a call to =initialize=. 
+    Sometimes, subroutines need that the direction of the parameter
+    (in, out, inout) is different from the one define in the
+    centralized module. Instead of changing the direction of the
+    parameters we need to use a copy of this parameters otherwise the
+    direction will be change for every procedures using this
+    parameters. For this the module provides the =copy= method which
+    return a copy of the parameters with the requested direction.
+  - =subroutine.rb=
+    This class is the parent class for the different subroutines of a
+    kernel. It allows to either directly print the code of the
+    subroutine in the kernel (manual inlining), or put the code in
+    a subroutine which will be call by the kernel (which can be a
+    simple procedure or inlined). The subroutine needs to know the
+    options of the kernel (unrolling, vector size, etc...) but also it
+    needs to have a reference of external functions by using the array
+    =functions=. 
+
+    Once the parameters used by the subroutine and the code block
+    have been described in the daughter class, the =construct= method needs
+    to be call. It will wrap the code block in a Procedure if the
+    loop nest needs to be out-sourced in a subroutine. 
+
+    Then to call a subroutine, just use the =call= method. It will
+    automatically put the code in the main kernel or call the
+    subroutine. 
+** Split
+   - =KSplitOSS.rb=
+     This class is the parent class for the orginal and BOAST version
+     of the kernel. It mainly centralizes the references to the
+     parameters the kernel uses, it does not contain any kernel code,
+     just references and initializations. This way children classes
+     can focus only on the kernel description.
+   - =KSplitOssRef_v2.rb=
+     Contains the code of the original kernel. For more details see
+     the tutorial.
+   - =KSplitOssBoast.rb=
+     Contains the BOAST implementation. For more details see
+     the tutorial.
+   - =debug.rb=
+     This is just a file to quickly test the kernel and debuging. You
+     can find a simple example about how to run the kernel. 
+   - =run.rb=
+     This contains the code to run an experiments.
+** ASGS
+   Same as Split but for =nsi_element_assembly_asgs_oss= kernel.
+* Running a Kernel
+  See src/boast/Split/example.rb
